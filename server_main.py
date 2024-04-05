@@ -273,20 +273,28 @@ def Strategy_candle(prices):
 
         if df['bullish_engulfing'].iloc[i] == True:
             pattern[i] = 'bullish_engulfing'
+            print('bullish_engulfing')
         if df['bearish_engulfing'].iloc[i] == True:
             pattern[i] = 'bearish_engulfing'
+            print('bearish_engulfing')
         if df['bearish_harami'].iloc[i] == True:
             pattern[i] = 'bearish_harami'
+            print('bearish_harami')
         if df['bullish_harami'].iloc[i] == True:
             pattern[i] = 'bullish_harami'
+            print('bullish_harami')
         if df['evening_star'].iloc[i] == True:
             pattern[i] = 'evening_star'
+            print('evening_star')
         if df['morning_star'].iloc[i] == True:
             pattern[i] = 'morning_star'
+            print('morning_star')
         if df['hanging_man'].iloc[i] == True:
             pattern[i] = 'hanging_man'
+            print('hanging_man')
         if df['inverted_hammer'].iloc[i] == True:
             pattern[i] = 'inverted_hammer'
+            print('inverted_hammer')
 
     return pattern
 
@@ -461,9 +469,16 @@ def bot(symbol, lot):
 
 
 def Mt5():
+    path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
+    login = 124207670
+    password = "abcdABCD123!@#"
+    server = "Exness-MT5Trial7"
+    timeout = 10000
+    portable = False
+
     # Use a breakpoint in the code line below to debug your script.
-    if not mt5.initialize(path="C:\Program Files\MetaTrader 5\\terminal64.exe", login=122618055,
-                          server="Exness-MT5Trial7", password="FUCKnibirr2023"):
+    if not mt5.initialize(path=path, login=login,
+                          server=server, password=password):
         print("initialize() failed, error code =", mt5.last_error())
         quit()
 

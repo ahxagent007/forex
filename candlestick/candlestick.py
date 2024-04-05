@@ -146,6 +146,12 @@ def morning_star(candles_df,
     cndl = __create_object('MorningStar', target)
     return cndl.has_pattern(candles_df, ohlc, is_reversed)
 
+def evening_star(candles_df,
+                   ohlc=__default_ohlc,
+                   is_reversed=False,
+                   target=None):
+    cndl = __create_object('EveningStar', target)
+    return cndl.has_pattern(candles_df, ohlc, is_reversed)
 
 def morning_star_doji(candles_df,
                    ohlc=__default_ohlc,
@@ -192,4 +198,11 @@ def shooting_star(candles_df,
                    is_reversed=False,
                    target=None):
     cndl = __create_object('ShootingStar', target)
+    return cndl.has_pattern(candles_df, ohlc, is_reversed)
+
+def three_soldier(candles_df,
+                   ohlc=__default_ohlc,
+                   is_reversed=False,
+                   target=None):
+    cndl = __create_object('ThreeSoldier', target)
     return cndl.has_pattern(candles_df, ohlc, is_reversed)
