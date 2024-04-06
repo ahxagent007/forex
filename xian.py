@@ -83,7 +83,7 @@ def trade_logic(last_4_candles):
 
 initialize_mt5()
 
-ticks_df = get_rates(symbol='EURUSDm', prev_min=5000)
+ticks_df = get_rates(symbol='EURUSDm', prev_min=1100)
 
 tws = 0
 tbc = 0
@@ -101,10 +101,10 @@ for i in range(0, ticks_df.shape[0]-4):
 
 print('Total Candle:', ticks_df.shape[0], '\nTWS:', tws, '\nTBC:',tbc)
 
-fig = go.Figure(data=[go.Candlestick(x=df['Date'],
-                open=df['AAPL.Open'],
-                high=df['AAPL.High'],
-                low=df['AAPL.Low'],
-                close=df['AAPL.Close'])])
+fig = go.Figure(data=[go.Candlestick(x=ticks_df['time'],
+                open=ticks_df['open'],
+                high=ticks_df['high'],
+                low=ticks_df['low'],
+                close=ticks_df['close'])])
 
 fig.show()
