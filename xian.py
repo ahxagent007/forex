@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-
+import plotly.graph_objects as go
 
 
 def initialize_mt5():
@@ -100,3 +100,11 @@ for i in range(0, ticks_df.shape[0]-4):
         print(data)
 
 print('Total Candle:', ticks_df.shape[0], '\nTWS:', tws, '\nTBC:',tbc)
+
+fig = go.Figure(data=[go.Candlestick(x=df['Date'],
+                open=df['AAPL.Open'],
+                high=df['AAPL.High'],
+                low=df['AAPL.Low'],
+                close=df['AAPL.Close'])])
+
+fig.show()
