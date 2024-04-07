@@ -23,11 +23,15 @@ def get_position(symbol='EURUSDm'):
     return orders_eurousdm
 
 def get_rates(symbol='EURUSDm', prev_min=720):
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=prev_min),
-                                 datetime.now())
-    ticks_frame = pd.DataFrame(rates)
+    # rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=prev_min),
+    #                              datetime.now())
 
-    print(ticks_frame.shape)
+    # window = 10
+    pt = datetime.now()-timedelta(days=2) #+ timedelta(minutes=window)
+    rates = mt5.copy_rates_range("EURUSDm", mt5.TIMEFRAME_M10, pt - timedelta(days=4), pt)
+
+    ticks_frame = pd.DataFrame(rates)
+    print('ticks_frame--> Size: ',ticks_frame.shape)
     return ticks_frame
 
 def candle_type(candle):
@@ -46,6 +50,7 @@ def trade_logic(last_4_candles):
     three_white_solders = True
     three_black_crows = True
     sl = 0
+    tp = 0
     action = None
 
     logic_three_white_solders = ['bearish', 'bullish', 'bullish', 'bullish']
@@ -60,51 +65,105 @@ def trade_logic(last_4_candles):
             three_black_crows = False
         i+=1
 
+    tp_change = 0.0004
+    sl_change = 0.0008
+
     if three_white_solders:
         sl = last_4_candles['low'].max()
+        tp = last_4_candles['close'].max() + tp_change
         action = 'buy'
-    if logic_three_black_crows:
+    if three_black_crows:
         sl = last_4_candles['high'].max()
+        tp = last_4_candles['close'].max() - tp_change
         action = 'sell'
-
     data = {
         'three_white_solders': three_white_solders,
         'three_black_crows': three_black_crows,
         'last_candle': last_4_candles.iloc[-1].to_dict(),
         'sl': sl,
+        'tp':tp,
         'action': action
     }
     #print(data)
 
     return data
 
+def test_tade_result(trade_dec, sl, tp, current_candle):
+    print(trade_dec, '=> SL:',sl,' TP:', tp,'\ncurrent_candle', current_candle.to_dict())
+    if trade_dec == 'buy':
+        if sl >= current_candle['low']:
+            print('SL Crossed low')
+            return False
+        elif tp <= current_candle['high']:
+            return True
+        else:
+            return None
+    elif trade_dec == 'sell':
+        if sl <= current_candle['high']:
+            print('SL Crossed high')
+            return False
+        elif tp >= current_candle['low']:
+            return True
+        else:
+            return None
 
 
+def show_plot(ticks_df):
+    fig = go.Figure(data=[go.Candlestick(x=ticks_df['time'],
+                    open=ticks_df['open'],
+                    high=ticks_df['high'],
+                    low=ticks_df['low'],
+                    close=ticks_df['close'])])
 
+    fig.show()
 initialize_mt5()
 
-ticks_df = get_rates(symbol='EURUSDm', prev_min=1100)
+ticks_df = get_rates(symbol='EURUSDm', prev_min=50000)
 
 tws = 0
 tbc = 0
+sell_total_win = 0
+sell_total_loss = 0
+buy_total_win = 0
+buy_total_loss = 0
 
 for i in range(0, ticks_df.shape[0]-4):
     last_4_candles = ticks_df[i:i+4]
     data = trade_logic(last_4_candles)
 
-    if data['three_white_solders']:
-        tws+=1
-        print(data)
-    if data['three_black_crows']:
-        tbc+=1
-        print(data)
 
-print('Total Candle:', ticks_df.shape[0], '\nTWS:', tws, '\nTBC:',tbc)
+    try:
+        if data['three_white_solders'] or data['three_black_crows']:
+            result = None
+            j = 5
+            while result is None:
+                result = test_tade_result(trade_dec=data['action'],
+                                          sl=data['sl'],
+                                          tp=data['tp'],
+                                          current_candle=ticks_df.iloc[i + j])
+                j += 1
 
-fig = go.Figure(data=[go.Candlestick(x=ticks_df['time'],
-                open=ticks_df['open'],
-                high=ticks_df['high'],
-                low=ticks_df['low'],
-                close=ticks_df['close'])])
+            if data['three_white_solders']:
+                tws += 1
+                if result:
+                    buy_total_win += 1
+                else:
+                    buy_total_loss += 1
 
-fig.show()
+            if data['three_black_crows']:
+                tbc += 1
+                if result:
+                    sell_total_win += 1
+                else:
+                    sell_total_loss += 1
+
+
+    except:
+        print('Trade Not closed')
+
+
+print('Total Candle:', ticks_df.shape[0], '\nTWS:', tws, '\nTBC:',tbc, '\nBUY WIN:',buy_total_win, '\nBUY LOSS:',buy_total_loss,
+      '\nSELL WIN:',sell_total_win, '\nSELL LOSS:',sell_total_loss)
+print('Success % : ', ((buy_total_win+sell_total_win)/(tws+tbc))*100)
+
+show_plot(ticks_df)
