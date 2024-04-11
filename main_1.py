@@ -732,8 +732,6 @@ def Mt5_backTest(muldhon,Current_time,window,totalTime):
 
         rates = mt5.copy_rates_range("EURUSDm", mt5.TIMEFRAME_M10, pt - timedelta(minutes=360), pt)
 
-
-
         ticks_frame1 = pd.DataFrame(rates)
 
 
