@@ -6,6 +6,22 @@ import numpy as np
 import plotly.graph_objects as go
 import time
 
+
+
+
+def MT5_error_code(code):
+    # error codes ==> https://mql5.com/en/docs/constants/errorswarnings/enum_trade_return_codes
+    mt5_error = {
+        '10019': 'Not Enough Money',
+        '10016': 'Invalid SL'
+    }
+
+    try:
+        error = mt5_error[str(code)]
+    except:
+        error = None
+    return error
+
 def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
     login = 124207670
@@ -35,6 +51,7 @@ def get_rates(symbol='EURUSDm', prev_min=720):
     return ticks_frame
 
 def candle_type(candle):
+    #print(candle.to_dict())
     if candle['open'] > candle['close']:
         # red
         return 'bearish'
@@ -45,41 +62,73 @@ def candle_type(candle):
         # Doji
         return 'doji'
 
-def trade_logic(last_5_candles):
-    three_white_solders = True
-    three_black_crows = True
+def trade_logic(last_4_candles):
     sl = 0
     tp = 0
     action = None
 
-    logic_three_white_solders = ['bearish', 'bullish', 'bullish', 'bullish', 'bullish']
-    logic_three_black_crows = ['bullish', 'bearish', 'bearish', 'bearish', 'bearish']
+    logic_three_white_solders = ['bearish', 'bullish', 'bullish', 'bullish']
+    logic_three_white_solders_2 = ['bearish', 'bearish', 'bullish', 'bullish']
+    logic_three_white_solders_3 = ['bearish', 'bearish', 'bullish', 'bullish']
+
+    logic_three_black_crows = ['bullish', 'bearish', 'bearish', 'bearish']
+    logic_three_black_crows_2 = ['bullish', 'bullish', 'bearish', 'bearish']
+    logic_three_black_crows_3 = ['bullish', 'bullish', 'bearish', 'bearish']
+
+    buy_1 = ['bullish', 'bullish', 'bullish']
+    buy_2 = ['bearish', 'bullish', 'bullish']
+
+    sell_1 = ['bearish', 'bearish', 'bearish']
+    sell_2 = ['bullish', 'bearish', 'bearish']
+
+    current_pattern = []
 
     i = 0
 
-    for idx, row in last_5_candles.iterrows():
-        if not logic_three_white_solders[i] == candle_type(row):
-            three_white_solders = False
-        if not logic_three_black_crows[i] == candle_type(row):
-            three_black_crows = False
-
+    for idx, row in last_4_candles.iterrows():
+        current_pattern.append(candle_type(row))
         i += 1
+
+    if current_pattern == logic_three_white_solders or current_pattern == logic_three_white_solders_2 or current_pattern == logic_three_white_solders_3:
+        three_white_solders = True
+    else:
+        three_white_solders = False
+
+    if current_pattern == logic_three_black_crows or current_pattern == logic_three_black_crows_2 or current_pattern == logic_three_black_crows_3:
+        three_black_crows = True
+    else:
+        three_black_crows = False
+
+    print('Current Pattern >> ', current_pattern)
+    # New Logic 2 Candle
+    # if current_pattern[2:5] == buy_1 or current_pattern[2:5] == buy_2:
+    #     three_white_solders = True
+    # else:
+    #     three_white_solders = False
+    #
+    # if current_pattern[2:5] == sell_1 or current_pattern[2:5] == sell_2:
+    #     three_black_crows = True
+    # else:
+    #     three_black_crows = False
 
     tp_change = 0.0004
     sl_change = 0.0008
 
     if three_white_solders:
-        sl = last_5_candles['low'].min()
-        tp = last_5_candles['close'].max() + tp_change
+        sl = last_4_candles['low'].min()
+        tp = last_4_candles['close'].max() + tp_change
         action = 'buy'
     if three_black_crows:
-        sl = last_5_candles['high'].max()
-        tp = last_5_candles['close'].min() - tp_change
+        sl = last_4_candles['high'].max()
+        tp = last_4_candles['close'].min() - tp_change
         action = 'sell'
+
+    print('action ====>> ', action)
+
     data = {
         'three_white_solders': three_white_solders,
         'three_black_crows': three_black_crows,
-        'last_candle': last_5_candles.iloc[-2].to_dict(),
+        'last_candle': last_4_candles.iloc[-2].to_dict(),
         'sl': sl,
         'tp':tp,
         'action': action
@@ -292,36 +341,38 @@ def stochastic_crossover_strategy(df, k_period=14, d_period=3):
     return trade_results
 
 def start_trading(symbol):
-    lot = 0.02
-    tp_point = 20
-    sl_point = 100
-    #10019 = Not Enough Money
+    print('------------------------------------------------------------------------')
+    print('Searching Trade >>> >>> ', symbol)
+    lot = 0.5
+    tp_point = 10
+    sl_point = 200
 
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=360),
+
+    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1, datetime.now() - timedelta(minutes=360),
                                  datetime.now())
     ticks_frame = pd.DataFrame(rates)
 
-    last_5_candles = ticks_frame.tail(5)
+    last_4_candles = ticks_frame.tail(4)
 
     try:
-        data = trade_logic(last_5_candles)
+        data = trade_logic(last_4_candles)
     except:
         return None
-    # data = {}
-    # data['three_white_solders'] = True
-    # data['three_black_crows'] = True
+
 
     if data['three_white_solders'] or data['three_black_crows']:
 
-        #Stocokastick Crossover
-        dec_stock_list = stochastic_crossover_strategy(ticks_frame, k_period=14, d_period=3)
+        # Stochastic Crossover
+        # dec_stock_list = stochastic_crossover_strategy(ticks_frame, k_period=14, d_period=3)
+        # #print(dec_stock_list)
+        # if dec_stock_list[-1] == 'buy' or dec_stock_list[-2] == 'buy':
+        #     dec_stock = 'buy'
+        # elif dec_stock_list[-1] == 'sell' or dec_stock_list[-2] == 'sell':
+        #     dec_stock = 'sell'
+        # else:
+        #     dec_stock = None
 
-        if dec_stock_list[-1] == 'buy' or dec_stock_list[-2] == 'buy':
-            dec_stock = 'buy'
-        elif dec_stock_list[-1] == 'sell' or dec_stock_list[-2] == 'sell':
-            dec_stock = 'sell'
-        else:
-            dec_stock = None
+        dec_stock = data['action']
 
         orders_json = read_json()
 
@@ -329,25 +380,25 @@ def start_trading(symbol):
         if len(orders) > 0:
             try:
                 current_time = round(time.time()*1000)
-                ten_mins = (orders_json[symbol] + (60000*10))
+                ten_mins = (orders_json[symbol] + (60000*1))
+                print(ten_mins, current_time)
                 if ten_mins < current_time:
                     orders_json[symbol] = current_time
                     write_json(orders_json)
                 else:
                     return
             except Exception as e:
-                print('##>> ', str(e))
                 orders_json[symbol] = current_time
                 write_json(orders_json)
 
-        #sl = data['sl']
+
         if data['action'] == 'buy' and dec_stock == 'buy':
             point = mt5.symbol_info(symbol).point
             price = mt5.symbol_info_tick(symbol).ask
 
             tp = price + tp_point * point
-            #sl = price - sl_point * point
-            sl = data['sl']
+            sl = price - sl_point * point
+            #sl = data['sl']
 
             deviation = 20
             request = {
@@ -371,18 +422,18 @@ def start_trading(symbol):
 
             try:
                 if result.retcode != mt5.TRADE_RETCODE_DONE:
-                    print(symbol, ' ', 'buy not done', result.retcode)
+                    print(symbol, ' ', 'buy not done', result.retcode, MT5_error_code(result.retcode))
                 else:
                     print('>>>>>>>>>>>> ## ## ## buy done with bot ', symbol)
-            except:
-                print('Result None BUY')
+            except Exception as e:
+                print('Result BUY >> ', str(e))
         elif data['action'] == 'sell' and dec_stock == 'sell':
             point = mt5.symbol_info(symbol).point
             price = mt5.symbol_info_tick(symbol).bid
 
             tp = price - tp_point * point
-            #sl = price + sl_point * point
-            sl = data['sl']
+            sl = price + sl_point * point
+            #sl = data['sl']
 
             deviation = 20
             request = {
@@ -408,37 +459,97 @@ def start_trading(symbol):
 
             try:
                 if result.retcode != mt5.TRADE_RETCODE_DONE:
-                    print(symbol, ' ', 'sell not done', result.retcode)
+                    print(symbol, ' ', 'sell not done', result.retcode, MT5_error_code(result.retcode))
                 else:
                     print('>>>>>>>>>>>> ## ## ## sell done with bot ', symbol)
-            except:
-                print('Result None SELL')
+            except Exception as e:
+                print('Result SELL >> ', str(e))
 
-
+    print('------------------------------------------------------------------------')
 initialize_mt5()
 
 while True:
 
-    #Major
+    delay_sec = 2
+
+    #  Forex
     start_trading('EURUSDm')
-    time.sleep(5)
+    time.sleep(delay_sec)
     start_trading('USDJPYm')
-    time.sleep(5)
+    time.sleep(delay_sec)
+    start_trading('AUDCHFm')
+    time.sleep(delay_sec)
+
+    # Stock
+    # start_trading('AMZNm')
+    # time.sleep(delay_sec)
+    # start_trading('EBAYm')
+    # time.sleep(delay_sec)
+    # start_trading('IQm')
+    # time.sleep(delay_sec)
+    # start_trading('JDm')
+    # time.sleep(delay_sec)
+    # start_trading('LIm')
+    # time.sleep(delay_sec)
+    # start_trading('NIOm')
+    # time.sleep(delay_sec)
+    # start_trading('SBUXm')
+    # time.sleep(delay_sec)
+    # start_trading('TMEm')
+    # time.sleep(delay_sec)
+    # start_trading('VIPSm')
+    # time.sleep(delay_sec)
+    # start_trading('XPEVm')
+    # time.sleep(delay_sec)
+    # start_trading('YUMCm')
+    # time.sleep(delay_sec)
+    # start_trading('BEKEm')
+    # time.sleep(delay_sec)
+    # start_trading('AAPLm')
+    # time.sleep(delay_sec)
+    # start_trading('BBm')
+    # time.sleep(delay_sec)
+    # start_trading('BILIm')
+    # time.sleep(delay_sec)
+    # start_trading('FTNTm')
+    # time.sleep(delay_sec)
+    # start_trading('TSMm')
+    # time.sleep(delay_sec)
+    # start_trading('CMCSAm')
+    # time.sleep(delay_sec)
+    # start_trading('CSCOm')
+    # time.sleep(delay_sec)
+
+
+    # GBPUSD high spread
+    # start_trading('GBPUSDm')
+    # time.sleep(delay_sec)
+    # start_trading('NZDUSDm')
+    # time.sleep(delay_sec)
+    # start_trading('USDCADm')
+    # time.sleep(delay_sec)
+    # start_trading('USDCHFm')
+    # time.sleep(delay_sec)
+    #
+    #
+    # start_trading('EURJPYm')
+    # time.sleep(delay_sec)
+    # start_trading('NZDJPYm')
+    # time.sleep(delay_sec)
+    # start_trading('CADJPYm')
+    # time.sleep(delay_sec)
+    # start_trading('GBPCADm')
+    # time.sleep(delay_sec)
+    # start_trading('EURAUDm')
+    # time.sleep(delay_sec)
+    # start_trading('EURCADm')
+    # time.sleep(delay_sec)
+    # start_trading('EURGBPm')
+    # time.sleep(delay_sec)
+
+    # not interested
     # start_trading('AUDUSDm')
     # time.sleep(5)
-    start_trading('GBPUSDm')
-    time.sleep(5)
-    start_trading('NZDUSDm')
-    time.sleep(5)
-    start_trading('USDCADm')
-    time.sleep(5)
-    start_trading('USDCHFm')
-    time.sleep(5)
-
-
-    #Minor
-    start_trading('EURJPYm')
-    time.sleep(5)
     # start_trading('AUDCADm')
     # time.sleep(5)
     # start_trading('AUDCHFm')
@@ -451,20 +562,12 @@ while True:
     # time.sleep(5)
     # start_trading('CHFJPYm')
     # time.sleep(5)
-    start_trading('EURAUDm')
-    time.sleep(5)
-    start_trading('EURCADm')
-    time.sleep(5)
     # start_trading('EURCHFm')
     # time.sleep(5)
-    start_trading('EURGBPm')
-    time.sleep(5)
     # start_trading('EURNZDm')
     # time.sleep(5)
     # start_trading('GBPAUDm')
     # time.sleep(5)
-    start_trading('GBPCADm')
-    time.sleep(5)
     # start_trading('GBPCHFm')
     # time.sleep(5)
     # start_trading('GBPJPYm')
@@ -483,7 +586,4 @@ while True:
     # time.sleep(5)
     # start_trading('USDTHBm')
     # time.sleep(5)
-    start_trading('NZDJPYm')
-    time.sleep(5)
-    start_trading('CADJPYm')
-    time.sleep(5)
+
