@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 import time
-
+import datetime as dt
 
 
 
@@ -69,17 +69,9 @@ def trade_logic(last_4_candles):
 
     logic_three_white_solders = ['bearish', 'bullish', 'bullish', 'bullish']
     logic_three_white_solders_2 = ['bearish', 'bearish', 'bullish', 'bullish']
-    logic_three_white_solders_3 = ['bearish', 'bearish', 'bullish', 'bullish']
 
     logic_three_black_crows = ['bullish', 'bearish', 'bearish', 'bearish']
     logic_three_black_crows_2 = ['bullish', 'bullish', 'bearish', 'bearish']
-    logic_three_black_crows_3 = ['bullish', 'bullish', 'bearish', 'bearish']
-
-    buy_1 = ['bullish', 'bullish', 'bullish']
-    buy_2 = ['bearish', 'bullish', 'bullish']
-
-    sell_1 = ['bearish', 'bearish', 'bearish']
-    sell_2 = ['bullish', 'bearish', 'bearish']
 
     current_pattern = []
 
@@ -89,12 +81,12 @@ def trade_logic(last_4_candles):
         current_pattern.append(candle_type(row))
         i += 1
 
-    if current_pattern == logic_three_white_solders or current_pattern == logic_three_white_solders_2 or current_pattern == logic_three_white_solders_3:
+    if current_pattern == logic_three_white_solders or current_pattern == logic_three_white_solders_2:
         three_white_solders = True
     else:
         three_white_solders = False
 
-    if current_pattern == logic_three_black_crows or current_pattern == logic_three_black_crows_2 or current_pattern == logic_three_black_crows_3:
+    if current_pattern == logic_three_black_crows or current_pattern == logic_three_black_crows_2:
         three_black_crows = True
     else:
         three_black_crows = False
@@ -293,6 +285,72 @@ def read_json():
         data = json.load(json_file)
         return data
 
+def support_resistance_strategy(df, window=20):
+    # Calculate rolling minimum of the low prices
+    df['RollingMin'] = df['low'].rolling(window=window).min()
+
+    # Calculate rolling maximum of the high prices
+    df['RollingMax'] = df['high'].rolling(window=window).max()
+
+    # Identify support and resistance levels
+    support_levels = df[df['low'] <= df['RollingMin']]['low'].unique()
+    resistance_levels = df[df['high'] >= df['RollingMax']]['high'].unique()
+    #print(df['RollingMin'])
+    #print(resistance_levels)
+    # Initialize variables
+    position = None
+    entry_price = None
+
+    # List to store trade results
+    trade_results = []
+
+    # Iterate over each row in the DataFrame
+    for i in range(len(df)):
+        if df['low'][i] <= df['RollingMin'][i] and df['low'][i] in support_levels:
+            # Enter long position at support level
+            trade_results.append('buy')
+        elif df['high'][i] <= df['RollingMax'][i] and df['high'][i] in resistance_levels:
+            trade_results.append('sell')
+        else:
+            trade_results.append('None')
+    return trade_results
+
+def supply_demand_buy_sell_decision(df, lookback_period=20, deviation=0.02):
+    # Initialize variables to store buy and sell signals
+    buy_signals = []
+    sell_signals = []
+
+    # Detect supply and demand zones
+    supply_zones = []
+    demand_zones = []
+
+    for i in range(lookback_period, len(df) - lookback_period):
+        # Check for potential supply zone
+        print(lookback_period,'  ',i)
+        if df['high'][i] == max(df['high'][i - lookback_period:i + 1]) and \
+           df['high'][i] - df['low'][i] < deviation * df['close'][i]:
+            supply_zones.append((df.index[i], df['high'][i]))
+
+        # Check for potential demand zone
+        if df['low'][i] == min(df['low'][i - lookback_period:i + 1]) and \
+           df['high'][i] - df['low'][i] < deviation * df['close'][i]:
+            demand_zones.append((df.index[i], df['low'][i]))
+
+    # Decision-making based on supply and demand zones
+    for i in range(len(df)):
+        # Buy signal when price is in a demand zone
+        for zone in demand_zones:
+            if df['low'][i] <= zone[1] and df['high'][i] >= zone[1]:
+                buy_signals.append((df.index[i], df['close'][i]))
+                break
+
+        # Sell signal when price is in a supply zone
+        for zone in supply_zones:
+            if df['high'][i] >= zone[1] and df['low'][i] <= zone[1]:
+                sell_signals.append((df.index[i], df['close'][i]))
+                break
+
+    return buy_signals, sell_signals
 
 def stochastic_oscillator(df, k_period=14, d_period=3):
     high = df['high']
@@ -342,13 +400,15 @@ def stochastic_crossover_strategy(df, k_period=14, d_period=3):
 
 def start_trading(symbol):
     print('------------------------------------------------------------------------')
-    print('Searching Trade >>> >>> ', symbol)
-    lot = 0.5
-    tp_point = 10
+    print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
+    lot = 0.05
+    tp_point = 50
     sl_point = 200
 
+    skip_min = 20
 
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1, datetime.now() - timedelta(minutes=360),
+
+    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=360),
                                  datetime.now())
     ticks_frame = pd.DataFrame(rates)
 
@@ -359,20 +419,28 @@ def start_trading(symbol):
     except:
         return None
 
-
     if data['three_white_solders'] or data['three_black_crows']:
 
         # Stochastic Crossover
-        # dec_stock_list = stochastic_crossover_strategy(ticks_frame, k_period=14, d_period=3)
-        # #print(dec_stock_list)
-        # if dec_stock_list[-1] == 'buy' or dec_stock_list[-2] == 'buy':
-        #     dec_stock = 'buy'
-        # elif dec_stock_list[-1] == 'sell' or dec_stock_list[-2] == 'sell':
-        #     dec_stock = 'sell'
-        # else:
-        #     dec_stock = None
+        dec_stock_list = stochastic_crossover_strategy(ticks_frame, k_period=14, d_period=3)
+        print('Stochastic', dec_stock_list)
+        #print(dec_stock_list)
+        if dec_stock_list[-1] == 'buy' or dec_stock_list[-2] == 'buy':
+            dec_stock = 'buy'
+        elif dec_stock_list[-1] == 'sell' or dec_stock_list[-2] == 'sell':
+            dec_stock = 'sell'
+        else:
+            dec_stock = None
 
-        dec_stock = data['action']
+        # Support and Resistance
+        support_resistance_result = support_resistance_strategy(ticks_frame)
+        if support_resistance_result[-1] == 'buy' or support_resistance_result[-2] == 'buy':
+            support_res_dec = 'buy'
+        elif support_resistance_result[-1] == 'sell' or support_resistance_result[-2] == 'sell':
+            support_res_dec = 'sell'
+        else:
+            support_res_dec = None
+        print('Support', support_resistance_result)
 
         orders_json = read_json()
 
@@ -380,9 +448,9 @@ def start_trading(symbol):
         if len(orders) > 0:
             try:
                 current_time = round(time.time()*1000)
-                ten_mins = (orders_json[symbol] + (60000*1))
-                print(ten_mins, current_time)
-                if ten_mins < current_time:
+                max_mins = (orders_json[symbol] + (60000*skip_min))
+                print(max_mins, current_time)
+                if max_mins < current_time:
                     orders_json[symbol] = current_time
                     write_json(orders_json)
                 else:
@@ -392,7 +460,7 @@ def start_trading(symbol):
                 write_json(orders_json)
 
 
-        if data['action'] == 'buy' and dec_stock == 'buy':
+        if data['action'] == 'buy' and dec_stock == 'buy' and support_res_dec == 'buy':
             point = mt5.symbol_info(symbol).point
             price = mt5.symbol_info_tick(symbol).ask
 
@@ -427,7 +495,7 @@ def start_trading(symbol):
                     print('>>>>>>>>>>>> ## ## ## buy done with bot ', symbol)
             except Exception as e:
                 print('Result BUY >> ', str(e))
-        elif data['action'] == 'sell' and dec_stock == 'sell':
+        elif data['action'] == 'sell' and dec_stock == 'sell' and support_res_dec == 'sell':
             point = mt5.symbol_info(symbol).point
             price = mt5.symbol_info_tick(symbol).bid
 
@@ -466,19 +534,44 @@ def start_trading(symbol):
                 print('Result SELL >> ', str(e))
 
     print('------------------------------------------------------------------------')
+
+
+def isNowInTimePeriod(startTime, endTime, nowTime):
+    if startTime < endTime:
+        return nowTime >= startTime and nowTime <= endTime
+    else:
+        #Over midnight:
+        return nowTime >= startTime or nowTime <= endTime
+
+
 initialize_mt5()
+
+loop_delay_sec = 60 * 5
+delay_sec = 20
 
 while True:
 
-    delay_sec = 2
+    if isNowInTimePeriod(dt.time(10, 00), dt.time(21, 00), dt.datetime.now().time()):
+        loop_delay_sec = 1
 
-    #  Forex
-    start_trading('EURUSDm')
-    time.sleep(delay_sec)
-    start_trading('USDJPYm')
-    time.sleep(delay_sec)
-    start_trading('AUDCHFm')
-    time.sleep(delay_sec)
+        #  Forex
+        start_trading('EURUSDm')
+        time.sleep(delay_sec)
+        start_trading('USDJPYm')
+        time.sleep(delay_sec)
+        start_trading('EURJPYm')
+        time.sleep(delay_sec)
+        start_trading('AUDCHFm')
+        time.sleep(delay_sec)
+        start_trading('AUDUSDm')
+        time.sleep(delay_sec)
+
+    else:
+        print(dt.datetime.now().time(),' >> out time')
+        loop_delay_sec = 60 * 5
+
+    time.sleep(loop_delay_sec)
+
 
     # Stock
     # start_trading('AMZNm')
