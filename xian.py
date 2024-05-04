@@ -398,14 +398,110 @@ def stochastic_crossover_strategy(df, k_period=14, d_period=3):
 
     return trade_results
 
+def buy_order(symbol, tp_point, sl_point, lot):
+    point = mt5.symbol_info(symbol).point
+    price = mt5.symbol_info_tick(symbol).ask
+
+    tp = price + tp_point * point
+    sl = price - sl_point * point
+    # sl = data['sl']
+
+    deviation = 20
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": symbol,
+        "volume": lot,
+        "type": mt5.ORDER_TYPE_BUY,
+        "price": price,
+        "sl": sl,
+        "tp": tp,
+        "deviation": deviation,
+        "magic": 234000,
+        "comment": "python script open",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+    print(request)
+    # send a trading request
+    result = mt5.order_send(request)
+    print(result)
+
+    try:
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            print(symbol, ' ', 'buy not done', result.retcode, MT5_error_code(result.retcode))
+        else:
+            print('>>>>>>>>>>>> ## ## ## buy done with bot ', symbol)
+    except Exception as e:
+        print('Result BUY >> ', str(e))
+
+def sell_order(symbol, tp_point, sl_point, lot):
+    point = mt5.symbol_info(symbol).point
+    price = mt5.symbol_info_tick(symbol).bid
+
+    tp = price - tp_point * point
+    sl = price + sl_point * point
+    # sl = data['sl']
+
+    deviation = 20
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": symbol,
+        "volume": lot,
+        "type": mt5.ORDER_TYPE_SELL,
+        "price": price,
+        "sl": sl,
+        "tp": tp,
+        "deviation": deviation,
+        "magic": 234000,
+        "comment": "python script close",
+        "type_time": mt5.ORDER_TIME_GTC,
+        "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+    print(request)
+
+    # send a trading request
+
+    result = mt5.order_send(request)
+    print(result)
+
+    try:
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            print(symbol, ' ', 'sell not done', result.retcode, MT5_error_code(result.retcode))
+        else:
+            print('>>>>>>>>>>>> ## ## ## sell done with bot ', symbol)
+    except Exception as e:
+        print('Result SELL >> ', str(e))
+
+def check_duplicate_orders(symbol):
+    skip_min = 8
+
+    orders = mt5.positions_get(symbol=symbol)
+    print(symbol, ' RUNNING ORDERS >> ', len(orders))
+
+    orders_json = read_json()
+    try:
+        current_time = round(time.time() * 1000)
+        max_mins = (orders_json[symbol] + (60000 * skip_min))
+        print(max_mins, current_time)
+        if max_mins < current_time:
+            orders_json[symbol] = current_time
+            #write_json(orders_json)
+        else:
+            print(symbol, 'TRADE SKIPPED for MULTIPLE')
+            return True, orders_json
+    except Exception as e:
+        orders_json[symbol] = current_time
+        #write_json(orders_json)
+
+    return False, orders_json
+
+
 def start_trading(symbol):
     print('------------------------------------------------------------------------')
     print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
     lot = 0.05
     tp_point = 50
-    sl_point = 200
-
-    skip_min = 20
+    sl_point = 50
 
 
     rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=360),
@@ -419,119 +515,58 @@ def start_trading(symbol):
     except:
         return None
 
+    # Stochastic Crossover
+    dec_stock_list = stochastic_crossover_strategy(ticks_frame, k_period=14, d_period=3)
+    print('Stochastic', dec_stock_list)
+    # print(dec_stock_list)
+    if dec_stock_list[-1] == 'buy' or dec_stock_list[-2] == 'buy':
+        dec_stock = 'buy'
+    elif dec_stock_list[-1] == 'sell' or dec_stock_list[-2] == 'sell':
+        dec_stock = 'sell'
+    else:
+        dec_stock = None
+
+    # Support and Resistance
+    support_resistance_result = support_resistance_strategy(ticks_frame)
+    if support_resistance_result[-1] == 'buy' or support_resistance_result[-2] == 'buy':
+        support_res_dec = 'buy'
+    elif support_resistance_result[-1] == 'sell' or support_resistance_result[-2] == 'sell':
+        support_res_dec = 'sell'
+    else:
+        support_res_dec = None
+    print('Support', support_resistance_result)
+
+
+    ## Check orders count
+    multi_trade, orders_json = check_duplicate_orders(symbol)
+
+    if multi_trade:
+        return None
+
+
+    # Buy Sell Order
     if data['three_white_solders'] or data['three_black_crows']:
 
-        # Stochastic Crossover
-        dec_stock_list = stochastic_crossover_strategy(ticks_frame, k_period=14, d_period=3)
-        print('Stochastic', dec_stock_list)
-        #print(dec_stock_list)
-        if dec_stock_list[-1] == 'buy' or dec_stock_list[-2] == 'buy':
-            dec_stock = 'buy'
-        elif dec_stock_list[-1] == 'sell' or dec_stock_list[-2] == 'sell':
-            dec_stock = 'sell'
-        else:
-            dec_stock = None
-
-        # Support and Resistance
-        support_resistance_result = support_resistance_strategy(ticks_frame)
-        if support_resistance_result[-1] == 'buy' or support_resistance_result[-2] == 'buy':
-            support_res_dec = 'buy'
-        elif support_resistance_result[-1] == 'sell' or support_resistance_result[-2] == 'sell':
-            support_res_dec = 'sell'
-        else:
-            support_res_dec = None
-        print('Support', support_resistance_result)
-
-        orders_json = read_json()
-
-        orders = mt5.positions_get(symbol=symbol)
-        if len(orders) > 0:
-            try:
-                current_time = round(time.time()*1000)
-                max_mins = (orders_json[symbol] + (60000*skip_min))
-                print(max_mins, current_time)
-                if max_mins < current_time:
-                    orders_json[symbol] = current_time
-                    write_json(orders_json)
-                else:
-                    return
-            except Exception as e:
-                orders_json[symbol] = current_time
-                write_json(orders_json)
-
-
         if data['action'] == 'buy' and dec_stock == 'buy' and support_res_dec == 'buy':
-            point = mt5.symbol_info(symbol).point
-            price = mt5.symbol_info_tick(symbol).ask
+            buy_order(symbol, tp_point, sl_point, lot)
 
-            tp = price + tp_point * point
-            sl = price - sl_point * point
-            #sl = data['sl']
-
-            deviation = 20
-            request = {
-                "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": symbol,
-                "volume": lot,
-                "type": mt5.ORDER_TYPE_BUY,
-                "price": price,
-                "sl": sl,
-                "tp": tp,
-                "deviation": deviation,
-                "magic": 234000,
-                "comment": "python script open",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
-            }
-            print(request)
-            # send a trading request
-            result = mt5.order_send(request)
-            print(result)
-
-            try:
-                if result.retcode != mt5.TRADE_RETCODE_DONE:
-                    print(symbol, ' ', 'buy not done', result.retcode, MT5_error_code(result.retcode))
-                else:
-                    print('>>>>>>>>>>>> ## ## ## buy done with bot ', symbol)
-            except Exception as e:
-                print('Result BUY >> ', str(e))
+            write_json(orders_json)
         elif data['action'] == 'sell' and dec_stock == 'sell' and support_res_dec == 'sell':
-            point = mt5.symbol_info(symbol).point
-            price = mt5.symbol_info_tick(symbol).bid
+            sell_order(symbol, tp_point, sl_point, lot)
 
-            tp = price - tp_point * point
-            sl = price + sl_point * point
-            #sl = data['sl']
+            write_json(orders_json)
 
-            deviation = 20
-            request = {
-                "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": symbol,
-                "volume": lot,
-                "type": mt5.ORDER_TYPE_SELL,
-                "price": price,
-                "sl": sl,
-                "tp": tp,
-                "deviation": deviation,
-                "magic": 234000,
-                "comment": "python script close",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
-            }
-            print(request)
+    elif not support_resistance_result[-1] == 'None' and not dec_stock_list[-1] == 'None':
+        print('Possible Stochastic + Support Resistance')
 
-            # send a trading request
+        if support_resistance_result[-1] == 'buy' and dec_stock_list[-1] == 'buy':
+            buy_order(symbol, tp_point, sl_point, lot)
 
-            result = mt5.order_send(request)
-            print(result)
+            write_json(orders_json)
+        elif support_resistance_result[-1] == 'sell' and dec_stock_list[-1] == 'sell':
+            sell_order(symbol, tp_point, sl_point, lot)
 
-            try:
-                if result.retcode != mt5.TRADE_RETCODE_DONE:
-                    print(symbol, ' ', 'sell not done', result.retcode, MT5_error_code(result.retcode))
-                else:
-                    print('>>>>>>>>>>>> ## ## ## sell done with bot ', symbol)
-            except Exception as e:
-                print('Result SELL >> ', str(e))
+            write_json(orders_json)
 
     print('------------------------------------------------------------------------')
 
@@ -546,7 +581,7 @@ def isNowInTimePeriod(startTime, endTime, nowTime):
 
 initialize_mt5()
 
-loop_delay_sec = 60 * 5
+loop_delay_sec = 60 * 1
 delay_sec = 20
 
 while True:
@@ -566,9 +601,23 @@ while True:
         start_trading('AUDUSDm')
         time.sleep(delay_sec)
 
+        #Crypto pair
+        start_trading('BTCUSDm')
+        time.sleep(delay_sec)
+        start_trading('BTCAUDm')
+        time.sleep(delay_sec)
+        start_trading('BTCJPYm')
+
     else:
-        print(dt.datetime.now().time(),' >> out time')
-        loop_delay_sec = 60 * 5
+        print(dt.datetime.now().time(),' >> out time >> Crypto')
+
+        start_trading('BTCUSDm')
+        time.sleep(delay_sec)
+        start_trading('BTCAUDm')
+        time.sleep(delay_sec)
+        start_trading('BTCJPYm')
+
+        loop_delay_sec = 60 * 1
 
     time.sleep(loop_delay_sec)
 
