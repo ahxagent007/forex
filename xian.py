@@ -13,7 +13,9 @@ def MT5_error_code(code):
     # error codes ==> https://mql5.com/en/docs/constants/errorswarnings/enum_trade_return_codes
     mt5_error = {
         '10019': 'Not Enough Money',
-        '10016': 'Invalid SL'
+        '10016': 'Invalid SL',
+        '10027': 'Autotrading Disabled',
+        '10014': 'Invalid volume in the request'
     }
 
     try:
@@ -27,6 +29,12 @@ def initialize_mt5():
     login = 124207670
     password = "abcdABCD123!@#"
     server = "Exness-MT5Trial7"
+
+    # new Testing account
+    # login = 116363058
+    # password = "abcdABCD123!@#"
+    # server = "Exness-MT5Trial6"
+
     timeout = 10000
     portable = False
     if mt5.initialize(path=path, login=login, password=password, server=server, timeout=timeout, portable=portable):
@@ -480,18 +488,32 @@ def check_duplicate_orders(symbol):
 
     orders_json = read_json()
     try:
-        current_time = round(time.time() * 1000)
-        max_mins = (orders_json[symbol] + (60000 * skip_min))
-        print(max_mins, current_time)
-        if max_mins < current_time:
-            orders_json[symbol] = current_time
-            #write_json(orders_json)
-        else:
+
+        last_trade_time = orders_json[symbol]
+
+        start_hour = last_trade_time['h']
+        start_min = last_trade_time['m']
+        end_hour = last_trade_time['h']
+        end_min = last_trade_time['m']+skip_min
+
+        if end_min > 60:
+            end_hour += 1
+            if end_hour > 24:
+                end_hour = 0
+
+        if isNowInTimePeriod(dt.time(start_hour, start_min), dt.time(end_hour, end_min), dt.datetime.now().time()):
             print(symbol, 'TRADE SKIPPED for MULTIPLE')
             return True, orders_json
+        else:
+            orders_json[symbol] = {
+                'h': dt.datetime.now().hour,
+                'm': dt.datetime.now().minute,
+            }
     except Exception as e:
-        orders_json[symbol] = current_time
-        #write_json(orders_json)
+        orders_json[symbol] = {
+            'h': dt.datetime.now().hour,
+            'm': dt.datetime.now().minute,
+        }
 
     return False, orders_json
 
@@ -499,7 +521,7 @@ def check_duplicate_orders(symbol):
 def start_trading(symbol):
     print('------------------------------------------------------------------------')
     print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
-    lot = 0.05
+    lot = 0.01
     tp_point = 50
     sl_point = 50
 
@@ -556,17 +578,17 @@ def start_trading(symbol):
 
             write_json(orders_json)
 
-    elif not support_resistance_result[-1] == 'None' and not dec_stock_list[-1] == 'None':
-        print('Possible Stochastic + Support Resistance')
-
-        if support_resistance_result[-1] == 'buy' and dec_stock_list[-1] == 'buy':
-            buy_order(symbol, tp_point, sl_point, lot)
-
-            write_json(orders_json)
-        elif support_resistance_result[-1] == 'sell' and dec_stock_list[-1] == 'sell':
-            sell_order(symbol, tp_point, sl_point, lot)
-
-            write_json(orders_json)
+    # elif not support_resistance_result[-1] == 'None' and not dec_stock_list[-1] == 'None':
+    #     print('Possible Stochastic + Support Resistance')
+    #
+    #     if support_resistance_result[-1] == 'buy' and dec_stock_list[-1] == 'buy':
+    #         buy_order(symbol, tp_point, sl_point, lot)
+    #
+    #         write_json(orders_json)
+    #     elif support_resistance_result[-1] == 'sell' and dec_stock_list[-1] == 'sell':
+    #         sell_order(symbol, tp_point, sl_point, lot)
+    #
+    #         write_json(orders_json)
 
     print('------------------------------------------------------------------------')
 
@@ -601,25 +623,39 @@ while True:
         start_trading('AUDUSDm')
         time.sleep(delay_sec)
 
-        #Crypto pair
-        start_trading('BTCUSDm')
-        time.sleep(delay_sec)
-        start_trading('BTCAUDm')
-        time.sleep(delay_sec)
-        start_trading('BTCJPYm')
+        # #Crypto pair
+        # start_trading('BTCUSDm')
+        # time.sleep(delay_sec)
+        # start_trading('BTCAUDm')
+        # time.sleep(delay_sec)
+        # start_trading('BTCJPYm')
 
     else:
         print(dt.datetime.now().time(),' >> out time >> Crypto')
-
-        start_trading('BTCUSDm')
-        time.sleep(delay_sec)
-        start_trading('BTCAUDm')
-        time.sleep(delay_sec)
-        start_trading('BTCJPYm')
-
-        loop_delay_sec = 60 * 1
-
+        loop_delay_sec = 60 * 5
     time.sleep(loop_delay_sec)
+
+
+    # start_trading('BTCAUDm')
+    # time.sleep(delay_sec)
+    # start_trading('BTCCNHm')
+    # time.sleep(delay_sec)
+    # start_trading('BTCJPYm')
+    # time.sleep(delay_sec)
+    # start_trading('BTCTHBm')
+    # time.sleep(delay_sec)
+    # start_trading('BTCUSDm')
+    # time.sleep(delay_sec)
+    # start_trading('BTCXAGm')
+    # time.sleep(delay_sec)
+    # start_trading('BTCXAUm')
+    # time.sleep(delay_sec)
+    # start_trading('BTCZARm')
+    # time.sleep(delay_sec)
+    # start_trading('ETHUSDm')
+    # time.sleep(delay_sec)
+    # start_trading('LTCUSDm')
+    # time.sleep(delay_sec)
 
 
     # Stock
@@ -672,8 +708,12 @@ while True:
     # time.sleep(delay_sec)
     # start_trading('USDCHFm')
     # time.sleep(delay_sec)
+
+    # Commodity
+    # start_trading('XAUUSDm')
+    # time.sleep(delay_sec)
     #
-    #
+    # # Currency Pair
     # start_trading('EURJPYm')
     # time.sleep(delay_sec)
     # start_trading('NZDJPYm')
@@ -688,8 +728,8 @@ while True:
     # time.sleep(delay_sec)
     # start_trading('EURGBPm')
     # time.sleep(delay_sec)
-
-    # not interested
+    #
+    # #not interested
     # start_trading('AUDUSDm')
     # time.sleep(5)
     # start_trading('AUDCADm')
