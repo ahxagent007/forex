@@ -26,14 +26,15 @@ def MT5_error_code(code):
 
 def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
-    login = 124207670
-    password = "abcdABCD123!@#"
-    server = "Exness-MT5Trial7"
+    # testing server
+    #login = 124207670
+    #password = "abcdABCD123!@#"
+    #server = "Exness-MT5Trial7"
 
-    # new Testing account
-    # login = 116363058
-    # password = "abcdABCD123!@#"
-    # server = "Exness-MT5Trial6"
+    # Real Account
+    login = 147963269
+    password = "XIANtrading24!@"
+    server = "Exness-MT5Real18"
 
     timeout = 10000
     portable = False
@@ -521,7 +522,7 @@ def check_duplicate_orders(symbol):
 def start_trading(symbol):
     print('------------------------------------------------------------------------')
     print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
-    lot = 0.05
+    lot = 0.01
     tp_point = 50
     sl_point = 200
 
