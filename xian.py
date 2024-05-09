@@ -521,9 +521,9 @@ def check_duplicate_orders(symbol):
 def start_trading(symbol):
     print('------------------------------------------------------------------------')
     print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
-    lot = 0.01
+    lot = 0.05
     tp_point = 50
-    sl_point = 50
+    sl_point = 200
 
 
     rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=360),
@@ -608,16 +608,16 @@ delay_sec = 20
 
 while True:
 
-    if isNowInTimePeriod(dt.time(10, 00), dt.time(21, 00), dt.datetime.now().time()):
+    if isNowInTimePeriod(dt.time(3, 00), dt.time(15, 00), dt.datetime.now().time()):
         loop_delay_sec = 1
 
         #  Forex
         start_trading('EURUSDm')
         time.sleep(delay_sec)
-        start_trading('USDJPYm')
-        time.sleep(delay_sec)
-        start_trading('EURJPYm')
-        time.sleep(delay_sec)
+        # start_trading('USDJPYm')
+        # time.sleep(delay_sec)
+        # start_trading('EURJPYm')
+        # time.sleep(delay_sec)
         start_trading('AUDCHFm')
         time.sleep(delay_sec)
         start_trading('AUDUSDm')
@@ -631,7 +631,7 @@ while True:
         # start_trading('BTCJPYm')
 
     else:
-        print(dt.datetime.now().time(),' >> out time >> Crypto')
+        print(dt.datetime.now().time(),' >> out time ')
         loop_delay_sec = 60 * 5
     time.sleep(loop_delay_sec)
 
