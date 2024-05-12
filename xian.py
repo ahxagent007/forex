@@ -482,7 +482,7 @@ def sell_order(symbol, tp_point, sl_point, lot):
         print('Result SELL >> ', str(e))
 
 def check_duplicate_orders(symbol):
-    skip_min = 8
+    skip_min = 10
 
     orders = mt5.positions_get(symbol=symbol)
     print(symbol, ' RUNNING ORDERS >> ', len(orders))
@@ -522,7 +522,7 @@ def check_duplicate_orders(symbol):
 def start_trading(symbol):
     print('------------------------------------------------------------------------')
     print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
-    lot = 0.01
+    lot = 0.02
     tp_point = 50
     sl_point = 200
 
@@ -633,7 +633,7 @@ while True:
 
     else:
         print(dt.datetime.now().time(),' >> out time ')
-        loop_delay_sec = 60 * 5
+        loop_delay_sec = 60 * 10
     time.sleep(loop_delay_sec)
 
 
