@@ -26,14 +26,15 @@ def MT5_error_code(code):
 
 def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
-    login = 124207670
-    password = "abcdABCD123!@#"
-    server = "Exness-MT5Trial7"
-
-    # new Testing account
-    # login = 116363058
+    #Old Testing
+    # login = 124207670
     # password = "abcdABCD123!@#"
-    # server = "Exness-MT5Trial6"
+    # server = "Exness-MT5Trial7"
+
+    #new Testing account
+    login = 116363058
+    password = "abcdABCD123!@#"
+    server = "Exness-MT5Trial6"
 
     timeout = 10000
     portable = False
@@ -62,6 +63,9 @@ def candle_type(candle):
     #print(candle.to_dict())
     if candle['open'] > candle['close']:
         # red
+        open_close_diff = candle['open'] - candle['close']
+        high_low_diff = candle['high'] - candle['low']
+
         return 'bearish'
     elif candle['close'] > candle['open']:
         # green
@@ -77,9 +81,11 @@ def trade_logic(last_4_candles):
 
     logic_three_white_solders = ['bearish', 'bullish', 'bullish', 'bullish']
     logic_three_white_solders_2 = ['bearish', 'bearish', 'bullish', 'bullish']
+    logic_three_white_solders_3 = ['bullish', 'bearish', 'bearish', 'bullish']
 
     logic_three_black_crows = ['bullish', 'bearish', 'bearish', 'bearish']
     logic_three_black_crows_2 = ['bullish', 'bullish', 'bearish', 'bearish']
+    logic_three_black_crows_3 = ['bearish', 'bullish', 'bullish', 'bearish']
 
     current_pattern = []
 
@@ -89,12 +95,12 @@ def trade_logic(last_4_candles):
         current_pattern.append(candle_type(row))
         i += 1
 
-    if current_pattern == logic_three_white_solders or current_pattern == logic_three_white_solders_2:
+    if current_pattern == logic_three_white_solders or current_pattern == logic_three_white_solders_2 or current_pattern == logic_three_white_solders_3:
         three_white_solders = True
     else:
         three_white_solders = False
 
-    if current_pattern == logic_three_black_crows or current_pattern == logic_three_black_crows_2:
+    if current_pattern == logic_three_black_crows or current_pattern == logic_three_black_crows_2 or current_pattern == logic_three_black_crows_3:
         three_black_crows = True
     else:
         three_black_crows = False
@@ -481,7 +487,6 @@ def sell_order(symbol, tp_point, sl_point, lot):
         print('Result SELL >> ', str(e))
 
 def check_duplicate_orders(symbol):
-    skip_min = 8
 
     orders = mt5.positions_get(symbol=symbol)
     print(symbol, ' RUNNING ORDERS >> ', len(orders))
@@ -521,12 +526,9 @@ def check_duplicate_orders(symbol):
 def start_trading(symbol):
     print('------------------------------------------------------------------------')
     print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
-    lot = 0.01
-    tp_point = 50
-    sl_point = 50
 
 
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=360),
+    rates = mt5.copy_rates_range(symbol, TIME_FRAME, datetime.now() - timedelta(minutes=PREV_MIN_CHART),
                                  datetime.now())
     ticks_frame = pd.DataFrame(rates)
 
@@ -603,37 +605,59 @@ def isNowInTimePeriod(startTime, endTime, nowTime):
 
 initialize_mt5()
 
+# Global Settings
+skip_min = 1
+
+TIME_FRAME = mt5.TIMEFRAME_M1
+PREV_MIN_CHART = 70
+
+lot = 0.06
+tp_point = 10
+sl_point = 20
+
+#Loop Settings
 loop_delay_sec = 60 * 1
-delay_sec = 20
+delay_sec = 5
+server_start = 3
+server_end = 15
+xian_start = 10
+xian_end = 21
 
 while True:
+    start_trading('EURUSDm')
+    time.sleep(delay_sec)
+    start_trading('USDJPYm')
+    time.sleep(delay_sec)
+    start_trading('EURJPYm')
+    time.sleep(delay_sec)
+    start_trading('AUDCHFm')
+    time.sleep(delay_sec)
+    start_trading('AUDUSDm')
+    time.sleep(delay_sec)
+    start_trading('EURGBPm')
+    time.sleep(delay_sec)
+    start_trading('CADCHFm')
+    time.sleep(delay_sec)
+    start_trading('USDCHFm')
+    time.sleep(delay_sec)
+    start_trading('GBPUSDm')
+    time.sleep(delay_sec)
 
-    if isNowInTimePeriod(dt.time(10, 00), dt.time(21, 00), dt.datetime.now().time()):
-        loop_delay_sec = 1
-
-        #  Forex
-        start_trading('EURUSDm')
-        time.sleep(delay_sec)
-        start_trading('USDJPYm')
-        time.sleep(delay_sec)
-        start_trading('EURJPYm')
-        time.sleep(delay_sec)
-        start_trading('AUDCHFm')
-        time.sleep(delay_sec)
-        start_trading('AUDUSDm')
-        time.sleep(delay_sec)
-
-        # #Crypto pair
-        # start_trading('BTCUSDm')
-        # time.sleep(delay_sec)
-        # start_trading('BTCAUDm')
-        # time.sleep(delay_sec)
-        # start_trading('BTCJPYm')
-
-    else:
-        print(dt.datetime.now().time(),' >> out time >> Crypto')
-        loop_delay_sec = 60 * 5
-    time.sleep(loop_delay_sec)
+    # if isNowInTimePeriod(dt.time(10, 00), dt.time(21, 00), dt.datetime.now().time()):
+    #     loop_delay_sec = 1
+    #
+    #     #  Forex
+    #
+    #
+    #     # #Crypto pair
+    #     # start_trading('BTCAUDm')
+    #     # time.sleep(delay_sec)
+    #     # start_trading('BTCJPYm')
+    #
+    # else:
+    #     print(dt.datetime.now().time(),' >> out time >> Crypto')
+    #     loop_delay_sec = 60 * 5
+    # time.sleep(loop_delay_sec)
 
 
     # start_trading('BTCAUDm')
