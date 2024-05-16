@@ -522,9 +522,9 @@ def check_duplicate_orders(symbol):
 def start_trading(symbol):
     print('------------------------------------------------------------------------')
     print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
-    lot = 0.02
-    tp_point = 50
-    sl_point = 200
+    lot = 0.01
+    tp_point = 30
+    sl_point = 120
 
 
     rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=360),
@@ -609,20 +609,31 @@ delay_sec = 20
 
 while True:
 
-    if isNowInTimePeriod(dt.time(3, 00), dt.time(15, 00), dt.datetime.now().time()):
-        loop_delay_sec = 1
+    start_trading('EURUSDm')
+    time.sleep(delay_sec)
+    # start_trading('USDJPYm')
+    # time.sleep(delay_sec)
+    # start_trading('EURJPYm')
+    # time.sleep(delay_sec)
+    start_trading('AUDCHFm')
+    time.sleep(delay_sec)
+    start_trading('AUDUSDm')
+    time.sleep(delay_sec)
+
+    # if isNowInTimePeriod(dt.time(3, 00), dt.time(15, 00), dt.datetime.now().time()):
+        # loop_delay_sec = 1
 
         #  Forex
-        start_trading('EURUSDm')
-        time.sleep(delay_sec)
+        # start_trading('EURUSDm')
+        # time.sleep(delay_sec)
         # start_trading('USDJPYm')
         # time.sleep(delay_sec)
         # start_trading('EURJPYm')
         # time.sleep(delay_sec)
-        start_trading('AUDCHFm')
-        time.sleep(delay_sec)
-        start_trading('AUDUSDm')
-        time.sleep(delay_sec)
+        # start_trading('AUDCHFm')
+        # time.sleep(delay_sec)
+        # start_trading('AUDUSDm')
+        # time.sleep(delay_sec)
 
         # #Crypto pair
         # start_trading('BTCUSDm')
@@ -631,10 +642,10 @@ while True:
         # time.sleep(delay_sec)
         # start_trading('BTCJPYm')
 
-    else:
-        print(dt.datetime.now().time(),' >> out time ')
-        loop_delay_sec = 60 * 10
-    time.sleep(loop_delay_sec)
+    # else:
+        # print(dt.datetime.now().time(),' >> out time ')
+        # loop_delay_sec = 60 * 10
+    # time.sleep(loop_delay_sec)
 
 
     # start_trading('BTCAUDm')
