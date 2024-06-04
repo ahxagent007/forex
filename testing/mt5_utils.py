@@ -11,20 +11,10 @@ from scipy.signal import argrelextrema
 
 def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
-    #Old Testing
-    # login = 124207670
-    # password = "abcdABCD123!@#"
-    # server = "Exness-MT5Trial7"
 
-    # FXTM
-    login = 160462649
-    password = '123ASDasd!@#'
-    server = 'ForexTimeFXTM-Demo01'
-
-    #new Testing account
-    # login = 116363058
-    # password = "abcdABCD123!@#"
-    # server = "Exness-MT5Trial6"
+    login = 116644810
+    password = "ABCabc123!@#"
+    server = "Exness-MT5Trial6"
 
     timeout = 10000
     portable = False
@@ -54,7 +44,7 @@ def MT5_error_code(code):
 def get_data(symbol):
     initialize_mt5()
 
-    TIME_FRAME = mt5.TIMEFRAME_M10
+    TIME_FRAME = mt5.TIMEFRAME_H1
     PREV_N_CANDLES = 100
 
 
@@ -65,3 +55,6 @@ def get_data(symbol):
     ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
 
     return ticks_frame
+
+def get_order_positions(symbol):
+    return mt5.positions_get(symbol=symbol)
