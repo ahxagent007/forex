@@ -1,5 +1,5 @@
-from ..mt5_utils import get_live_data
-from ..common_functions import check_duplicate_orders, write_json
+from mt5_utils import get_live_data
+from common_functions import check_duplicate_orders, write_json
 
 
 def mac_rsi(symbol, short_window=50, long_window=200):
@@ -41,10 +41,12 @@ def mac_rsi(symbol, short_window=50, long_window=200):
     for i in range(2, len(df)):
         if (df['rsi'].iloc[i] < df['rsi'].iloc[i - 1] < df['rsi'].iloc[i - 2] and
                 df['close'].iloc[i] > df['close'].iloc[i - 1] > df['close'].iloc[i - 2]):
-            df['rsi_divergence'].iloc[i] = -1  # Bearish divergence
+            #df['rsi_divergence'].iloc[i] = -1  # Bearish divergence
+            df.loc[i, "rsi_divergence"] = -1
         elif (df['rsi'].iloc[i] > df['rsi'].iloc[i - 1] > df['rsi'].iloc[i - 2] and
               df['close'].iloc[i] < df['close'].iloc[i - 1] < df['close'].iloc[i - 2]):
-            df['rsi_divergence'].iloc[i] = 1  # Bullish divergence
+            #df['rsi_divergence'].iloc[i] = 1  # Bullish divergence
+            df.loc[i, "rsi_divergence"] = 1
 
     # Function to generate signals based on Moving Average Crossover + RSI Divergence
 

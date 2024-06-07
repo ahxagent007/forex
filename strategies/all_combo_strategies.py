@@ -1,8 +1,8 @@
-from combo.boillinger_macd_combo import boil_macd
-from combo.fibonacci_price_action_combo import fibonacci_price_action
-from combo.ichimoku_cloud_stochastic_oscillator_combo import ichimoku_stochastic
-from combo.mac_rsi_combo import mac_rsi
-from ..mt5_utils import trade_order
+from boillinger_macd_combo import boil_macd
+from fibonacci_price_action_combo import fibonacci_price_action
+from ichimoku_cloud_stochastic_oscillator_combo import ichimoku_stochastic
+from mac_rsi_combo import mac_rsi
+from mt5_utils import trade_order
 
 def combo_strategies(symbol):
 
@@ -18,7 +18,7 @@ def combo_strategies(symbol):
         print('fibonacci_price_signal', fibonacci_price_signal)
         all_actions.append(fibonacci_price_signal)
 
-    ichimoku_stochastic_signal = ichimoku_stochastic()
+    ichimoku_stochastic_signal = ichimoku_stochastic(symbol)
     if ichimoku_stochastic_signal:
         print('ichimoku_stochastic_signal', ichimoku_stochastic_signal)
         all_actions.append(ichimoku_stochastic_signal)

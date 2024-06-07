@@ -1,3 +1,5 @@
+import json
+
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta
 import matplotlib.  pyplot as plt
@@ -7,7 +9,23 @@ import plotly.graph_objects as go
 import time
 import datetime as dt
 from scipy.signal import argrelextrema
-from common_functions import get_magic_number
+
+
+def get_magic_number():
+    with open('magic_number.json') as json_file:
+        data = json.load(json_file)
+        magic_number = data['magic_number']
+        magic_number += 1
+        data = {
+            'magic_number': magic_number
+        }
+    json_file.close()
+
+    with open('magic_number.json', 'w') as outfile:
+        json.dump(data, outfile)
+    json_file.close()
+
+    return magic_number
 
 
 def initialize_mt5():
@@ -69,7 +87,7 @@ def get_live_data(symbol, time_frame, prev_n_candles):
 
     return ticks_frame
 
-def buy_order(symbol, tp_point, sl_point, lot, action):
+def trade_order(symbol, tp_point, sl_point, lot, action):
 
 
     if action == 'buy':
@@ -77,6 +95,8 @@ def buy_order(symbol, tp_point, sl_point, lot, action):
         price = mt5.symbol_info_tick(symbol).ask
         bid_price = mt5.symbol_info_tick(symbol).bid
         type = mt5.ORDER_TYPE_BUY
+
+        spread = abs(price - bid_price) / point
 
         tp = price + tp_point * point
         sl = price - sl_point * point
@@ -87,11 +107,11 @@ def buy_order(symbol, tp_point, sl_point, lot, action):
         ask_price = mt5.symbol_info_tick(symbol).ask
         type = mt5.ORDER_TYPE_SELL
 
+        spread = abs(price - ask_price) / point
+
         tp = price - tp_point * point
         sl = price + sl_point * point
 
-
-    spread = abs(price-bid_price)/point
     print(symbol, 'Spread pip: ', spread)
 
     if spread > 15:
@@ -127,52 +147,6 @@ def buy_order(symbol, tp_point, sl_point, lot, action):
     except Exception as e:
         print('Result '+action+' >> ', str(e))
 
-# def sell_order(symbol, tp_point, sl_point, lot):
-#     point = mt5.symbol_info(symbol).point
-#     price = mt5.symbol_info_tick(symbol).bid
-#     ask_price = mt5.symbol_info_tick(symbol).ask
-#
-#     spread = abs(price - ask_price) / point
-#     print('Spread pip: ', spread)
-#     if spread > 4:
-#         print(symbol, 'High Spread')
-#         clear_data()
-#         return None
-#
-#     add_data('spreads', spread)
-#
-#     tp = price - tp_point * point
-#     sl = price + sl_point * point
-#     # sl = data['sl']
-#
-#     deviation = 20
-#     request = {
-#         "action": mt5.TRADE_ACTION_DEAL,
-#         "symbol": symbol,
-#         "volume": lot,
-#         "type": mt5.ORDER_TYPE_SELL,
-#         "price": price,
-#         "sl": sl,
-#         "tp": tp,
-#         "deviation": deviation,
-#         "magic": get_magic_number(),
-#         "comment": "python script close",
-#         #"type_time": mt5.ORDER_TIME_GTC,
-#         #"type_filling": mt5.ORDER_FILLING_IOC,
-#     }
-#     print(request)
-#
-#     # send a trading request
-#
-#     result = mt5.order_send(request)
-#     print(result)
-#
-#     try:
-#         if result.retcode != mt5.TRADE_RETCODE_DONE:
-#             print(symbol, ' ', 'sell not done', result.retcode, MT5_error_code(result.retcode))
-#             clear_data()
-#         else:
-#             print('>>>>>>>>>>>> ## ## ## sell done with bot ', symbol)
-#             write_data()
-#     except Exception as e:
-#         print('Result SELL >> ', str(e))
+def get_order_positions_count(symbol):
+    return len(mt5.positions_get(symbol=symbol))
+

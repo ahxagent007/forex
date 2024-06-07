@@ -2,7 +2,7 @@ import pandas as pd
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-from mt5_utils import get_live_data, buy_order
+from mt5_utils import get_live_data, trade_order, get_order_positions_count
 from common_functions import check_duplicate_orders, write_json
 
 
@@ -27,8 +27,8 @@ def strategy_3ws_3bc(symbol):
     json_file_name = '3ws_3bc'
 
     if not symbol in accepted_symbol_list:
-        print('Symbol Not supported')
-        return
+        #print('Symbol Not supported', symbol)
+        return None
 
     running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=60, json_file_name=json_file_name)
     if running_trade_status:
@@ -41,9 +41,9 @@ def strategy_3ws_3bc(symbol):
     action = if_3ws_3bc(data_df)
 
     if action:
-        tp_point = 100
+        tp_point = 80
         sl_point = 50
         lot = 0.01
-        buy_order(symbol, tp_point, sl_point, lot, action)
+        trade_order(symbol, tp_point, sl_point, lot, action)
 
         write_json(json_dict=orders_json, json_file_name=json_file_name)

@@ -492,6 +492,8 @@ def check_duplicate_orders(symbol):
     print(symbol, ' RUNNING ORDERS >> ', len(orders))
 
     orders_json = read_json()
+
+
     try:
 
         last_trade_time = orders_json[symbol]
@@ -505,6 +507,13 @@ def check_duplicate_orders(symbol):
             end_hour += 1
             if end_hour > 24:
                 end_hour = 0
+
+        if len(orders) == 0:
+            orders_json[symbol] = {
+                'h': dt.datetime.now().hour,
+                'm': dt.datetime.now().minute,
+            }
+            return False, orders_json
 
         if isNowInTimePeriod(dt.time(start_hour, start_min), dt.time(end_hour, end_min), dt.datetime.now().time()):
             print(symbol, 'TRADE SKIPPED for MULTIPLE')

@@ -80,8 +80,8 @@ def note_trade(txt):
 
 
 def export_df(symbol):
-    TIME_FRAME = mt5.TIMEFRAME_M1
-    PREV_MIN_CHART = 7200
+    TIME_FRAME = mt5.TIMEFRAME_H1
+    PREV_MIN_CHART = 5000
 
     rates = mt5.copy_rates_range(symbol, TIME_FRAME, datetime.now() - timedelta(minutes=PREV_MIN_CHART),
                                  datetime.now())
@@ -1163,5 +1163,7 @@ def start_live_trade():
 
 # test_trade('EURUSD')
 
-start_live_trade()
+# start_live_trade()
 
+initialize_mt5()
+export_df('EURUSD')

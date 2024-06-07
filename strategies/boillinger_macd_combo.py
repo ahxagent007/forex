@@ -1,5 +1,5 @@
-from ..mt5_utils import get_live_data
-from ..common_functions import check_duplicate_orders, write_json
+from mt5_utils import get_live_data
+from common_functions import check_duplicate_orders, write_json
 
 def boil_macd(symbol, window=20, num_std=2):
 

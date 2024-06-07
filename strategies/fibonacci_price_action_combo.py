@@ -1,5 +1,5 @@
-from ..mt5_utils import get_live_data
-from ..common_functions import check_duplicate_orders, write_json
+from mt5_utils import get_live_data
+from common_functions import check_duplicate_orders, write_json
 
 def fibonacci_price_action(symbol, lookback=20):
     accepted_symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY']
@@ -38,19 +38,22 @@ def fibonacci_price_action(symbol, lookback=20):
         # Identify Pin Bars
         if (df['high'].iloc[i] - df['close'].iloc[i] > (df['high'].iloc[i] - df['low'].iloc[i]) * 2 / 3 and
                 df['close'].iloc[i] > df['open'].iloc[i]):
-            df['pin_bar'].iloc[i] = 1  # Bullish pin bar
+            #df['pin_bar'].iloc[i] = 1  # Bullish pin bar
+            df.loc[i, 'pin_bar'] = 1
         elif (df['close'].iloc[i] - df['low'].iloc[i] > (df['high'].iloc[i] - df['low'].iloc[i]) * 2 / 3 and
               df['close'].iloc[i] < df['open'].iloc[i]):
-            df['pin_bar'].iloc[i] = -1  # Bearish pin bar
+            #df['pin_bar'].iloc[i] = -1  # Bearish pin bar
+            df.loc[i, 'pin_bar'] = -1
 
         # Identify Engulfing Bars
         if (df['close'].iloc[i] > df['open'].iloc[i] and
                 df['close'].iloc[i] > df['open'].iloc[i - 1] > df['close'].iloc[i - 1] > df['open'].iloc[i]):
-            df['engulfing'].iloc[i] = 1  # Bullish engulfing
+            #df['engulfing'].iloc[i] = 1  # Bullish engulfing
+            df.loc[i, 'engulfing'] = 1
         elif (df['close'].iloc[i] < df['open'].iloc[i] and
               df['close'].iloc[i] < df['open'].iloc[i - 1] < df['close'].iloc[i - 1] < df['open'].iloc[i]):
-            df['engulfing'].iloc[i] = -1  # Bearish engulfing
-
+            #df['engulfing'].iloc[i] = -1  # Bearish engulfingengulfing
+            df.loc[i, 'engulfing'] = -1
 
     # Function to generate signals based on Fibonacci retracement levels and price action patterns
 
