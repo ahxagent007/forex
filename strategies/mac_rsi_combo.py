@@ -4,19 +4,19 @@ from common_functions import check_duplicate_orders, write_json
 
 def mac_rsi(symbol, short_window=50, long_window=200):
 
-    accepted_symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY']
+    accepted_symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'USDCAD', 'USDJPY', 'EURGPB']
     json_file_name = 'mac_rsi'
 
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
         return None
 
-    running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=60,
+    running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=30,
                                                                json_file_name=json_file_name)
     if running_trade_status:
         return None
 
-    df = get_live_data(symbol=symbol, time_frame='H1', prev_n_candles=100)
+    df = get_live_data(symbol=symbol, time_frame='M30', prev_n_candles=100)
 
 
 

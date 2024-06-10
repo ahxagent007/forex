@@ -9,10 +9,12 @@ def trade(symbol):
     #strategy_3ws_3bc(symbol)
 
     # Combo Strategies
-    #combo_strategies(symbol)
+    combo_strategies(symbol)
 
     # AI Trade
     ai_trade(symbol)
+
+    # Bob Volman
 
 
 def start_live_trade():

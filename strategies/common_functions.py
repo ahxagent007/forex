@@ -71,15 +71,15 @@ def write_json(json_dict, json_file_name):
     with open('time_counts/'+json_file_name+'.json', 'w') as outfile:
         json.dump(json_dict, outfile)
 
-def get_sl_tp_pips(df):
+def get_sl_tp_pips(df, sl, tp):
 
     # Calculate ATR
     atr = AverageTrueRange(high=df['high'], low=df['low'], close=df['close'], window=14)
     df['ATR'] = atr.average_true_range()
 
     # Define multipliers for SL and TP
-    SL_MULTIPLIER = 1.5
-    TP_MULTIPLIER = 3.0
+    SL_MULTIPLIER = sl
+    TP_MULTIPLIER = tp
 
     # Initialize lists to store SL and TP values in pips
     sl_pips = []

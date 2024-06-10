@@ -12,6 +12,8 @@ from sklearn.ensemble import RandomForestRegressor
 
 def random_forest_signal(symbol):
     df = get_live_data(symbol=symbol, time_frame='H1', prev_n_candles=1000)
+    if df.shape[0] == 0:
+        return None
 
     # Preprocess data
     data = df[['close']].values
