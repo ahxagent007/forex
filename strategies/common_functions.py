@@ -1,9 +1,13 @@
 import datetime as dt
 import json
-from mt5_utils import get_order_positions_count
+
+import pandas as pd
+
+from mt5_utils import get_order_positions_count, get_all_positions
 import numpy as np
 from ta.volatility import AverageTrueRange
 
+import MetaTrader5 as mt5
 
 
 def tick_type(candle):
@@ -67,6 +71,80 @@ def check_duplicate_orders(symbol, skip_min, json_file_name):
 
     return False, orders_json
 
+def check_duplicate_orders_magic(symbol):
+    trade_numbers = read_json('trade_number')
+
+    try:
+        MAGIC_NUMBER = trade_numbers[symbol]
+
+        if MAGIC_NUMBER:
+
+            # Get open positions
+            positions = get_all_positions(symbol)
+
+            # Check if positions are retrieved successfully
+            if positions is None:
+                # No positions found
+                #trade_numbers[symbol] = MAGIC_NUMBER
+                return False
+
+            # Convert positions to a DataFrame
+            positions_df = pd.DataFrame(list(positions), columns=positions[0]._asdict().keys())
+
+            # Filter positions by magic number
+            filtered_positions = positions_df[positions_df['magic'] == MAGIC_NUMBER]
+
+            if filtered_positions.shape[0] > 0:
+                return True
+            else:
+                trade_numbers[symbol] = None
+                return False
+
+    except Exception as e:
+        trade_numbers[symbol] = None
+        return False
+
+    return False
+
+
+def check_duplicate_orders_magic_v2(symbol):
+    trade_numbers = read_json('trade_number')
+    action = None
+    try:
+        MAGIC_NUMBER = trade_numbers[symbol]
+
+        if MAGIC_NUMBER:
+
+            # Get open positions
+            positions = get_all_positions(symbol)
+
+            # Check if positions are retrieved successfully
+            if positions is None:
+                # No positions found
+                #trade_numbers[symbol] = MAGIC_NUMBER
+                return False, MAGIC_NUMBER, action, pd.DataFrame()
+
+            # Convert positions to a DataFrame
+            positions_df = pd.DataFrame(list(positions), columns=positions[0]._asdict().keys())
+
+            # Filter positions by magic number
+            filtered_positions = positions_df[positions_df['magic'] == MAGIC_NUMBER]
+            action = mt5.ORDER_TYPE_SELL if filtered_positions.iloc[0]['type'] == 0 else mt5.ORDER_TYPE_BUY
+
+            if filtered_positions.shape[0] > 0:
+                return True, MAGIC_NUMBER, action, positions_df
+            else:
+                trade_numbers[symbol] = None
+                return False, MAGIC_NUMBER, action, positions_df
+
+    except Exception as e:
+        trade_numbers[symbol] = None
+        return False, 0, action, pd.DataFrame()
+
+    return False, 0, action, pd.DataFrame()
+
+
+
 def write_json(json_dict, json_file_name):
     with open('time_counts/'+json_file_name+'.json', 'w') as outfile:
         json.dump(json_dict, outfile)
@@ -107,3 +185,4 @@ def get_sl_tp_pips(df, sl, tp):
     }
 
     return result
+

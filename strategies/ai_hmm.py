@@ -9,7 +9,7 @@ from mt5_utils import get_live_data
 
 
 def hmm_model_signal(symbol):
-    df = get_live_data(symbol=symbol, time_frame='H1', prev_n_candles=10)
+    df = get_live_data(symbol=symbol, time_frame='D1', prev_n_candles=100)
     if df.shape[0] == 0:
         return None
     # Preprocess data: Assume 'close' prices are used

@@ -11,6 +11,7 @@ import datetime as dt
 from scipy.signal import argrelextrema
 
 
+
 def get_magic_number():
     with open('magic_number.json') as json_file:
         data = json.load(json_file)
@@ -51,7 +52,8 @@ def MT5_error_code(code):
         '10027': 'Autotrading Disabled',
         '10014': 'Invalid volume in the request',
         '10030': 'Invalid order filling type',
-        '10021': 'There are no quotes to process the request'
+        '10021': 'There are no quotes to process the request',
+        '10018': 'Market is closed'
     }
 
     try:
@@ -87,7 +89,7 @@ def get_live_data(symbol, time_frame, prev_n_candles):
 
     return ticks_frame
 
-def trade_order(symbol, tp_point, sl_point, lot, action):
+def trade_order(symbol, tp_point, sl_point, lot, action, magic=False):
 
 
     if action == 'buy':
@@ -98,8 +100,11 @@ def trade_order(symbol, tp_point, sl_point, lot, action):
 
         spread = abs(price - bid_price) / point
 
-        tp = price + tp_point * point
-        sl = price - sl_point * point
+        if tp_point:
+            tp = price + tp_point * point
+            sl = price - sl_point * point
+        else:
+            sl = price - sl_point * point
 
     elif action == 'sell':
         point = mt5.symbol_info(symbol).point
@@ -109,8 +114,11 @@ def trade_order(symbol, tp_point, sl_point, lot, action):
 
         spread = abs(price - ask_price) / point
 
-        tp = price - tp_point * point
-        sl = price + sl_point * point
+        if tp_point:
+            tp = price - tp_point * point
+            sl = price + sl_point * point
+        else:
+            sl = price + sl_point * point
 
     print(symbol, 'Spread pip: ', spread)
 
@@ -119,21 +127,36 @@ def trade_order(symbol, tp_point, sl_point, lot, action):
         return None
 
     deviation = 20
-
-    request = {
-        "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
-        "volume": lot,
-        "type": type,
-        "price": price,
-        "sl": sl,
-        "tp": tp,
-        "deviation": deviation,
-        "magic": get_magic_number(),
-        "comment": "python script open",
-        #"type_time": mt5.ORDER_TIME_GTC,
-        #"type_filling": mt5.ORDER_FILLING_IOC,
-    }
+    MAGIC_NUMBER = get_magic_number()
+    if tp_point:
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": type,
+            "price": price,
+            "sl": sl,
+            "tp": tp,
+            "deviation": deviation,
+            "magic": MAGIC_NUMBER,
+            "comment": "python script open",
+            #"type_time": mt5.ORDER_TIME_GTC,
+            #"type_filling": mt5.ORDER_FILLING_IOC,
+        }
+    else:
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": type,
+            "price": price,
+            "sl": sl,
+            "deviation": deviation,
+            "magic": MAGIC_NUMBER,
+            "comment": "python script open",
+            # "type_time": mt5.ORDER_TIME_GTC,
+            # "type_filling": mt5.ORDER_FILLING_IOC,
+        }
     print(request)
     # send a trading request
     result = mt5.order_send(request)
@@ -142,11 +165,53 @@ def trade_order(symbol, tp_point, sl_point, lot, action):
     try:
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             print(symbol, ' ', action+' not done', result.retcode, MT5_error_code(result.retcode))
+
         else:
-            print('>>>>>>>>>>>> ## ## ## '+action+' done with bot ', symbol)
+            print('>>>>>>>>>>>> ## ## ## '+action+' done with bot ', symbol)## update magic number
+            if magic:
+                update_magic_number(symbol, MAGIC_NUMBER)
     except Exception as e:
         print('Result '+action+' >> ', str(e))
 
 def get_order_positions_count(symbol):
     return len(mt5.positions_get(symbol=symbol))
+
+def get_all_positions(symbol):
+    return mt5.positions_get(symbol=symbol)
+
+def update_magic_number(symbol, MAGIC_NUMBER):
+    #print('updating',symbol,MAGIC_NUMBER)
+    file_name = 'time_counts/trade_number.json'
+    json_data = {}
+    with open(file_name) as json_file:
+        json_data = json.load(json_file)
+
+    json_data[symbol] = MAGIC_NUMBER
+
+    with open(file_name, 'w') as outfile:
+        json.dump(json_data, outfile)
+
+
+def get_current_price(symbol):
+    # Get current price
+    price_info = mt5.symbol_info_tick(symbol)
+
+    # Check if price information is retrieved successfully
+    if price_info is None:
+        print(f"Failed to get price information for {symbol}, error code =", mt5.last_error())
+        return None
+
+    # Extract bid and ask prices
+    bid_price = price_info.bid
+    ask_price = price_info.ask
+
+    # Print the current bid and ask prices
+    # print(f"Current bid price for {symbol}: {bid_price}")
+    # print(f"Current ask price for {symbol}: {ask_price}")
+    data = {
+        'bid_price': bid_price,
+        'ask_price': ask_price
+    }
+
+    return data
 

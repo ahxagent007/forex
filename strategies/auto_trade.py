@@ -1,4 +1,7 @@
 import time
+
+from akash import moving_average_signal
+from volman_strategies import volman_strategies
 from mt5_utils import initialize_mt5
 from three_white_soldiers_three_back_crows import strategy_3ws_3bc
 from all_combo_strategies import combo_strategies
@@ -8,26 +11,38 @@ def trade(symbol):
     # Three White Soldiers & Three Black Crows
     #strategy_3ws_3bc(symbol)
 
-    # Combo Strategies
-    combo_strategies(symbol)
+    # # Combo Strategies
+    # combo_strategies(symbol)
+    #
+    # # AI Trade
+    # try:
+    #     ai_trade(symbol)
+    # except Exception as e:
+    #     print( e)
+    #
+    # # Bob Volman
+    # volman_strategies(symbol)
 
-    # AI Trade
-    ai_trade(symbol)
-
-    # Bob Volman
+    #Akash
+    try:
+        moving_average_signal(symbol)
+    except:
+        print("ERROR")
 
 
 def start_live_trade():
     initialize_mt5()
 
-    delay_sec = 8.5
+    delay_sec = 1
 
     symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY']
+    #symbol_list = ['EURUSD', 'EURJPY', 'USDJPY']
 
     ## 200 --> 198.64 [23] 23
     ## 198.64 --> 203.42 [14] 37
     ## 203.42 --> 201.53 [13] 50
     ## 201.53 --> 195.54 [41] 91 <<ACCIDENT>>
+    ## 200 -->> 205.91 AI
     ## 200 -->>
 
     while True:

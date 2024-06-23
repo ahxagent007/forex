@@ -11,7 +11,7 @@ from mt5_utils import get_live_data
 from sklearn.ensemble import RandomForestRegressor
 
 def random_forest_signal(symbol):
-    df = get_live_data(symbol=symbol, time_frame='H1', prev_n_candles=1000)
+    df = get_live_data(symbol=symbol, time_frame='D1', prev_n_candles=1000)
     if df.shape[0] == 0:
         return None
 

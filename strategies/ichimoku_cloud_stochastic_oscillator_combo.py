@@ -10,12 +10,12 @@ def ichimoku_stochastic(symbol):
         # print('Symbol Not supported', symbol)
         return None
 
-    running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=30,
-                                                               json_file_name=json_file_name)
-    if running_trade_status:
-        return None
+    # running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=60,
+    #                                                            json_file_name=json_file_name)
+    # if running_trade_status:
+    #     return None
 
-    df = get_live_data(symbol=symbol, time_frame='M30', prev_n_candles=100)
+    df = get_live_data(symbol=symbol, time_frame='H1', prev_n_candles=100)
 
     # Function to calculate Ichimoku Cloud
 
@@ -57,14 +57,14 @@ def ichimoku_stochastic(symbol):
             df['close'].iloc[i] > df['senkou_span_b'].iloc[i] and
             df['%K'].iloc[i] < 20 and df['%D'].iloc[i] < 20 and
             df['%K'].iloc[i] > df['%D'].iloc[i]):
-        write_json(json_dict=orders_json, json_file_name=json_file_name)
+        #write_json(json_dict=orders_json, json_file_name=json_file_name)
         return 'buy'
     elif (df['tenkan_sen'].iloc[i] < df['kijun_sen'].iloc[i] and
           df['close'].iloc[i] < df['senkou_span_a'].iloc[i] and
           df['close'].iloc[i] < df['senkou_span_b'].iloc[i] and
           df['%K'].iloc[i] > 80 and df['%D'].iloc[i] > 80 and
           df['%K'].iloc[i] < df['%D'].iloc[i]):
-        write_json(json_dict=orders_json, json_file_name=json_file_name)
+        #write_json(json_dict=orders_json, json_file_name=json_file_name)
         return 'sell'
     else:
         return None

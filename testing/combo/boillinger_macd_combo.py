@@ -1,8 +1,7 @@
-import pandas as pd
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-from mt5_utils import get_data
+from Nahid.testing.akash.mt5_utils import get_data
 
 
 # Define the symbol and timeframe

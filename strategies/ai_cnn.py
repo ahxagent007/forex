@@ -16,7 +16,7 @@ from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, Dropou
 
 def cnn_model_signal(symbol):
     # Get historical data
-    df = get_live_data(symbol=symbol, time_frame='H1', prev_n_candles=5000)
+    df = get_live_data(symbol=symbol, time_frame='D1', prev_n_candles=5000)
     if df.shape[0] == 0:
         return None
     # Preprocess data
@@ -54,7 +54,7 @@ def cnn_model_signal(symbol):
     y_train, y_test = y[:train_size], y[train_size:]
 
     # Train the model
-    history = model.fit(X_train, y_train, epochs=20, batch_size=32, validation_data=(X_test, y_test))
+    history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test))
 
     # Make predictions
     predictions = model.predict(X_test)

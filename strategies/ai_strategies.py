@@ -2,26 +2,32 @@ from mt5_utils import trade_order
 from ai_hmm import hmm_model_signal
 from ai_cnn import cnn_model_signal
 from ai_random_forests import random_forest_signal
-from common_functions import get_sl_tp_pips, check_duplicate_orders
+from common_functions import get_sl_tp_pips, check_duplicate_orders, check_duplicate_orders_magic, write_json
 from mt5_utils import get_live_data, get_order_positions_count
 from ai_lstm import lstm_signal
 
 def ai_trade(symbol):
-    symbol_list = ['EURUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY']
+    symbol_list = ['EURUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURJPY']
 
     if not symbol in symbol_list:
         return None
 
-    json_file_name ='ai_strategies'
-    running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=30,
-                                                               json_file_name=json_file_name)
-    if running_trade_status:
-        print(symbol, 'MULTIPLE TRADE >>>>')
+    # json_file_name ='ai_strategies'
+    # running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=30,
+    #                                                            json_file_name=json_file_name)
+    # if running_trade_status:
+    #     print(symbol, 'MULTIPLE TRADE >>>>')
+    #     return None
+
+    order_count = get_order_positions_count(symbol)
+    if order_count>0:
+        print(symbol, 'AI MULTIPLE TRADE >>>>', order_count)
         return None
 
-    # order_count = get_order_positions_count(symbol)
-    # if order_count>0:
-    #     print(symbol, 'MULTIPLE TRADE >>>>', order_count)
+    # if_duplicate = check_duplicate_orders_magic(symbol)
+    #
+    # if if_duplicate:
+    #     print('DUPLICATE AI FOR >> ',symbol)
     #     return None
 
     all_signals = []
@@ -60,22 +66,27 @@ def ai_trade(symbol):
             sell_signals += 1
 
     # Set SL TP
-    df = get_live_data(symbol=symbol, time_frame='H1', prev_n_candles=20)
-    sl_tp = get_sl_tp_pips(df=df, sl=5, tp=10)
-    # tp_point = 150
-    # sl_point = 50
+    # df = get_live_data(symbol=symbol, time_frame='H1', prev_n_candles=20)
+    # sl_tp = get_sl_tp_pips(df=df, sl=5, tp=10)
+    # tp_point = sl_tp['TP']
+    # sl_point = sl_tp['SL']
 
-    lot = 0.02
+    tp_point = 200
+    sl_point = 600
 
-    tp_point = sl_tp['TP']
-    sl_point = sl_tp['SL']
+    lot = 0.01
 
     print('SL TP -->> ',sl_point, tp_point)
 
 
     if buy_signals > sell_signals:
         action = 'buy'
-        trade_order(symbol, tp_point, sl_point, lot, action)
+        trade_order(symbol=symbol, tp_point=tp_point, sl_point=sl_point, lot=lot, action=action, magic=True)
     elif sell_signals > buy_signals:
         action = 'sell'
-        trade_order(symbol, tp_point, sl_point, lot, action)
+        trade_order(symbol=symbol, tp_point=tp_point, sl_point=sl_point, lot=lot, action=action, magic=True)
+
+    # for signal in all_signals:
+    #     trade_order(symbol=symbol, tp_point=tp_point, sl_point=sl_point, lot=lot, action=signal, magic=True)
+
+    #write_json(json_dict=orders_json, json_file_name=json_file_name)

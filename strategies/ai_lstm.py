@@ -10,7 +10,7 @@ from mt5_utils import get_live_data
 
 def lstm_signal(symbol):
     # Load historical forex data
-    df = get_live_data(symbol=symbol, time_frame='H1', prev_n_candles=3000)
+    df = get_live_data(symbol=symbol, time_frame='D1', prev_n_candles=3000)
     if df.shape[0] == 0:
         return None
 
@@ -45,7 +45,7 @@ def lstm_signal(symbol):
     model.compile(optimizer='adam', loss='mean_squared_error')
 
     # Train the model
-    model.fit(X_train, y_train, epochs=40, batch_size=32, validation_data=(X_test, y_test))
+    model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test))
 
     # Make predictions
     predictions = model.predict(X_test)

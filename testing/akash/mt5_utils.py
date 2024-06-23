@@ -44,8 +44,8 @@ def MT5_error_code(code):
 def get_data(symbol):
     initialize_mt5()
 
-    TIME_FRAME = mt5.TIMEFRAME_H1
-    PREV_N_CANDLES = 24
+    TIME_FRAME = mt5.TIMEFRAME_M30
+    PREV_N_CANDLES = 100
 
 
     rates = mt5.copy_rates_from_pos(symbol, TIME_FRAME, 0, PREV_N_CANDLES)
