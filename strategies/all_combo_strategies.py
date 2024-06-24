@@ -1,4 +1,4 @@
-from common_functions import get_sl_tp_pips, check_duplicate_orders, write_json
+from common_functions import check_duplicate_orders, write_json #get_sl_tp_pips
 from boillinger_macd_combo import boil_macd
 from fibonacci_price_action_combo import fibonacci_price_action
 from ichimoku_cloud_stochastic_oscillator_combo import ichimoku_stochastic
