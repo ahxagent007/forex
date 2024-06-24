@@ -5,7 +5,7 @@ import pandas as pd
 
 from mt5_utils import get_order_positions_count, get_all_positions
 import numpy as np
-from ta.volatility import AverageTrueRange
+#from ta.volatility import AverageTrueRange
 
 import MetaTrader5 as mt5
 
@@ -149,40 +149,40 @@ def write_json(json_dict, json_file_name):
     with open('time_counts/'+json_file_name+'.json', 'w') as outfile:
         json.dump(json_dict, outfile)
 
-def get_sl_tp_pips(df, sl, tp):
-
-    # Calculate ATR
-    atr = AverageTrueRange(high=df['high'], low=df['low'], close=df['close'], window=14)
-    df['ATR'] = atr.average_true_range()
-
-    # Define multipliers for SL and TP
-    SL_MULTIPLIER = sl
-    TP_MULTIPLIER = tp
-
-    # Initialize lists to store SL and TP values in pips
-    sl_pips = []
-    tp_pips = []
-
-    # Calculate SL and TP in pips based on ATR
-    for i in range(len(df)):
-        if i < 14:  # Ensure we have enough data for ATR calculation
-            sl_pips.append(np.nan)
-            tp_pips.append(np.nan)
-        else:
-            atr_value = df['ATR'].iloc[i]
-            sl_pip = SL_MULTIPLIER * atr_value * 10000  # Convert ATR value to pips
-            tp_pip = TP_MULTIPLIER * atr_value * 10000  # Convert ATR value to pips
-            sl_pips.append(sl_pip)
-            tp_pips.append(tp_pip)
-
-    # Add SL and TP pips to the dataframe
-    df['SL_pips'] = sl_pips
-    df['TP_pips'] = tp_pips
-
-    result = {
-        'SL': sl_pips[-1],
-        'TP': tp_pips[-1]
-    }
-
-    return result
+# def get_sl_tp_pips(df, sl, tp):
+#
+#     # Calculate ATR
+#     atr = AverageTrueRange(high=df['high'], low=df['low'], close=df['close'], window=14)
+#     df['ATR'] = atr.average_true_range()
+#
+#     # Define multipliers for SL and TP
+#     SL_MULTIPLIER = sl
+#     TP_MULTIPLIER = tp
+#
+#     # Initialize lists to store SL and TP values in pips
+#     sl_pips = []
+#     tp_pips = []
+#
+#     # Calculate SL and TP in pips based on ATR
+#     for i in range(len(df)):
+#         if i < 14:  # Ensure we have enough data for ATR calculation
+#             sl_pips.append(np.nan)
+#             tp_pips.append(np.nan)
+#         else:
+#             atr_value = df['ATR'].iloc[i]
+#             sl_pip = SL_MULTIPLIER * atr_value * 10000  # Convert ATR value to pips
+#             tp_pip = TP_MULTIPLIER * atr_value * 10000  # Convert ATR value to pips
+#             sl_pips.append(sl_pip)
+#             tp_pips.append(tp_pip)
+#
+#     # Add SL and TP pips to the dataframe
+#     df['SL_pips'] = sl_pips
+#     df['TP_pips'] = tp_pips
+#
+#     result = {
+#         'SL': sl_pips[-1],
+#         'TP': tp_pips[-1]
+#     }
+#
+#     return result
 
