@@ -26,8 +26,8 @@ def trade(symbol):
     #Akash
     try:
         moving_average_signal(symbol)
-    except:
-        print("ERROR")
+    except Exception as e:
+        print("ERROR", str(e))
 
 
 def start_live_trade():
