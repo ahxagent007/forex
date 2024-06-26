@@ -6,7 +6,7 @@ import MetaTrader5 as mt5
 
 
 def moving_average_signal(symbol):
-    accepted_symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'USDCAD', 'USDJPY', 'EURGPB']
+    accepted_symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'EURGPB', 'USDCHF']
     skip_min = 30
     time_frame = 'M30'
 
@@ -58,7 +58,8 @@ def moving_average_signal(symbol):
         'GBPUSD': 400,
         'USDCAD': 200,
         'USDJPY': 500,
-        'EURGPB': 300
+        'EURGPB': 300,
+        'USDCHF': 400
     }
 
     tp_dict_2 = {
@@ -67,12 +68,24 @@ def moving_average_signal(symbol):
         'GBPUSD': 200,
         'USDCAD': 100,
         'USDJPY': 150,
-        'EURGPB': 150
+        'EURGPB': 150,
+        'USDCHF': 200
+    }
+
+    tp_dict_3 = {
+        'EURUSD': 120,
+        'AUDUSD': 100,
+        'GBPUSD': 100,
+        'USDCAD': 70,
+        'USDJPY': 100,
+        'EURGPB': 100,
+        'USDCHF': 100
     }
 
     sl = 50
     tp = tp_dict[symbol] #300 #hour chart 500/600
     tp2 = tp_dict_2[symbol] #300 #hour chart 500/600
+    tp3 = tp_dict_3[symbol] #300 #hour chart 500/600
 
     # if (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-2]) \
     #         or (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
@@ -90,10 +103,13 @@ def moving_average_signal(symbol):
         action = None
 
     if action:
-        trade_order(symbol=symbol, tp_point=None, sl_point=sl, lot=0.05, action=action, magic=True)
-        trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.05, action=action, magic=False)
-        trade_order(symbol=symbol, tp_point=tp2, sl_point=sl, lot=0.05, action=action, magic=False)
+        trade_order(symbol=symbol, tp_point=None, sl_point=sl, lot=0.1, action=action, magic=True)
+        trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.1, action=action, magic=False)
+        trade_order(symbol=symbol, tp_point=tp2, sl_point=sl, lot=0.1, action=action, magic=False)
+        trade_order(symbol=symbol, tp_point=tp3, sl_point=sl, lot=0.1, action=action, magic=False)
+
         write_json(json_dict=orders_json, json_file_name=json_file_name)
+
 
 
 def close_position(symbol, magic_number):

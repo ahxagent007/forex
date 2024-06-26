@@ -35,7 +35,8 @@ def start_live_trade():
 
     delay_sec = 1
 
-    symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY']
+    symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGPB', 'EURJPY']
+
     #symbol_list = ['EURUSD', 'EURJPY', 'USDJPY']
 
     ## 200 --> 198.64 [23] 23
