@@ -6,7 +6,7 @@ import MetaTrader5 as mt5
 
 
 def moving_average_signal(symbol):
-    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'EURGPB', 'USDCHF']
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'USDCHF']
     skip_min = 30
     time_frame = 'M30'
 

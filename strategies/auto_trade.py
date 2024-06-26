@@ -27,7 +27,7 @@ def trade(symbol):
     try:
         moving_average_signal(symbol)
     except Exception as e:
-        print("ERROR", str(e))
+        print(symbol, "ERROR", str(e))
 
 
 def start_live_trade():
@@ -35,7 +35,7 @@ def start_live_trade():
 
     delay_sec = 1
 
-    symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGPB', 'EURJPY']
+    symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY']
 
     #symbol_list = ['EURUSD', 'EURJPY', 'USDJPY']
 
