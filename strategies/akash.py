@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from common_functions import check_duplicate_orders_magic_v2, check_duplicate_orders, write_json
@@ -5,8 +6,49 @@ from mt5_utils import get_live_data, trade_order, get_current_price
 import MetaTrader5 as mt5
 
 
+
+def adx_decision(data, period=14):
+    # Calculate the True Range (TR)
+    data['TR'] = np.maximum((data['high'] - data['low']), np.maximum(abs(data['high'] - data['close'].shift(1)),
+                                                                     abs(data['low'] - data['close'].shift(1))))
+
+    # Calculate +DM and -DM
+    data['+DM'] = np.where((data['high'] - data['high'].shift(1)) > (data['low'].shift(1) - data['low']),
+                           np.maximum(data['high'] - data['high'].shift(1), 0), 0)
+    data['-DM'] = np.where((data['low'].shift(1) - data['low']) > (data['high'] - data['high'].shift(1)),
+                           np.maximum(data['low'].shift(1) - data['low'], 0), 0)
+
+    # Calculate smoothed TR, +DM, and -DM
+    data['TR_smooth'] = data['TR'].rolling(window=period).sum()
+    data['+DM_smooth'] = data['+DM'].rolling(window=period).sum()
+    data['-DM_smooth'] = data['-DM'].rolling(window=period).sum()
+
+    # Calculate +DI and -DI
+    data['+DI'] = 100 * (data['+DM_smooth'] / data['TR_smooth'])
+    data['-DI'] = 100 * (data['-DM_smooth'] / data['TR_smooth'])
+
+    # Calculate the DI Difference and DI Sum
+    data['DI_diff'] = abs(data['+DI'] - data['-DI'])
+    data['DI_sum'] = data['+DI'] + data['-DI']
+
+    # Calculate the DX
+    data['DX'] = 100 * (data['DI_diff'] / data['DI_sum'])
+
+    # Calculate the ADX
+    data['ADX'] = data['DX'].rolling(window=period).mean()
+
+    if data['ADX'].iloc[-1] >= 25:
+        #YES TRADE
+        if data['+DI'].iloc[-1] > data['-DI'].iloc[-1]:
+            return 'buy'
+        else:
+            return 'sell'
+
+    else:
+        return None
+
 def moving_average_signal(symbol):
-    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'USDCHF']
+    accepted_symbol_list = ['EURUSD', 'GBPUSD']
     skip_min = 30
     time_frame = 'M30'
 
@@ -95,6 +137,9 @@ def moving_average_signal(symbol):
     #     action = 'sell'
     # else:
     #     action = None
+
+    adx_signal = adx_decision(data=df, period=14)
+
     if (df['MA_50'].iloc[-1] < df['close'].iloc[-2] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
         action = 'buy'
     elif (df['MA_50'].iloc[-1] > df['close'].iloc[-2] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
@@ -102,8 +147,14 @@ def moving_average_signal(symbol):
     else:
         action = None
 
+
     if action:
-        trade_order(symbol=symbol, tp_point=None, sl_point=sl, lot=0.1, action=action, magic=True)
+
+        if not action == adx_signal:
+            print('ADX Signal -->> ', adx_signal, ' <<--- ORIGINAL --->>', action)
+            return None
+
+        trade_order(symbol=symbol, tp_point=600, sl_point=sl, lot=0.1, action=action, magic=True)
         trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.1, action=action, magic=False)
         trade_order(symbol=symbol, tp_point=tp2, sl_point=sl, lot=0.1, action=action, magic=False)
         trade_order(symbol=symbol, tp_point=tp3, sl_point=sl, lot=0.1, action=action, magic=False)
