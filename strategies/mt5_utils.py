@@ -122,7 +122,7 @@ def trade_order(symbol, tp_point, sl_point, lot, action, magic=False):
 
     print(symbol, 'Spread pip: ', spread)
 
-    if spread > 15:
+    if spread > 150:
         print('High Spread')
         return None
 

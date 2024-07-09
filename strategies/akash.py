@@ -37,7 +37,8 @@ def adx_decision(data, period=14):
     # Calculate the ADX
     data['ADX'] = data['DX'].rolling(window=period).mean()
 
-    if data['ADX'].iloc[-1] >= 25:
+    print('ADX VALUE -->>',data['ADX'].iloc[-1])
+    if data['ADX'].iloc[-1] >= 20:
         #YES TRADE
         if data['+DI'].iloc[-1] > data['-DI'].iloc[-1]:
             return 'buy'
@@ -48,9 +49,9 @@ def adx_decision(data, period=14):
         return None
 
 def moving_average_signal(symbol):
-    accepted_symbol_list = ['EURUSD', 'GBPUSD']
-    skip_min = 30
-    time_frame = 'M30'
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD']
+    skip_min = 5
+    time_frame = 'M5'
 
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
@@ -95,72 +96,86 @@ def moving_average_signal(symbol):
 
 
     tp_dict = {
-        'EURUSD': 400,
+        'EURUSD': 150,
         'AUDUSD': 400,
-        'GBPUSD': 400,
+        'GBPUSD': 100,
         'USDCAD': 200,
         'USDJPY': 500,
         'EURGPB': 300,
-        'USDCHF': 400
+        'USDCHF': 400,
+        'XAUUSD': 5000
     }
 
     tp_dict_2 = {
-        'EURUSD': 200,
+        'EURUSD': 120,
         'AUDUSD': 200,
-        'GBPUSD': 200,
+        'GBPUSD': 80,
         'USDCAD': 100,
         'USDJPY': 150,
         'EURGPB': 150,
-        'USDCHF': 200
+        'USDCHF': 200,
+        'XAUUSD': 3000
     }
 
     tp_dict_3 = {
-        'EURUSD': 120,
+        'EURUSD': 90,
         'AUDUSD': 100,
-        'GBPUSD': 100,
+        'GBPUSD': 50,
         'USDCAD': 70,
         'USDJPY': 100,
         'EURGPB': 100,
-        'USDCHF': 100
+        'USDCHF': 100,
+        'XAUUSD': 1500
     }
 
-    sl = 50
+    sl_dict = {
+        'EURUSD': 30,
+        'AUDUSD': 50,
+        'GBPUSD': 30,
+        'USDCAD': 20,
+        'USDJPY': 50,
+        'EURGPB': 50,
+        'USDCHF': 50,
+        'XAUUSD': 500
+    }
+
+    sl = sl_dict[symbol]
     tp = tp_dict[symbol] #300 #hour chart 500/600
     tp2 = tp_dict_2[symbol] #300 #hour chart 500/600
     tp3 = tp_dict_3[symbol] #300 #hour chart 500/600
 
-    # if (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-2]) \
-    #         or (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
-    #     action = 'buy'
-    # elif (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-2]) \
-    #         or (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
-    #     action = 'sell'
-    # else:
-    #     action = None
-
-    adx_signal = adx_decision(data=df, period=14)
-
-    if (df['MA_50'].iloc[-1] < df['close'].iloc[-2] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
+    if (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-2]) \
+            or (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
         action = 'buy'
-    elif (df['MA_50'].iloc[-1] > df['close'].iloc[-2] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
+    elif (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-2]) \
+            or (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
         action = 'sell'
     else:
         action = None
 
 
-    if action:
+    print(symbol)
+    adx_signal = adx_decision(data=df, period=14)
 
+    # if (df['MA_50'].iloc[-1] < df['close'].iloc[-2] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
+    #     action = 'buy'
+    # elif (df['MA_50'].iloc[-1] > df['close'].iloc[-2] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
+    #     action = 'sell'
+    # else:
+    #     action = None
+
+
+    if action:
+        print(symbol, 'ADX Signal -->> ', adx_signal, ' <<--- ORIGINAL --->>', action)
         if not action == adx_signal:
-            print('ADX Signal -->> ', adx_signal, ' <<--- ORIGINAL --->>', action)
             return None
 
-        trade_order(symbol=symbol, tp_point=600, sl_point=sl, lot=0.1, action=action, magic=True)
+        trade_order(symbol=symbol, tp_point=None, sl_point=sl, lot=0.1, action=action, magic=True)
         trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.1, action=action, magic=False)
         trade_order(symbol=symbol, tp_point=tp2, sl_point=sl, lot=0.1, action=action, magic=False)
         trade_order(symbol=symbol, tp_point=tp3, sl_point=sl, lot=0.1, action=action, magic=False)
 
         write_json(json_dict=orders_json, json_file_name=json_file_name)
-
 
 
 def close_position(symbol, magic_number):

@@ -48,12 +48,12 @@ def check_duplicate_orders(symbol, skip_min, json_file_name):
             if end_hour >= 24:
                 end_hour = 0
 
-        if orders == 0:
-            orders_json[symbol] = {
-                'h': dt.datetime.now().hour,
-                'm': dt.datetime.now().minute,
-            }
-            return False, orders_json
+        # if orders == 0:
+        #     orders_json[symbol] = {
+        #         'h': dt.datetime.now().hour,
+        #         'm': dt.datetime.now().minute,
+        #     }
+        #     return False, orders_json
 
         if isNowInTimePeriod(dt.time(start_hour, start_min), dt.time(end_hour, end_min), dt.datetime.now().time()):
             print(symbol, 'TRADE SKIPPED for MULTIPLE [',orders,']', json_file_name)
@@ -146,6 +146,7 @@ def check_duplicate_orders_magic_v2(symbol):
 
 
 def write_json(json_dict, json_file_name):
+    print('SKIPPING TIME UPDATED ---->>>', json_dict)
     with open('time_counts/'+json_file_name+'.json', 'w') as outfile:
         json.dump(json_dict, outfile)
 
