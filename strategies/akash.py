@@ -41,10 +41,16 @@ def adx_decision(data, period=14):
     adx_min = 25
     if data['ADX'].iloc[-1] >= adx_min:
         #YES TRADE
-        if (data['+DI'].iloc[-1] > data['-DI'].iloc[-1]) and (data['+DI'].iloc[-1] > adx_min):
+        if data['+DI'].iloc[-1] > data['-DI'].iloc[-1]:
             return 'buy'
-        elif (data['-DI'].iloc[-1] > adx_min):
+        else:
             return 'sell'
+    # if data['ADX'].iloc[-1] >= adx_min:
+    #     #YES TRADE
+    #     if (data['+DI'].iloc[-1] > data['-DI'].iloc[-1]) and (data['+DI'].iloc[-1] > adx_min):
+    #         return 'buy'
+    #     elif (data['-DI'].iloc[-1] > adx_min):
+    #         return 'sell'
 
     else:
         return None
