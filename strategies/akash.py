@@ -38,11 +38,12 @@ def adx_decision(data, period=14):
     data['ADX'] = data['DX'].rolling(window=period).mean()
 
     print('ADX VALUE -->>',data['ADX'].iloc[-1])
-    if data['ADX'].iloc[-1] >= 20:
+    adx_min = 25
+    if data['ADX'].iloc[-1] >= adx_min:
         #YES TRADE
-        if data['+DI'].iloc[-1] > data['-DI'].iloc[-1]:
+        if (data['+DI'].iloc[-1] > data['-DI'].iloc[-1]) and (data['+DI'].iloc[-1] > adx_min):
             return 'buy'
-        else:
+        elif (data['-DI'].iloc[-1] > adx_min):
             return 'sell'
 
     else:
