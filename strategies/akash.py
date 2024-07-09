@@ -37,7 +37,7 @@ def adx_decision(data, period=14):
     # Calculate the ADX
     data['ADX'] = data['DX'].rolling(window=period).mean()
 
-    print('ADX VALUE -->>',data['ADX'].iloc[-1])
+    #print('ADX VALUE -->>',data['ADX'].iloc[-1])
     adx_min = 25
     if data['ADX'].iloc[-1] >= adx_min:
         #YES TRADE
@@ -155,7 +155,7 @@ def moving_average_signal(symbol):
         action = None
 
 
-    print(symbol)
+    #print(symbol)
     adx_signal = adx_decision(data=df, period=14)
 
     # if (df['MA_50'].iloc[-1] < df['close'].iloc[-2] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
