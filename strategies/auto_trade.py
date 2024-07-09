@@ -37,7 +37,7 @@ def start_live_trade():
 
     #symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY']
 
-    symbol_list = ['XAUUSD']
+    symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
 
     ## 200 --> 198.64 [23] 23
     ## 198.64 --> 203.42 [14] 37
