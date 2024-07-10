@@ -57,8 +57,8 @@ def adx_decision(data, period=14):
 
 def moving_average_signal(symbol):
     accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD']
-    skip_min = 5
-    time_frame = 'M5'
+    skip_min = 30
+    time_frame = 'M30'
 
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
@@ -103,47 +103,47 @@ def moving_average_signal(symbol):
 
 
     tp_dict = {
-        'EURUSD': 150,
+        'EURUSD': 600,
         'AUDUSD': 400,
-        'GBPUSD': 100,
+        'GBPUSD': 600,
         'USDCAD': 200,
         'USDJPY': 500,
         'EURGPB': 300,
         'USDCHF': 400,
-        'XAUUSD': 5000
+        'XAUUSD': 35000
     }
 
     tp_dict_2 = {
-        'EURUSD': 120,
+        'EURUSD': 400,
         'AUDUSD': 200,
-        'GBPUSD': 80,
+        'GBPUSD': 400,
         'USDCAD': 100,
         'USDJPY': 150,
         'EURGPB': 150,
         'USDCHF': 200,
-        'XAUUSD': 3000
+        'XAUUSD': 25000
     }
 
     tp_dict_3 = {
-        'EURUSD': 90,
+        'EURUSD': 200,
         'AUDUSD': 100,
-        'GBPUSD': 50,
+        'GBPUSD': 200,
         'USDCAD': 70,
         'USDJPY': 100,
         'EURGPB': 100,
         'USDCHF': 100,
-        'XAUUSD': 1500
+        'XAUUSD': 10000
     }
 
     sl_dict = {
-        'EURUSD': 30,
+        'EURUSD': 50,
         'AUDUSD': 50,
-        'GBPUSD': 30,
+        'GBPUSD': 50,
         'USDCAD': 20,
         'USDJPY': 50,
         'EURGPB': 50,
         'USDCHF': 50,
-        'XAUUSD': 500
+        'XAUUSD': 1500
     }
 
     sl = sl_dict[symbol]
