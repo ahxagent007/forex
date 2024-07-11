@@ -143,7 +143,7 @@ def moving_average_signal(symbol):
         'USDJPY': 50,
         'EURGPB': 50,
         'USDCHF': 50,
-        'XAUUSD': 1500
+        'XAUUSD': 2000
     }
 
     sl = sl_dict[symbol]
