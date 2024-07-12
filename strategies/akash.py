@@ -37,28 +37,28 @@ def adx_decision(data, period=14):
     # Calculate the ADX
     data['ADX'] = data['DX'].rolling(window=period).mean()
 
-    #print('ADX VALUE -->>',data['ADX'].iloc[-1])
-    adx_min = 25
-    if data['ADX'].iloc[-1] >= adx_min:
-        #YES TRADE
-        if data['+DI'].iloc[-1] > data['-DI'].iloc[-1]:
-            return 'buy'
-        else:
-            return 'sell'
+    #print('ADX VALUE -->>',data['ADX'].iloc[-1], data['+DI'].iloc[-1], data['-DI'].iloc[-1])
+    adx_min = 20
     # if data['ADX'].iloc[-1] >= adx_min:
     #     #YES TRADE
-    #     if (data['+DI'].iloc[-1] > data['-DI'].iloc[-1]) and (data['+DI'].iloc[-1] > adx_min):
+    #     if data['+DI'].iloc[-1] > data['-DI'].iloc[-1]:
     #         return 'buy'
-    #     elif (data['-DI'].iloc[-1] > adx_min):
+    #     else:
     #         return 'sell'
+    if data['ADX'].iloc[-1] >= adx_min:
+        #YES TRADE
+        if (data['+DI'].iloc[-1] > data['-DI'].iloc[-1]) and (data['+DI'].iloc[-1] > adx_min):
+            return 'buy'
+        elif (data['-DI'].iloc[-1] > adx_min):
+            return 'sell'
 
     else:
         return None
 
 def moving_average_signal(symbol):
     accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD']
-    skip_min = 30
-    time_frame = 'M30'
+    skip_min = 5
+    time_frame = 'M5'
 
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
@@ -73,10 +73,11 @@ def moving_average_signal(symbol):
 
     if_duplicate, magic_number, dup_action, positions_df = check_duplicate_orders_magic_v2(symbol)
 
-    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
+    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
 
     # Moving Average
     df['MA_50'] = df['close'].rolling(window=50).mean()
+    df['MA_200'] = df['close'].rolling(window=200).mean()
 
     if if_duplicate:
         action_convert = {
@@ -102,47 +103,93 @@ def moving_average_signal(symbol):
                 return None
 
 
+    ## M30
+    # tp_dict = {
+    #     'EURUSD': 600,
+    #     'AUDUSD': 400,
+    #     'GBPUSD': 600,
+    #     'USDCAD': 200,
+    #     'USDJPY': 500,
+    #     'EURGPB': 300,
+    #     'USDCHF': 400,
+    #     'XAUUSD': 35000
+    # }
+    #
+    # tp_dict_2 = {
+    #     'EURUSD': 400,
+    #     'AUDUSD': 200,
+    #     'GBPUSD': 400,
+    #     'USDCAD': 100,
+    #     'USDJPY': 150,
+    #     'EURGPB': 150,
+    #     'USDCHF': 200,
+    #     'XAUUSD': 25000
+    # }
+    #
+    # tp_dict_3 = {
+    #     'EURUSD': 200,
+    #     'AUDUSD': 100,
+    #     'GBPUSD': 200,
+    #     'USDCAD': 70,
+    #     'USDJPY': 100,
+    #     'EURGPB': 100,
+    #     'USDCHF': 100,
+    #     'XAUUSD': 10000
+    # }
+    #
+    # sl_dict = {
+    #     'EURUSD': 50,
+    #     'AUDUSD': 50,
+    #     'GBPUSD': 50,
+    #     'USDCAD': 20,
+    #     'USDJPY': 50,
+    #     'EURGPB': 50,
+    #     'USDCHF': 50,
+    #     'XAUUSD': 2000
+    # }
+
+    ## M5
     tp_dict = {
-        'EURUSD': 600,
+        'EURUSD': 200,
         'AUDUSD': 400,
-        'GBPUSD': 600,
+        'GBPUSD': 200,
         'USDCAD': 200,
         'USDJPY': 500,
         'EURGPB': 300,
         'USDCHF': 400,
-        'XAUUSD': 35000
+        'XAUUSD': 25000
     }
 
     tp_dict_2 = {
-        'EURUSD': 400,
+        'EURUSD': 150,
         'AUDUSD': 200,
-        'GBPUSD': 400,
+        'GBPUSD': 150,
         'USDCAD': 100,
         'USDJPY': 150,
         'EURGPB': 150,
         'USDCHF': 200,
-        'XAUUSD': 25000
+        'XAUUSD': 15000
     }
 
     tp_dict_3 = {
-        'EURUSD': 200,
+        'EURUSD': 100,
         'AUDUSD': 100,
-        'GBPUSD': 200,
+        'GBPUSD': 100,
         'USDCAD': 70,
         'USDJPY': 100,
         'EURGPB': 100,
         'USDCHF': 100,
-        'XAUUSD': 10000
+        'XAUUSD': 6000
     }
 
     sl_dict = {
-        'EURUSD': 50,
-        'AUDUSD': 50,
-        'GBPUSD': 50,
+        'EURUSD': 30,
+        'AUDUSD': 30,
+        'GBPUSD': 30,
         'USDCAD': 20,
-        'USDJPY': 50,
-        'EURGPB': 50,
-        'USDCHF': 50,
+        'USDJPY': 30,
+        'EURGPB': 30,
+        'USDCHF': 30,
         'XAUUSD': 2000
     }
 
@@ -151,29 +198,40 @@ def moving_average_signal(symbol):
     tp2 = tp_dict_2[symbol] #300 #hour chart 500/600
     tp3 = tp_dict_3[symbol] #300 #hour chart 500/600
 
-    # if (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-2]) \
-    #         or (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
-    #     action = 'buy'
-    # elif (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-2]) \
-    #         or (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
-    #     action = 'sell'
-    # else:
-    #     action = None
-
-
-    #print(symbol)
-    adx_signal = adx_decision(data=df, period=14)
-
-    if (df['MA_50'].iloc[-1] < df['close'].iloc[-2] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
+    ## Current Candle
+    if (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-2]) \
+            or (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
         action = 'buy'
-    elif (df['MA_50'].iloc[-1] > df['close'].iloc[-2] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
+    elif (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-2]) \
+            or (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
         action = 'sell'
     else:
         action = None
 
 
+    #print(symbol)
+    adx_signal = adx_decision(data=df, period=14)
+
+    ## Previous Candle
+    # if (df['MA_50'].iloc[-1] < df['close'].iloc[-2] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
+    #     action = 'buy'
+    # elif (df['MA_50'].iloc[-1] > df['close'].iloc[-2] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
+    #     action = 'sell'
+    # else:
+    #     action = None
+
+    ## 200 MA Technique
+    signal_200ma = None
+    if df['MA_50'].iloc[-1] > df['MA_200'].iloc[-1]:
+        signal_200ma = 'buy'
+    elif df['MA_50'].iloc[-1] < df['MA_200'].iloc[-1]:
+        signal_200ma = 'sell'
+
+
     if action:
-        print(symbol, 'ADX Signal -->> ', adx_signal, ' <<--- ORIGINAL --->>', action)
+        print(symbol, 'ADX Signal -->> ', adx_signal, ' <<--- ORIGINAL --->>', action, ' 200 MA -->>',signal_200ma)
+        # if not action == adx_signal == signal_200ma:
+        #     return None
         if not action == adx_signal:
             return None
 
