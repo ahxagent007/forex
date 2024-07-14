@@ -38,7 +38,7 @@ def adx_decision(data, period=14):
     data['ADX'] = data['DX'].rolling(window=period).mean()
 
     #print('ADX VALUE -->>',data['ADX'].iloc[-1], data['+DI'].iloc[-1], data['-DI'].iloc[-1])
-    adx_min = 20
+    adx_min = 25
     # if data['ADX'].iloc[-1] >= adx_min:
     #     #YES TRADE
     #     if data['+DI'].iloc[-1] > data['-DI'].iloc[-1]:
@@ -57,8 +57,8 @@ def adx_decision(data, period=14):
 
 def moving_average_signal(symbol):
     accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD']
-    skip_min = 5
-    time_frame = 'M5'
+    skip_min = 60
+    time_frame = 'H1'
 
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
@@ -103,95 +103,95 @@ def moving_average_signal(symbol):
                 return None
 
 
-    ## M30
-    # tp_dict = {
-    #     'EURUSD': 600,
-    #     'AUDUSD': 400,
-    #     'GBPUSD': 600,
-    #     'USDCAD': 200,
-    #     'USDJPY': 500,
-    #     'EURGPB': 300,
-    #     'USDCHF': 400,
-    #     'XAUUSD': 35000
-    # }
-    #
-    # tp_dict_2 = {
-    #     'EURUSD': 400,
-    #     'AUDUSD': 200,
-    #     'GBPUSD': 400,
-    #     'USDCAD': 100,
-    #     'USDJPY': 150,
-    #     'EURGPB': 150,
-    #     'USDCHF': 200,
-    #     'XAUUSD': 25000
-    # }
-    #
-    # tp_dict_3 = {
-    #     'EURUSD': 200,
-    #     'AUDUSD': 100,
-    #     'GBPUSD': 200,
-    #     'USDCAD': 70,
-    #     'USDJPY': 100,
-    #     'EURGPB': 100,
-    #     'USDCHF': 100,
-    #     'XAUUSD': 10000
-    # }
-    #
-    # sl_dict = {
-    #     'EURUSD': 50,
-    #     'AUDUSD': 50,
-    #     'GBPUSD': 50,
-    #     'USDCAD': 20,
-    #     'USDJPY': 50,
-    #     'EURGPB': 50,
-    #     'USDCHF': 50,
-    #     'XAUUSD': 2000
-    # }
-
-    ## M5
+    ## M30/H1
     tp_dict = {
-        'EURUSD': 200,
+        'EURUSD': 600,
         'AUDUSD': 400,
-        'GBPUSD': 200,
+        'GBPUSD': 600,
         'USDCAD': 200,
         'USDJPY': 500,
         'EURGPB': 300,
         'USDCHF': 400,
-        'XAUUSD': 25000
+        'XAUUSD': 60000
     }
 
     tp_dict_2 = {
-        'EURUSD': 150,
+        'EURUSD': 400,
         'AUDUSD': 200,
-        'GBPUSD': 150,
+        'GBPUSD': 400,
         'USDCAD': 100,
         'USDJPY': 150,
         'EURGPB': 150,
         'USDCHF': 200,
-        'XAUUSD': 15000
+        'XAUUSD': 30000
     }
 
     tp_dict_3 = {
-        'EURUSD': 100,
+        'EURUSD': 200,
         'AUDUSD': 100,
-        'GBPUSD': 100,
+        'GBPUSD': 200,
         'USDCAD': 70,
         'USDJPY': 100,
         'EURGPB': 100,
         'USDCHF': 100,
-        'XAUUSD': 6000
+        'XAUUSD': 25000
     }
 
     sl_dict = {
-        'EURUSD': 30,
-        'AUDUSD': 30,
-        'GBPUSD': 30,
+        'EURUSD': 100,
+        'AUDUSD': 50,
+        'GBPUSD': 100,
         'USDCAD': 20,
-        'USDJPY': 30,
-        'EURGPB': 30,
-        'USDCHF': 30,
-        'XAUUSD': 2000
+        'USDJPY': 50,
+        'EURGPB': 50,
+        'USDCHF': 50,
+        'XAUUSD': 5000
     }
+
+    ## M5
+    # tp_dict = {
+    #     'EURUSD': 200,
+    #     'AUDUSD': 400,
+    #     'GBPUSD': 200,
+    #     'USDCAD': 200,
+    #     'USDJPY': 500,
+    #     'EURGPB': 300,
+    #     'USDCHF': 400,
+    #     'XAUUSD': 25000
+    # }
+    #
+    # tp_dict_2 = {
+    #     'EURUSD': 150,
+    #     'AUDUSD': 200,
+    #     'GBPUSD': 150,
+    #     'USDCAD': 100,
+    #     'USDJPY': 150,
+    #     'EURGPB': 150,
+    #     'USDCHF': 200,
+    #     'XAUUSD': 15000
+    # }
+    #
+    # tp_dict_3 = {
+    #     'EURUSD': 100,
+    #     'AUDUSD': 100,
+    #     'GBPUSD': 100,
+    #     'USDCAD': 70,
+    #     'USDJPY': 100,
+    #     'EURGPB': 100,
+    #     'USDCHF': 100,
+    #     'XAUUSD': 6000
+    # }
+    #
+    # sl_dict = {
+    #     'EURUSD': 30,
+    #     'AUDUSD': 30,
+    #     'GBPUSD': 30,
+    #     'USDCAD': 20,
+    #     'USDJPY': 30,
+    #     'EURGPB': 30,
+    #     'USDCHF': 30,
+    #     'XAUUSD': 2000
+    # }
 
     sl = sl_dict[symbol]
     tp = tp_dict[symbol] #300 #hour chart 500/600
@@ -238,7 +238,7 @@ def moving_average_signal(symbol):
         trade_order(symbol=symbol, tp_point=None, sl_point=sl, lot=0.1, action=action, magic=True)
         trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.1, action=action, magic=False)
         trade_order(symbol=symbol, tp_point=tp2, sl_point=sl, lot=0.1, action=action, magic=False)
-        trade_order(symbol=symbol, tp_point=tp3, sl_point=sl, lot=0.1, action=action, magic=False)
+        #trade_order(symbol=symbol, tp_point=tp3, sl_point=sl, lot=0.1, action=action, magic=False)
 
         write_json(json_dict=orders_json, json_file_name=json_file_name)
 
