@@ -1,11 +1,14 @@
 import time
 
-from akash import moving_average_signal
+from ai_strategies import ai_trade
+from akash import moving_average_signal, moving_average_crossover, rsi_ma15, probability_trade, rsi_adx
 from volman_strategies import volman_strategies
 from mt5_utils import initialize_mt5
 from three_white_soldiers_three_back_crows import strategy_3ws_3bc
 from all_combo_strategies import combo_strategies
 #from ai_strategies import ai_trade
+from boilinger_bands_xian import boil_xian
+
 def trade(symbol):
 
     # Three White Soldiers & Three Black Crows
@@ -14,18 +17,48 @@ def trade(symbol):
     # # Combo Strategies
     # combo_strategies(symbol)
     #
-    # # AI Trade
+    # AI Trade
     # try:
     #     ai_trade(symbol)
     # except Exception as e:
     #     print( e)
-    #
-    # # Bob Volman
+
+    # Bob Volman
     # volman_strategies(symbol)
 
     #Akash
+
+    # try:
+    #     rsi_adx(symbol)
+    # except Exception as e:
+    #      print(symbol, "AKASH ERROR", str(e))
+
+    ## LATEST --------------
+
+    # try:
+    #     moving_average_signal(symbol)
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+
+    # try:
+    #     moving_average_crossover(symbol)
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+
+    # try:
+    #     rsi_ma15(symbol)
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+
+    ## Probability 129
+    # try:
+    #     probability_trade(symbol)
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+
+    # ### XIAN
     try:
-        moving_average_signal(symbol)
+        boil_xian(symbol)
     except Exception as e:
         print(symbol, "ERROR", str(e))
 
@@ -33,24 +66,20 @@ def trade(symbol):
 def start_live_trade():
     initialize_mt5()
 
-    delay_sec = 1
+    delay_sec = 2
 
     #symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY']
 
-    symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
+    #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
+    symbol_list = ['XAUUSD']
 
-    ## 200 --> 198.64 [23] 23
-    ## 198.64 --> 203.42 [14] 37
-    ## 203.42 --> 201.53 [13] 50
-    ## 201.53 --> 195.54 [41] 91 <<ACCIDENT>>
-    ## 200 -->> 205.91 AI
-    ## 200 -->>
 
     while True:
         for symbol in symbol_list:
             trade(symbol)
             time.sleep(delay_sec)
 
+        ## BTCUSD 161.43
 
         # trade('EURUSD')
         # time.sleep(delay_sec)

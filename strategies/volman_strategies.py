@@ -216,7 +216,7 @@ def volman_strategies(symbol):
         print('VOLMAN MULTIPLE TRADE >>>', symbol)
         return None
 
-    accepted_symbol_list = ['EURUSD']
+    accepted_symbol_list = ['EURUSD', 'XAUUSD']
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
         return None
@@ -225,8 +225,18 @@ def volman_strategies(symbol):
 
     signal = bob_volman_signal(tick_df)
 
-    tp_point = 80
-    sl_point = 40
+    tp_dict = {
+        'EURUSD': 80,
+        'XAUUSD': 1000
+    }
+    sl_dict = {
+        'EURUSD': 80,
+        'XAUUSD': 1000
+    }
+
+    tp_point = tp_dict[symbol]
+    sl_point = sl_dict[symbol]
+
     lot = 0.05
 
     if signal:
