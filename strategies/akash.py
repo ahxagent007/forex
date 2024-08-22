@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from common_functions import check_duplicate_orders_magic_v2, check_duplicate_orders, write_json
-from mt5_utils import get_live_data, trade_order, get_current_price, get_order_positions_count
+from common_functions import check_duplicate_orders_magic_v2, check_duplicate_orders, write_json, check_duplicate_orders_time, check_duplicate_orders_magic
+from mt5_utils import get_live_data, trade_order, get_current_price, get_order_positions_count, trade_order_magic
 import MetaTrader5 as mt5
 
 
@@ -101,6 +101,40 @@ def check_adx(data, period=14):
         return True
     else:
         return False
+
+
+def create_adx(data, period=14):
+    # Calculate the True Range (TR)
+    data['TR'] = np.maximum((data['high'] - data['low']), np.maximum(abs(data['high'] - data['close'].shift(1)),
+                                                                     abs(data['low'] - data['close'].shift(1))))
+
+    # Calculate +DM and -DM
+    data['+DM'] = np.where((data['high'] - data['high'].shift(1)) > (data['low'].shift(1) - data['low']),
+                           np.maximum(data['high'] - data['high'].shift(1), 0), 0)
+    data['-DM'] = np.where((data['low'].shift(1) - data['low']) > (data['high'] - data['high'].shift(1)),
+                           np.maximum(data['low'].shift(1) - data['low'], 0), 0)
+
+    # Calculate smoothed TR, +DM, and -DM
+    data['TR_smooth'] = data['TR'].rolling(window=period).sum()
+    data['+DM_smooth'] = data['+DM'].rolling(window=period).sum()
+    data['-DM_smooth'] = data['-DM'].rolling(window=period).sum()
+
+    # Calculate +DI and -DI
+    data['+DI'] = 100 * (data['+DM_smooth'] / data['TR_smooth'])
+    data['-DI'] = 100 * (data['-DM_smooth'] / data['TR_smooth'])
+
+    # Calculate the DI Difference and DI Sum
+    data['DI_diff'] = abs(data['+DI'] - data['-DI'])
+    data['DI_sum'] = data['+DI'] + data['-DI']
+
+    # Calculate the DX
+    data['DX'] = 100 * (data['DI_diff'] / data['DI_sum'])
+
+    # Calculate the ADX
+    data['ADX'] = data['DX'].rolling(window=period).mean()
+
+
+    return data
 
 def moving_average_signal(symbol):
     accepted_symbol_list = ['XAUUSD', 'BTCUSD']
@@ -292,11 +326,12 @@ def moving_average_signal(symbol):
     #     signal_200ma = 'sell'
 
     # Average candle
-    avg_high = (df['high'].iloc[-1] + df['high'].iloc[-2] + df['high'].iloc[-3] + df['high'].iloc[-4] + df['high'].iloc[-5] + df['high'].iloc[-6])/6
-    avg_low = (df['low'].iloc[-1] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] + df['low'].iloc[-6])/6
+    avg_high = (df['high'].iloc[-1] + df['high'].iloc[-2] + df['high'].iloc[-3] + df['high'].iloc[-4] + df['high'].iloc[-5] + df['high'].iloc[-6])/7
+    avg_low = (df['low'].iloc[-1] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] + df['low'].iloc[-6])/7
 
     avg_signal = False
-    if (avg_high - avg_low) > 0.8:
+    candle_avg = (avg_high - avg_low)
+    if candle_avg > 0.4:
         avg_signal = True
 
     # Tick Volume Analysis
@@ -326,7 +361,7 @@ def moving_average_signal(symbol):
         #     trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.1, action=action, magic=True)
         if tick_signal and avg_signal:
             if action == adx_signal:
-                trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.1, action=action, magic=True)
+                trade_order(symbol=symbol, tp_point=candle_avg*1000, sl_point=candle_avg*1000, lot=0.1, action=action, magic=True)
                 write_json(json_dict=orders_json, json_file_name=json_file_name)
             else:
                 print('ADX WRONG SIGNAL')
@@ -394,8 +429,8 @@ def calculate_ema(data, period):
 
 def moving_average_crossover(symbol):
     accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD']
-    skip_min = 5
-    time_frame = 'M5'
+    skip_min = 2
+    time_frame = 'M1'
 
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
@@ -714,3 +749,152 @@ def rsi_adx(symbol):
             if rsi_signal == ma_signal:
                 trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.1, action=rsi_signal, magic=True)
                 write_json(json_dict=orders_json, json_file_name=json_file_name)
+
+def ma_adx_rsi(symbol):
+    '''AM50 > buy
+    MA50 < sell
+    ADX > 20
+    AVG ADX (1,2) > AVG ADX (3,4) -> TRADE OK
+    RSI AVG (1,2) > RSI AVG(3,4) —> BUY
+    RSI AVG (1,2) < RSI AVG(3,4) —> SELL'''
+
+    accepted_symbol_list = ['XAUUSD']
+    json_file_name = 'akash_ma_adx_rsi'
+    time_frame = 'M1'
+    skip_min = 2
+    trade_code = 1
+
+    if not symbol in accepted_symbol_list:
+        # print('Symbol Not supported', symbol)
+        return None
+
+    running_trade_status_time, orders_json = check_duplicate_orders_time(symbol=symbol, skip_min=skip_min,
+                                                                         json_file_name=json_file_name)
+    running_trade_status_magic = check_duplicate_orders_magic(symbol=symbol, code=trade_code)
+    if running_trade_status_time or running_trade_status_magic:
+        return None
+
+    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
+
+    ## RSI
+    df['RSI'] = calculate_rsi(df)
+
+    ## ADX : +DI -DI ADX
+    df = create_adx(df)
+
+    ## 50 MA
+    df['MA_50'] = df['close'].rolling(window=50).mean()
+
+    rsi_cur_avg = (df['RSI'].iloc[-1] + df['RSI'].iloc[-2]) / 2
+    rsi_prev_avg = (df['RSI'].iloc[-2] + df['RSI'].iloc[-3]) / 2
+
+    adx_cur_avg = (df['ADX'].iloc[-1] + df['ADX'].iloc[-2]) / 2
+    adx_prev_avg = (df['ADX'].iloc[-2] + df['ADX'].iloc[-3]) / 2
+
+    adx_cur = df['ADX'].iloc[-1]
+
+    ma_signal = None
+    rsi_signal = None
+
+    if adx_cur > 20:
+         if adx_cur_avg > adx_prev_avg:
+            # ADX Trade OK
+            if df['close'].iloc[-1] > df['MA_50'].iloc[-1]:
+                ma_signal = 'buy'
+            elif df['close'].iloc[-1] < df['MA_50'].iloc[-1]:
+                ma_signal = 'sell'
+
+            if rsi_cur_avg > rsi_prev_avg:
+               # BUY
+                rsi_signal = 'buy'
+            elif rsi_cur_avg < rsi_prev_avg:
+                rsi_signal = 'sell'
+
+    ## AVG Candle
+    avg_high = (df['high'].iloc[-1] + df['high'].iloc[-2] + df['high'].iloc[-3] + df['high'].iloc[-4] + df['high'].iloc[
+        -5] + df['high'].iloc[-6]) / 7
+    avg_low = (df['low'].iloc[-1] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] +
+               df['low'].iloc[-6]) / 7
+
+    avg_candle_size = avg_high - avg_low
+
+    ## 0.8 == 800
+    tp = avg_candle_size * 1000
+    sl = avg_candle_size * 1000
+
+    if tp > 600:
+        tp = 600
+        sl = 600
+
+    lot = 0.05
+
+    print('ADX -->', adx_cur,'rsi_cur_avg -->', rsi_cur_avg,'rsi_prev_avg -->', rsi_prev_avg,'ma_signal -->',
+          ma_signal,'tp -->', tp, 'sl -->', sl)
+    print('-----------------------------------------------------------------------------------------------------------')
+
+    if rsi_signal:
+        # if ma_signal == rsi_signal:
+        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=rsi_signal, magic=True, code=trade_code)
+        write_json(json_dict=orders_json, json_file_name=json_file_name)
+
+def moving_average_crossover_15_100(symbol):
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
+    skip_min = 5
+    time_frame = 'M5'
+
+    if not symbol in accepted_symbol_list:
+        # print('Symbol Not supported', symbol)
+        return None
+
+    json_file_name = 'akash_strategies_ma_ema_15_100'
+    running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
+                                                               json_file_name=json_file_name)
+    if running_trade_status:
+        #print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>')
+        return None
+
+    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
+
+    # Moving Average
+    df['EMA_15'] = calculate_ema(df, 15)
+    df['MA_100'] = df['close'].rolling(window=100).mean()
+
+    action = None
+    if df['EMA_15'].iloc[-1] > df['MA_100'].iloc[-1] and df['EMA_15'].iloc[-2] < df['MA_100'].iloc[-2]:
+        action = 'buy'
+    elif df['EMA_15'].iloc[-1] < df['MA_100'].iloc[-1] and df['EMA_15'].iloc[-2] > df['MA_100'].iloc[-2]:
+        action = 'sell'
+
+    # Average Candle Size
+    avg_high = (df['high'].iloc[-1] + df['high'].iloc[-2] + df['high'].iloc[-3] + df['high'].iloc[-4] + df['high'].iloc[
+        -5] + df['high'].iloc[-6]) / 7
+    avg_low = (df['low'].iloc[-1] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] +
+               df['low'].iloc[-6]) / 7
+
+    avg_candle_size = avg_high - avg_low
+
+    if symbol == 'XAUUSD':
+        ## 0.8 == 800
+        tp = avg_candle_size * 1000 * 6
+        sl = avg_candle_size * 1000 * 2 #+ df['spread'].iloc[-1]
+
+    elif symbol == 'EURUSD':
+        ## 0.00016 = 16
+        tp = avg_candle_size * 100000 * 6
+        sl = avg_candle_size * 100000 * 2 #+ df['spread'].iloc[-1]
+    elif symbol == 'USDJPY':
+        ##  0.00017 = 17
+        tp = avg_candle_size * 10000 * 6
+        sl = avg_candle_size * 10000 * 2 #+ df['spread'].iloc[-1]
+    elif symbol == 'GBPUSD':
+        ## 0.00023 = 23
+        tp = avg_candle_size * 100000 * 6
+        sl = avg_candle_size * 100000 * 2 #+ df['spread'].iloc[-1]
+
+    lot = 0.1
+
+    print(symbol, '## TP -->', tp,  '## SL -->', sl,  '## AVG -->', avg_candle_size,  '## ACTION -->', action)
+    if action:
+        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=0)
+        write_json(json_dict=orders_json, json_file_name=json_file_name)
+

@@ -1,4 +1,4 @@
-from akash import calculate_rsi
+from akash import calculate_rsi, adx_decision
 from mt5_utils import get_live_data, trade_order, trade_order_wo_sl, trade_order_magic
 from common_functions import check_duplicate_orders_time, write_json, check_duplicate_orders_magic
 
@@ -40,6 +40,12 @@ def boil_xian(symbol, window=20, num_std=2):
             action = 'buy'
             #band_diff = df['middle_band'].iloc[curr_idx] - df['lower_band'].iloc[curr_idx]
 
+    # if df['low'].iloc[-1] < df['lower_band'].iloc[curr_idx] and df['open'].iloc[-1] < df['close'].iloc[-1]:
+    #     action = 'buy'
+    # elif df['high'].iloc[-1] < df['upper_band'].iloc[curr_idx] and df['open'].iloc[-1] > df['close'].iloc[-1]:
+    #     action = 'sell'
+
+
     high_band_diff = df['close'].iloc[curr_idx] - df['middle_band'].iloc[curr_idx]
     low_band_diff = df['middle_band'].iloc[curr_idx] - df['close'].iloc[curr_idx]
 
@@ -47,12 +53,25 @@ def boil_xian(symbol, window=20, num_std=2):
         band_diff = high_band_diff
     else:
         band_diff = low_band_diff
+
+    ## MIDDLE BAND CROSS
+    # middle_band_signal = None
+    # adx_signal = adx_decision(df)
+    #
+    # if df['high'].iloc[-1] > df['middle_band'].iloc[-1] and df['close'].iloc[-1] < df['middle_band'].iloc[-1]:
+    #     middle_band_signal = 'sell'
+    # elif df['low'].iloc[-1] < df['middle_band'].iloc[-1] and df['close'].iloc[-1] > df['middle_band'].iloc[-1]:
+    #     middle_band_signal = 'sell'
+    #
+    # if not middle_band_signal == adx_signal:
+    #     middle_band_signal = None
+
     ## AVG Candle
 
     avg_high = (df['high'].iloc[-1] + df['high'].iloc[-2] + df['high'].iloc[-3] + df['high'].iloc[-4] + df['high'].iloc[
-        -5] + df['high'].iloc[-6]) / 6
+        -5] + df['high'].iloc[-6]) / 7
     avg_low = (df['low'].iloc[-1] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] +
-               df['low'].iloc[-6]) / 6
+               df['low'].iloc[-6]) / 7
 
     avg_candle_size = avg_high - avg_low
 
@@ -65,18 +84,18 @@ def boil_xian(symbol, window=20, num_std=2):
     df['RSI'] = calculate_rsi(df)
 
     rsi_action = None
-    if df['RSI'].iloc[curr_idx] >= 70:
+    if df['RSI'].iloc[curr_idx] >= 65:
         ## Overbought
         if df['RSI'].iloc[curr_idx] < df['RSI'].iloc[prev_idx]:
             rsi_action = 'sell'
-    elif df['RSI'].iloc[curr_idx] <= 30:
+    elif df['RSI'].iloc[curr_idx] <= 35:
         ## Oversold
         if df['RSI'].iloc[curr_idx] > df['RSI'].iloc[prev_idx]:
             rsi_action = 'buy'
 
     if symbol == 'XAUUSD':
         ## 0.8 == 800
-        avg_tp = avg_candle_size * 1000 * 1.5
+        avg_tp = avg_candle_size * 1000
         avg_sl = avg_candle_size * 1000 + df['spread'].iloc[-1]
 
     elif symbol == 'BTCUSD':
@@ -87,7 +106,7 @@ def boil_xian(symbol, window=20, num_std=2):
     if symbol == 'XAUUSD':
         ## 0.8 == 800
         diff_tp = band_diff * 1000
-        diff_sl = band_diff * 1000 * 1.5
+        diff_sl = band_diff * 1000 + df['spread'].iloc[-1]
 
     elif symbol == 'BTCUSD':
         diff_tp = band_diff * 100
@@ -100,13 +119,16 @@ def boil_xian(symbol, window=20, num_std=2):
         tp = diff_tp
         sl = diff_sl
 
-    print(symbol, ' ## AVG -->>',avg_candle_size,'## TP -->',tp,'## SL -->',sl, '## RSI -->>', df['RSI'].iloc[-1],rsi_action, '## Tick Power -->>',
+    print(symbol, ' ## AVG -->>',avg_candle_size,'## TP -->',tp,'## SL -->',sl, '## RSI -->>', df['RSI'].iloc[-1], rsi_action, '## Tick Power -->>',
           tick_signal, '## TP Diff-->> ', band_diff, '## Spread -->', df['spread'].iloc[-1])
+    print('-----------------------------------------------------------------------------------------------------------')
 
-    if tp < 500:
-        print('LOW TP !!!!!!!')
-        return
     lot = 0.1
     if action and (action == rsi_action):
-        trade_order_magic(symbol=symbol, tp_point=tp, lot=lot, action=action, magic=True, code=0)
+        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=0)
         write_json(json_dict=orders_json, json_file_name=json_file_name)
+    # elif middle_band_signal and tp>400:
+    #     lot = 0.09
+    #     trade_order_magic(symbol=symbol, tp_point=avg_tp, sl_point=avg_sl, lot=lot, action=action, magic=True, code=2)
+    #     write_json(json_dict=orders_json, json_file_name=json_file_name)
+

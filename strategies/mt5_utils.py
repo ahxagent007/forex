@@ -298,7 +298,9 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
     spread_dict = {
         'EURUSD': 15,
         'XAUUSD': 150,
-        'BTCUSD': 1900
+        'BTCUSD': 1900,
+        'USDJPY': 15,
+        'GBPUSD': 15,
     }
 
     if spread > spread_dict[symbol]:

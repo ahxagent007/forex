@@ -1,7 +1,7 @@
 import time
 
-from ai_strategies import ai_trade
-from akash import moving_average_signal, moving_average_crossover, rsi_ma15, probability_trade, rsi_adx
+#from ai_strategies import ai_trade
+from akash import moving_average_signal, moving_average_crossover, rsi_ma15, probability_trade, rsi_adx, ma_adx_rsi, moving_average_crossover_15_100
 from volman_strategies import volman_strategies
 from mt5_utils import initialize_mt5
 from three_white_soldiers_three_back_crows import strategy_3ws_3bc
@@ -10,6 +10,7 @@ from all_combo_strategies import combo_strategies
 from boilinger_bands_xian import boil_xian
 
 def trade(symbol):
+    delay_sec = 2
 
     # Three White Soldiers & Three Black Crows
     #strategy_3ws_3bc(symbol)
@@ -28,13 +29,25 @@ def trade(symbol):
 
     #Akash
 
+    # time.sleep(delay_sec)
+    # try:
+    #     ma_adx_rsi(symbol)
+    # except Exception as e:
+    #     print(symbol, "AKASH ERROR ma_adx_rsi", str(e))
+
     # try:
     #     rsi_adx(symbol)
     # except Exception as e:
     #      print(symbol, "AKASH ERROR", str(e))
 
     ## LATEST --------------
+    time.sleep(delay_sec)
 
+    try:
+        moving_average_crossover_15_100(symbol)
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
+    #
     # try:
     #     moving_average_signal(symbol)
     # except Exception as e:
@@ -57,27 +70,28 @@ def trade(symbol):
     #     print(symbol, "ERROR", str(e))
 
     # ### XIAN
-    try:
-        boil_xian(symbol)
-    except Exception as e:
-        print(symbol, "ERROR", str(e))
+    # time.sleep(delay_sec)
+    # try:
+    #     boil_xian(symbol)
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
 
 
 def start_live_trade():
     initialize_mt5()
 
-    delay_sec = 2
+
 
     #symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY']
 
     #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
-    symbol_list = ['XAUUSD']
+    symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
 
 
     while True:
         for symbol in symbol_list:
             trade(symbol)
-            time.sleep(delay_sec)
+
 
         ## BTCUSD 161.43
 
