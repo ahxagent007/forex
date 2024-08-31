@@ -264,7 +264,7 @@ def trade_order_wo_sl(symbol, tp_point, lot, action, magic=False):
     except Exception as e:
         print('Result '+action+' >> ', str(e))
 
-def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code=0):
+def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code=0, MAGIC_NUMBER=0):
 
 
     if action == 'buy':
@@ -306,9 +306,12 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
     if spread > spread_dict[symbol]:
         print('High Spread')
         return None
+    if tp <= spread or sl <= spread:
+        print('LOW TP/SL')
+        return None
 
     deviation = 20
-    MAGIC_NUMBER = get_magic_number()
+    # MAGIC_NUMBER = get_magic_number()
     if tp_point:
         request = {
             "action": mt5.TRADE_ACTION_DEAL,

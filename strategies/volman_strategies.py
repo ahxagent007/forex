@@ -1,6 +1,9 @@
 from mt5_utils import get_live_data, trade_order
-from common_functions import check_duplicate_orders, write_json
-
+from common_functions import check_duplicate_orders, write_json, check_duplicate_orders_time, \
+    check_duplicate_orders_magic
+from mt5_utils import get_live_data, get_magic_number, trade_order_magic
+from common_functions import check_duplicate_orders, write_json, add_csv
+from akash import get_avg_candle_size
 
 ## DOUBEL DOJI BREAK
 # Function to identify Doji candles
@@ -210,38 +213,56 @@ def bob_volman_signal(tick_frames):
 
 def volman_strategies(symbol):
     json_file_name = 'volman'
-    running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=1,
-                                                               json_file_name=json_file_name)
-    if running_trade_status:
-        print('VOLMAN MULTIPLE TRADE >>>', symbol)
+    skip_min = 1
+    time_frame = 'M1'
+
+    running_trade_status_time, orders_json = check_duplicate_orders_time(symbol=symbol, skip_min=skip_min,
+                                                                         json_file_name=json_file_name)
+    running_trade_status_magic = check_duplicate_orders_magic(symbol=symbol, code=77)
+    if running_trade_status_time or running_trade_status_magic:
         return None
+
 
     accepted_symbol_list = ['EURUSD', 'XAUUSD']
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
         return None
 
-    tick_df = get_live_data(symbol=symbol, time_frame='M1', prev_n_candles=70)
+    tick_df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=70)
 
-    signal = bob_volman_signal(tick_df)
+    action = bob_volman_signal(tick_df)
 
-    tp_dict = {
-        'EURUSD': 80,
-        'XAUUSD': 1000
-    }
-    sl_dict = {
-        'EURUSD': 80,
-        'XAUUSD': 1000
-    }
+    # tp_dict = {
+    #     'EURUSD': 80,
+    #     'XAUUSD': 1000
+    # }
+    # sl_dict = {
+    #     'EURUSD': 80,
+    #     'XAUUSD': 1000
+    # }
+    #
+    # tp_point = tp_dict[symbol]
+    # sl_point = sl_dict[symbol]
+    #
+    # lot = 0.05
+    #
+    # if signal:
+    #     trade_order(symbol, tp_point, sl_point, lot, signal)
+    #     write_json(json_dict=orders_json, json_file_name=json_file_name)
 
-    tp_point = tp_dict[symbol]
-    sl_point = sl_dict[symbol]
 
-    lot = 0.05
+    if action:
+        print(symbol, 'volman_strategies')
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, tick_df, 3, 2)
 
-    if signal:
-        trade_order(symbol, tp_point, sl_point, lot, signal)
+        lot = 0.1
+
+        MAGIC_NUMBER = get_magic_number()
+        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=77, MAGIC_NUMBER=MAGIC_NUMBER)
         write_json(json_dict=orders_json, json_file_name=json_file_name)
 
+        data = ""
+        data_lst = [symbol, time_frame,  MAGIC_NUMBER, avg_candle_size, action, tp, sl, 'volman_strategies', data]
+        add_csv(data_lst)
 
 

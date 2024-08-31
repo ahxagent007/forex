@@ -8,7 +8,7 @@ import numpy as np
 #from ta.volatility import AverageTrueRange
 
 import MetaTrader5 as mt5
-
+import csv
 
 def tick_type(candle):
     if candle['close'] > candle['open']:
@@ -202,6 +202,11 @@ def write_json(json_dict, json_file_name):
     with open('time_counts/'+json_file_name+'.json', 'w') as outfile:
         json.dump(json_dict, outfile)
 
+
+def add_csv(data_lst):
+    with open(r'data.csv', 'a') as f:
+        writer = csv.writer(f)
+        writer.writerow(data_lst)
 
 # def get_sl_tp_pips(df, sl, tp):
 #

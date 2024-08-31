@@ -1,13 +1,14 @@
-from akash import calculate_rsi, adx_decision
-from mt5_utils import get_live_data, trade_order, trade_order_wo_sl, trade_order_magic
-from common_functions import check_duplicate_orders_time, write_json, check_duplicate_orders_magic
+from akash import calculate_rsi, adx_decision, get_avg_candle_size
+from mt5_utils import get_live_data, trade_order, trade_order_wo_sl, trade_order_magic, get_magic_number
+from common_functions import check_duplicate_orders_time, write_json, check_duplicate_orders_magic, add_csv
+
 
 def boil_xian(symbol, window=20, num_std=2):
 
-    accepted_symbol_list = ['XAUUSD']
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
     json_file_name = 'boil_xian'
-    time_frame = 'M1'
-    skip_min = 3
+    time_frame = 'M5'
+    skip_min = 10
 
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
@@ -15,7 +16,7 @@ def boil_xian(symbol, window=20, num_std=2):
 
     running_trade_status_time, orders_json = check_duplicate_orders_time(symbol=symbol, skip_min=skip_min,
                                                                json_file_name=json_file_name)
-    running_trade_status_magic = check_duplicate_orders_magic(symbol=symbol, code=0)
+    running_trade_status_magic = check_duplicate_orders_magic(symbol=symbol, code=7)
     if running_trade_status_time or running_trade_status_magic:
         return None
 
@@ -98,9 +99,17 @@ def boil_xian(symbol, window=20, num_std=2):
         avg_tp = avg_candle_size * 1000
         avg_sl = avg_candle_size * 1000 + df['spread'].iloc[-1]
 
-    elif symbol == 'BTCUSD':
-        avg_tp = avg_candle_size * 100 * 2
-        avg_sl = avg_candle_size * 100 + df['spread'].iloc[-1]
+    elif symbol == 'EURUSD':
+        avg_tp = avg_candle_size * 100000
+        avg_sl = avg_candle_size * 100000 + df['spread'].iloc[-1]
+
+    elif symbol == 'GBPUSD':
+        avg_tp = avg_candle_size * 100000
+        avg_sl = avg_candle_size * 100000 + df['spread'].iloc[-1]
+
+    elif symbol == 'USDJPY':
+        avg_tp = avg_candle_size * 1000
+        avg_sl = avg_candle_size * 1000 + df['spread'].iloc[-1]
 
 
     if symbol == 'XAUUSD':
@@ -108,27 +117,42 @@ def boil_xian(symbol, window=20, num_std=2):
         diff_tp = band_diff * 1000
         diff_sl = band_diff * 1000 + df['spread'].iloc[-1]
 
-    elif symbol == 'BTCUSD':
-        diff_tp = band_diff * 100
-        diff_sl = band_diff * 100 + df['spread'].iloc[-1]
+    elif symbol == 'EURUSD':
+        diff_tp = band_diff * 100000
+        diff_sl = band_diff * 100000 + df['spread'].iloc[-1]
+
+    elif symbol == 'GBPUSD':
+        diff_tp = band_diff * 100000
+        diff_sl = band_diff * 100000 + df['spread'].iloc[-1]
+
+    elif symbol == 'USDJPY':
+        diff_tp = band_diff * 1000
+        diff_sl = band_diff * 1000 + df['spread'].iloc[-1]
 
     if avg_tp < diff_tp:
-        tp = avg_tp
-        sl = avg_sl
+        tp = avg_tp/1.5
+        sl = avg_sl/2
     else:
-        tp = diff_tp
-        sl = diff_sl
+        tp = diff_tp/1.5
+        sl = diff_sl/2
 
-    print(symbol, ' ## AVG -->>',avg_candle_size,'## TP -->',tp,'## SL -->',sl, '## RSI -->>', df['RSI'].iloc[-1], rsi_action, '## Tick Power -->>',
-          tick_signal, '## TP Diff-->> ', band_diff, '## Spread -->', df['spread'].iloc[-1])
-    print('-----------------------------------------------------------------------------------------------------------')
+    # print(symbol, ' ## AVG -->>',avg_candle_size,'## TP -->',tp,'## SL -->',sl, '## RSI -->>', df['RSI'].iloc[-1], rsi_action, '## Tick Power -->>',
+    #       tick_signal, '## TP Diff-->> ', band_diff, '## Spread -->', df['spread'].iloc[-1])
+    # print('-----------------------------------------------------------------------------------------------------------')
 
-    lot = 0.1
-    if action and (action == rsi_action):
-        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=0)
+    if action:
+        print(symbol, 'boil_xian')
+        lot = 0.1
+
+        MAGIC_NUMBER = get_magic_number()
+        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=7,
+                          MAGIC_NUMBER=MAGIC_NUMBER)
         write_json(json_dict=orders_json, json_file_name=json_file_name)
-    # elif middle_band_signal and tp>400:
-    #     lot = 0.09
-    #     trade_order_magic(symbol=symbol, tp_point=avg_tp, sl_point=avg_sl, lot=lot, action=action, magic=True, code=2)
-    #     write_json(json_dict=orders_json, json_file_name=json_file_name)
+
+        data = {
+
+        }
+        data_lst = [symbol, time_frame, MAGIC_NUMBER, avg_candle_size, action, tp, sl, 'boil_xian', data]
+        add_csv(data_lst)
+
 

@@ -1,5 +1,5 @@
 
-from Nahid.testing.akash.mt5_utils import get_data
+from testing.akash.mt5_utils import get_data
 
 import MetaTrader5 as mt5
 from datetime import datetime, timedelta

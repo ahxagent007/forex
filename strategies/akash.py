@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from common_functions import check_duplicate_orders_magic_v2, check_duplicate_orders, write_json, check_duplicate_orders_time, check_duplicate_orders_magic
-from mt5_utils import get_live_data, trade_order, get_current_price, get_order_positions_count, trade_order_magic
+from common_functions import check_duplicate_orders_magic_v2, check_duplicate_orders, write_json, \
+    check_duplicate_orders_time, check_duplicate_orders_magic, add_csv
+from mt5_utils import get_live_data, trade_order, get_current_price, get_order_positions_count, trade_order_magic, \
+    get_magic_number
 import MetaTrader5 as mt5
 
 
@@ -682,7 +684,7 @@ def rsi_adx(symbol):
     ### adx > 20
     ## RSI 3 candle
 
-    accepted_symbol_list = ['XAUUSD']
+    accepted_symbol_list = ['EURUSD', 'EURJPY', 'GBPUSD', 'XAUUSD']
     skip_min = 1
     time_frame = 'M1'
 
@@ -758,7 +760,7 @@ def ma_adx_rsi(symbol):
     RSI AVG (1,2) > RSI AVG(3,4) —> BUY
     RSI AVG (1,2) < RSI AVG(3,4) —> SELL'''
 
-    accepted_symbol_list = ['XAUUSD']
+    accepted_symbol_list = ['EURUSD', 'EURJPY', 'GBPUSD', 'XAUUSD']
     json_file_name = 'akash_ma_adx_rsi'
     time_frame = 'M1'
     skip_min = 2
@@ -810,37 +812,26 @@ def ma_adx_rsi(symbol):
             elif rsi_cur_avg < rsi_prev_avg:
                 rsi_signal = 'sell'
 
-    ## AVG Candle
-    avg_high = (df['high'].iloc[-1] + df['high'].iloc[-2] + df['high'].iloc[-3] + df['high'].iloc[-4] + df['high'].iloc[
-        -5] + df['high'].iloc[-6]) / 7
-    avg_low = (df['low'].iloc[-1] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] +
-               df['low'].iloc[-6]) / 7
 
-    avg_candle_size = avg_high - avg_low
-
-    ## 0.8 == 800
-    tp = avg_candle_size * 1000
-    sl = avg_candle_size * 1000
-
-    if tp > 600:
-        tp = 600
-        sl = 600
-
-    lot = 0.05
-
-    print('ADX -->', adx_cur,'rsi_cur_avg -->', rsi_cur_avg,'rsi_prev_avg -->', rsi_prev_avg,'ma_signal -->',
-          ma_signal,'tp -->', tp, 'sl -->', sl)
     print('-----------------------------------------------------------------------------------------------------------')
 
     if rsi_signal:
-        # if ma_signal == rsi_signal:
-        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=rsi_signal, magic=True, code=trade_code)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df)
+
+        lot = 0.1
+
+        MAGIC_NUMBER = get_magic_number()
+        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=rsi_signal, magic=True, code=6, MAGIC_NUMBER=MAGIC_NUMBER)
         write_json(json_dict=orders_json, json_file_name=json_file_name)
+
+        data = ""
+        data_lst = [symbol, time_frame,  MAGIC_NUMBER, avg_candle_size, rsi_signal, tp, sl, 'ma_adx_rsi', data]
+        add_csv(data_lst)
 
 def moving_average_crossover_15_100(symbol):
     accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY']
-    skip_min = 5
-    time_frame = 'M5'
+    skip_min = 2
+    time_frame = 'M1'
 
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
@@ -860,9 +851,9 @@ def moving_average_crossover_15_100(symbol):
     df['MA_100'] = df['close'].rolling(window=100).mean()
 
     action = None
-    if df['EMA_15'].iloc[-1] > df['MA_100'].iloc[-1] and df['EMA_15'].iloc[-2] < df['MA_100'].iloc[-2]:
+    if df['EMA_15'].iloc[-1] > df['MA_100'].iloc[-1] and df['EMA_15'].iloc[-3] < df['MA_100'].iloc[-1]:
         action = 'buy'
-    elif df['EMA_15'].iloc[-1] < df['MA_100'].iloc[-1] and df['EMA_15'].iloc[-2] > df['MA_100'].iloc[-2]:
+    elif df['EMA_15'].iloc[-1] < df['MA_100'].iloc[-1] and df['EMA_15'].iloc[-3] > df['MA_100'].iloc[-1]:
         action = 'sell'
 
     # Average Candle Size
@@ -873,28 +864,97 @@ def moving_average_crossover_15_100(symbol):
 
     avg_candle_size = avg_high - avg_low
 
-    if symbol == 'XAUUSD':
-        ## 0.8 == 800
-        tp = avg_candle_size * 1000 * 6
-        sl = avg_candle_size * 1000 * 2 #+ df['spread'].iloc[-1]
+    df = create_adx(df)
 
-    elif symbol == 'EURUSD':
-        ## 0.00016 = 16
-        tp = avg_candle_size * 100000 * 6
-        sl = avg_candle_size * 100000 * 2 #+ df['spread'].iloc[-1]
-    elif symbol == 'USDJPY':
-        ##  0.00017 = 17
-        tp = avg_candle_size * 10000 * 6
-        sl = avg_candle_size * 10000 * 2 #+ df['spread'].iloc[-1]
-    elif symbol == 'GBPUSD':
-        ## 0.00023 = 23
-        tp = avg_candle_size * 100000 * 6
-        sl = avg_candle_size * 100000 * 2 #+ df['spread'].iloc[-1]
+    tp_multi = 6
+    sl_multi = 2
+
+    if df['ADX'].iloc[-1] < 23:
+        print(symbol, 'LOW ON ADX')
+        return None
+    elif (df['ADX'].iloc[-2] - df['ADX'].iloc[-3]) < 0.8:
+        print(symbol, "ADX falling")
+        return
+
+    # elif df['ADX'].iloc[-1] > 20 and df['ADX'].iloc[-1] < 30:
+    #     tp_multi = 3
+    #     sl_multi = 1.5
+    # elif df['ADX'].iloc[-1] > 30: # and df['ADX'].iloc[-1] < 40:
+    #     tp_multi = 4
+    #     sl_multi = 2
+    # elif df['ADX'].iloc[-1] > 40:
+    #     tp_multi = 8
+    #     sl_multi = 2
+    else:
+        tp_multi = 2
+        sl_multi = 2
+
+    if df['+DI'].iloc[-1] > df['-DI'].iloc[-1]:
+        adx_signal = 'buy'
+    elif df['+DI'].iloc[-1] < df['-DI'].iloc[-1]:
+        adx_signal = 'buy'
+    else:
+        adx_signal = None
+
+    avg_candle_size, sl, tp = get_avg_candle_size(symbol, df)
+
 
     lot = 0.1
 
     print(symbol, '## TP -->', tp,  '## SL -->', sl,  '## AVG -->', avg_candle_size,  '## ACTION -->', action)
+    print('ADX -->', df['ADX'].iloc[-1], 'tp_multi -->', tp_multi)
+    print('-----------------------------------------------------------------------------------------')
     if action:
-        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=0)
-        write_json(json_dict=orders_json, json_file_name=json_file_name)
+        if action == adx_signal:
+            MAGIC_NUMBER = get_magic_number()
+            trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=8, MAGIC_NUMBER=MAGIC_NUMBER)
+            write_json(json_dict=orders_json, json_file_name=json_file_name)
 
+            data_lst = [symbol, time_frame,  MAGIC_NUMBER, avg_candle_size, action, tp, sl, df['ADX'].iloc[-1], ]
+            add_csv(data_lst)
+
+def get_avg_candle_size(symbol, df, tp_multi = 2, sl_multi = 2):
+
+    avg_high = (df['high'].iloc[-1] + df['high'].iloc[-2] + df['high'].iloc[-3] + df['high'].iloc[-4] + df['high'].iloc[
+        -5] + df['high'].iloc[-6]) / 7
+    avg_low = (df['low'].iloc[-1] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] +
+               df['low'].iloc[-6]) / 7
+
+    avg_candle_size = avg_high - avg_low
+
+    if symbol == 'XAUUSD':
+        ## 0.8 == 800
+        tp = avg_candle_size * 1000 * tp_multi
+        sl = avg_candle_size * 1000 * sl_multi #+ df['spread'].iloc[-1]
+
+        if sl < 300:
+            print('LOW SL')
+            return
+
+    elif symbol == 'EURUSD':
+        ## 0.00016 = 16
+        tp = avg_candle_size * 100000 * tp_multi
+        sl = avg_candle_size * 100000 * sl_multi #+ df['spread'].iloc[-1]
+
+        if sl < df['spread'].iloc[-1]+5:
+            print('LOW SL')
+            return
+
+    elif symbol == 'USDJPY':
+        ##  0.00017 = 17
+        tp = avg_candle_size * 1000 * tp_multi
+        sl = avg_candle_size * 1000 * sl_multi #+ df['spread'].iloc[-1]
+
+        if sl < df['spread'].iloc[-1]+5:
+            print('LOW SL')
+            return
+    elif symbol == 'GBPUSD':
+        ## 0.00023 = 23
+        tp = avg_candle_size * 100000 * tp_multi
+        sl = avg_candle_size * 100000 * sl_multi #+ df['spread'].iloc[-1]
+
+        if sl < df['spread'].iloc[-1]+5:
+            print('LOW SL')
+            return
+
+    return avg_candle_size, sl, tp
