@@ -4,7 +4,7 @@ import pandas as pd
 from common_functions import check_duplicate_orders_magic_v2, check_duplicate_orders, write_json, \
     check_duplicate_orders_time, check_duplicate_orders_magic, add_csv
 from mt5_utils import get_live_data, trade_order, get_current_price, get_order_positions_count, trade_order_magic, \
-    get_magic_number
+    get_magic_number, trade_order_wo_tp_sl
 import MetaTrader5 as mt5
 
 
@@ -373,6 +373,86 @@ def moving_average_signal(symbol):
         # trade_order(symbol=symbol, tp_point=tp2, sl_point=sl, lot=0.1, action=action, magic=False)
         #trade_order(symbol=symbol, tp_point=tp3, sl_point=sl, lot=0.1, action=action, magic=False)
 
+
+def moving_average_nahid_signal(symbol):
+    accepted_symbol_list = ['XAUUSD', 'EURUSD', 'EURJPY', 'USDJPY', 'GBPUSD']
+    skip_min = 6
+    time_frame = 'M5'
+
+    if not symbol in accepted_symbol_list:
+        # print('Symbol Not supported', symbol)
+        return None
+
+    json_file_name ='akash_strategies_nahid'
+    running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
+                                                               json_file_name=json_file_name)
+
+
+    if_duplicate, magic_number, dup_action, positions_df = check_duplicate_orders_magic_v2(symbol)
+
+    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
+
+    # Moving Average
+    df['MA_25'] = df['close'].rolling(window=25).mean() ## MA Change
+    df['MA_50'] = df['close'].rolling(window=50).mean() ## MA Change
+    df['MA_200'] = df['close'].rolling(window=200).mean()
+
+    ## RSI
+    df['RSI'] = calculate_rsi(df)
+
+    if if_duplicate:
+        stop_logic_nahid(df, symbol)
+
+    if running_trade_status:
+        #print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>')
+        return None
+
+    if (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-2]) \
+            or (df['MA_50'].iloc[-1] < df['close'].iloc[-1] and df['MA_50'].iloc[-1] > df['close'].iloc[-3]):
+        action = 'buy'
+    elif (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-2]) \
+            or (df['MA_50'].iloc[-1] > df['close'].iloc[-1] and df['MA_50'].iloc[-1] < df['close'].iloc[-3]):
+        action = 'sell'
+    else:
+        action = None
+
+
+    # Tick Volume Analysis
+    tick_signal = False
+    if df['tick_volume'].iloc[-1] > df['tick_volume'].iloc[-2] > df['tick_volume'].iloc[-3]:
+        tick_signal = True
+
+    ## ADX CALCULATION
+    adx_signal = adx_decision(df)
+
+
+    # print('RSI --->>',df['RSI'].iloc[-1], '\t tick_volume --->>',df['tick_volume'].iloc[-1], '\t spread --->>',df['spread'].iloc[-1],
+    #       '\t real_volume --->>',df['real_volume'].iloc[-1], '\t ADX --->>', adx_signal, '\t\t Final ACTION -->>',action)
+
+
+    if action:
+        # print(symbol, 'ADX Signal -->> ', adx_signal, ' <<--- ORIGINAL --->>', action, ' 200 MA -->>',signal_200ma)
+        # if not action == adx_signal == signal_200ma:
+        #     return None
+        # if not action == adx_signal:
+        #     return None
+
+        # trade_order(symbol=symbol, tp_point=None, sl_point=sl, lot=0.1, action=action, magic=True)
+        # if action == 'buy' and df['RSI'].iloc[-1] > 60:
+        #     trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.1, action=action, magic=True)
+        # elif action == 'sell' and df['RSI'].iloc[-1] < 40:
+        #     trade_order(symbol=symbol, tp_point=tp, sl_point=sl, lot=0.1, action=action, magic=True)
+        if tick_signal:
+            if action == adx_signal:
+                trade_order_wo_tp_sl(symbol=symbol, lot=0.1, action=action, magic=True)
+                write_json(json_dict=orders_json, json_file_name=json_file_name)
+            else:
+                print('ADX WRONG SIGNAL')
+        else:
+            print(symbol, 'tick_signal NOT UPTO THE MARK!!')
+
+        # trade_order(symbol=symbol, tp_point=tp2, sl_point=sl, lot=0.1, action=action, magic=False)
+        #trade_order(symbol=symbol, tp_point=tp3, sl_point=sl, lot=0.1, action=action, magic=False)
 
 
 def close_position(symbol, magic_number):
@@ -958,3 +1038,63 @@ def get_avg_candle_size(symbol, df, tp_multi = 2, sl_multi = 2):
             return
 
     return avg_candle_size, sl, tp
+
+
+def line_from_points(P, Q):
+    # Calculate the coefficients A, B, C for the line equation Ax + By = C
+    A = Q[1] - P[1]  # y2 - y1
+    B = P[0] - Q[0]  # x1 - x2
+    C = A * P[0] + B * P[1]  # A*x1 + B*y1
+    return A, B, C
+
+
+def find_intersection(P1, Q1, P2, Q2, lim):
+    # Get the line equations Ax + By = C for both lines
+    A1, B1, C1 = line_from_points(P1, Q1)
+    A2, B2, C2 = line_from_points(P2, Q2)
+
+    # Calculate the determinant
+    determinant = A1 * B2 - A2 * B1
+    #print(determinant)
+    if determinant == 0:
+        return "not cross"
+    else:
+        # Using Cramer's rule to find the intersection point (x, y)
+        x = (C1 * B2 - C2 * B1) / determinant
+        y = (A1 * C2 - A2 * C1) / determinant
+        if (x <= lim):
+            return "not cross"
+        else:
+            return x, y
+
+
+def Ma(prices):
+    a = prices['close'].rolling(window=50).mean()
+    return a
+
+
+def Ema(prices):
+    a = prices['close'].ewm(span=5, adjust=False).mean()
+    return a
+
+
+def stop_logic_nahid(ticks_frame1, symbol):
+    positions = mt5.positions_get(symbol=symbol)
+
+    a = Ma(ticks_frame1)
+    b = Ema(ticks_frame1)
+    P1 = (0, b.iloc[-7])
+    Q1 = (7, b.iloc[-1])
+    # print(P1, " ", Q1)
+    P2 = (0, a.iloc[-7])
+    Q2 = (7, a.iloc[-1])
+    # print(P2, " ", Q2)
+    intersection_point = find_intersection(P1, Q1, P2, Q2, 7)
+    # print(intersection_point)
+    if intersection_point != 'not cross':
+        print(symbol, ' ## ## # Forced off !@!@@!@!@@!@@! @!@ !@!@ !@! @ !@!@ !@ !@!@ !@')
+
+        for position in positions:
+            print(position.profit)
+            mt5.Close(symbol, ticket=position.ticket)
+

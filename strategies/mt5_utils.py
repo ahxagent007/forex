@@ -264,6 +264,73 @@ def trade_order_wo_sl(symbol, tp_point, lot, action, magic=False):
     except Exception as e:
         print('Result '+action+' >> ', str(e))
 
+def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
+
+
+    if action == 'buy':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).ask
+        bid_price = mt5.symbol_info_tick(symbol).bid
+        type = mt5.ORDER_TYPE_BUY
+
+        spread = abs(price - bid_price) / point
+
+
+
+    elif action == 'sell':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).bid
+        ask_price = mt5.symbol_info_tick(symbol).ask
+        type = mt5.ORDER_TYPE_SELL
+
+        spread = abs(price - ask_price) / point
+
+
+    print(symbol, 'Spread pip: ', spread)
+
+    spread_dict = {
+        'EURUSD': 15,
+        'EURJPY': 15,
+        'USDJPY': 15,
+        'XAUUSD': 150,
+        'BTCUSD': 1900,
+        'GBPUSD': 15
+    }
+
+    if spread > spread_dict[symbol]:
+        print('High Spread')
+        return None
+
+    deviation = 20
+
+    MAGIC_NUMBER = get_magic_number()
+
+    request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": type,
+            "price": price,
+            "deviation": deviation,
+            "magic": MAGIC_NUMBER,
+            "comment": "python script open"
+        }
+    print(request)
+    # send a trading request
+    result = mt5.order_send(request)
+    print(result)
+
+    try:
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            print(symbol, ' ', action+' not done', result.retcode, MT5_error_code(result.retcode))
+
+        else:
+            print('>>>>>>>>>>>> ## ## ## '+action+' done with bot ', symbol)## update magic number
+            if magic:
+                update_magic_number(symbol, MAGIC_NUMBER)
+    except Exception as e:
+        print('Result '+action+' >> ', str(e))
+
 def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code=0, MAGIC_NUMBER=0):
 
 

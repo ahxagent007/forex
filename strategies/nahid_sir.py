@@ -5,9 +5,11 @@ from datetime import datetime, timedelta
 import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
-from hmmlearn import hmm
-import matplotlib.pyplot as plt
+# from hmmlearn import hmm
+# import matplotlib.pyplot as plt
 import time
+
+from mt5_utils import get_live_data, trade_order_wo_tp_sl
 
 '''import time
 # Press Shift+F10 to execute it or replace it with your code.
@@ -35,91 +37,91 @@ from candlestick import candlestick
 '''
 
 
-def bot_patterns(sym, lot, transition_matrix):
-    rates = mt5.copy_rates_range(sym, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=200),
-                                 datetime.now())
-
-    ticks_frame1 = pd.DataFrame(rates)
-
-    symbol = sym
-    # ticks_frame1.drop(ticks_frame1.tail(1).index, inplace=True)
-    ticks_frame1 = ticks_frame1.tail(10)
-    ticks_frame1['State'] = ticks_frame1.apply(lambda row: identify_state(row['open'], row['close']), axis=1)
-    seq = list(ticks_frame1['State'])
-    print(seq)
-
-    next_state_sequence = predict_next_state_sequence(seq, transition_matrix)
-    # print(next_state_sequence[0], '   ', next_state_sequence[1])
-    if next_state_sequence == None:
-        print('kiccu korar nai')
-    elif (next_state_sequence[0] == 'Bullish'):
-        print('Buy')
-        point = mt5.symbol_info(symbol).point
-        price = mt5.symbol_info_tick(symbol).ask
-        sl = price - 30 * point
-        tp = price + 10 * point
-        '''if sl>price:
-            sl = price - 50 * point'''
-
-        deviation = 20
-        request = {
-            "action": mt5.TRADE_ACTION_DEAL,
-            "symbol": symbol,
-            "volume": lot,
-            "type": mt5.ORDER_TYPE_BUY,
-            "price": price,
-            "sl": sl,
-            "tp": tp,
-            "deviation": deviation,
-            "magic": 234000,
-            "comment": "python script open",
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
-        }
-
-        # send a trading request
-        result = mt5.order_send(request)
-
-        if result.retcode != mt5.TRADE_RETCODE_DONE:
-            print('not done')
-        else:
-            print('buy done with bot 1')
-    elif (next_state_sequence[0] == 'Bearish'):
-        print('sell')
-        point = mt5.symbol_info(symbol).point
-        price = mt5.symbol_info_tick(symbol).bid
-
-        sl = price + 30 * point
-        tp = price - 10 * point
-
-        '''if sl<price:
-            sl = price + 50 * point'''
-
-        deviation = 20
-        request = {
-            "action": mt5.TRADE_ACTION_DEAL,
-            "symbol": symbol,
-            "volume": lot,
-            "type": mt5.ORDER_TYPE_SELL,
-            "price": price,
-            "sl": sl,
-            "tp": tp,
-            "deviation": deviation,
-            "magic": 234000,
-            "comment": "python script close",
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
-        }
-
-        # send a trading request
-        result = mt5.order_send(request)
-
-        if result.retcode != mt5.TRADE_RETCODE_DONE:
-            print('not done')
-        else:
-            print('sell done with bot 1')
-    else:
-        print('kiccu korar nai')
+# def bot_patterns(sym, lot, transition_matrix):
+#     rates = mt5.copy_rates_range(sym, mt5.TIMEFRAME_M10, datetime.now() - timedelta(minutes=200),
+#                                  datetime.now())
+#
+#     ticks_frame1 = pd.DataFrame(rates)
+#
+#     symbol = sym
+#     # ticks_frame1.drop(ticks_frame1.tail(1).index, inplace=True)
+#     ticks_frame1 = ticks_frame1.tail(10)
+#     ticks_frame1['State'] = ticks_frame1.apply(lambda row: identify_state(row['open'], row['close']), axis=1)
+#     seq = list(ticks_frame1['State'])
+#     print(seq)
+#
+#     next_state_sequence = predict_next_state_sequence(seq, transition_matrix)
+#     # print(next_state_sequence[0], '   ', next_state_sequence[1])
+#     if next_state_sequence == None:
+#         print('kiccu korar nai')
+#     elif (next_state_sequence[0] == 'Bullish'):
+#         print('Buy')
+#         point = mt5.symbol_info(symbol).point
+#         price = mt5.symbol_info_tick(symbol).ask
+#         sl = price - 30 * point
+#         tp = price + 10 * point
+#         '''if sl>price:
+#             sl = price - 50 * point'''
+#
+#         deviation = 20
+#         request = {
+#             "action": mt5.TRADE_ACTION_DEAL,
+#             "symbol": symbol,
+#             "volume": lot,
+#             "type": mt5.ORDER_TYPE_BUY,
+#             "price": price,
+#             "sl": sl,
+#             "tp": tp,
+#             "deviation": deviation,
+#             "magic": 234000,
+#             "comment": "python script open",
+#             "type_time": mt5.ORDER_TIME_GTC,
+#             "type_filling": mt5.ORDER_FILLING_IOC,
+#         }
+#
+#         # send a trading request
+#         result = mt5.order_send(request)
+#
+#         if result.retcode != mt5.TRADE_RETCODE_DONE:
+#             print('not done')
+#         else:
+#             print('buy done with bot 1')
+#     elif (next_state_sequence[0] == 'Bearish'):
+#         print('sell')
+#         point = mt5.symbol_info(symbol).point
+#         price = mt5.symbol_info_tick(symbol).bid
+#
+#         sl = price + 30 * point
+#         tp = price - 10 * point
+#
+#         '''if sl<price:
+#             sl = price + 50 * point'''
+#
+#         deviation = 20
+#         request = {
+#             "action": mt5.TRADE_ACTION_DEAL,
+#             "symbol": symbol,
+#             "volume": lot,
+#             "type": mt5.ORDER_TYPE_SELL,
+#             "price": price,
+#             "sl": sl,
+#             "tp": tp,
+#             "deviation": deviation,
+#             "magic": 234000,
+#             "comment": "python script close",
+#             "type_time": mt5.ORDER_TIME_GTC,
+#             "type_filling": mt5.ORDER_FILLING_IOC,
+#         }
+#
+#         # send a trading request
+#         result = mt5.order_send(request)
+#
+#         if result.retcode != mt5.TRADE_RETCODE_DONE:
+#             print('not done')
+#         else:
+#             print('sell done with bot 1')
+#     else:
+#         print('kiccu korar nai')
 
 
 def getSpike(prices):
@@ -171,12 +173,12 @@ def find_intersection(P1, Q1, P2, Q2, lim):
 
 
 def Ma(prices):
-    a = prices['close'].rolling(window=80).mean()
+    a = prices['close'].rolling(window=200).mean()
     return a
 
 
 def Ema(prices):
-    a = prices['close'].ewm(span=12, adjust=False).mean()
+    a = prices['close'].ewm(span=50, adjust=False).mean()
     return a
 
 
@@ -204,9 +206,11 @@ def bot_1(symbol, lot):
     #print("hello")
 
     positions = mt5.positions_get(symbol=symbol)
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1,
-                                 datetime.now() - timedelta(minutes=300),
-                                 datetime.now())
+    # rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M1,
+    #                              datetime.now() - timedelta(minutes=300),
+    #                              datetime.now())
+    time_frame = 'M1'
+    rates = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
 
     ticks_frame1 = pd.DataFrame(rates)
     #print(positions)
@@ -220,55 +224,57 @@ def bot_1(symbol, lot):
         #print(len(lst))
         #print(lst)
 
-
-
         if (lst=='bull' ):
-            print('buy')
-            point = mt5.symbol_info(symbol).point
-            price = mt5.symbol_info_tick(symbol).ask
-
-            '''if sl>price:
-                sl = price - 50 * point'''
-
-            deviation = 20
-            request = {
-                "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": symbol,
-                "volume": lot,
-                "type": mt5.ORDER_TYPE_BUY,
-                "price": price,
-                "deviation": deviation,
-                "magic": 234000,
-                "comment": "python script open",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
-            }
-
-            # send a trading request
-            result = mt5.order_send(request)
-
+            print(symbol, 'buy')
+            trade_order_wo_tp_sl(symbol=symbol, lot=0.1, action='buy', magic=True)
+            # point = mt5.symbol_info(symbol).point
+            # price = mt5.symbol_info_tick(symbol).ask
+            #
+            # '''if sl>price:
+            #     sl = price - 50 * point'''
+            #
+            # deviation = 20
+            # request = {
+            #     "action": mt5.TRADE_ACTION_DEAL,
+            #     "symbol": symbol,
+            #     "volume": lot,
+            #     "type": mt5.ORDER_TYPE_BUY,
+            #     "price": price,
+            #     "deviation": deviation,
+            #     "magic": 234000,
+            #     "comment": "python script open",
+            #     "type_time": mt5.ORDER_TIME_GTC,
+            #     "type_filling": mt5.ORDER_FILLING_IOC,
+            # }
+            #
+            # # send a trading request
+            # result = mt5.order_send(request)
+            # print(result)
+            #
 
         elif(lst=='bear' ):
-            print('sell')
-            point = mt5.symbol_info(symbol).point
-            price = mt5.symbol_info_tick(symbol).bid
-
-            deviation = 20
-            request = {
-                "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": symbol,
-                "volume": lot,
-                "type": mt5.ORDER_TYPE_SELL,
-                "price": price,
-                "deviation": deviation,
-                "magic": 234000,
-                "comment": "python script close",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
-            }
-
-            # send a trading request
-            result = mt5.order_send(request)
+            print(symbol, 'sell')
+            trade_order_wo_tp_sl(symbol=symbol, lot=0.1, action='sell', magic=True)
+            # point = mt5.symbol_info(symbol).point
+            # price = mt5.symbol_info_tick(symbol).bid
+            #
+            # deviation = 20
+            # request = {
+            #     "action": mt5.TRADE_ACTION_DEAL,
+            #     "symbol": symbol,
+            #     "volume": lot,
+            #     "type": mt5.ORDER_TYPE_SELL,
+            #     "price": price,
+            #     "deviation": deviation,
+            #     "magic": 234000,
+            #     "comment": "python script close",
+            #     "type_time": mt5.ORDER_TIME_GTC,
+            #     "type_filling": mt5.ORDER_FILLING_IOC,
+            # }
+            #
+            # # send a trading request
+            # result = mt5.order_send(request)
+            # print(result)
 
             #print(f"The intersection point is: {intersection_point}")
     elif len(positions) > 0:
@@ -298,18 +304,31 @@ def bot_1(symbol, lot):
 def Mt5_backTest(muldhon, Current_time, window, totalTime):
     capital = muldhon
     pt = Current_time
-    if not mt5.initialize(path="C:\Program Files\MetaTrader 5\\terminal64.exe", login=176154099,
-                          server="Exness-MT5Trial7", password="FUCKnibirr2023#"):
+    # if not mt5.initialize(path="C:\Program Files\MetaTrader 5\\terminal64.exe", login=176154099,
+    #                       server="Exness-MT5Trial7", password="FUCKnibirr2023#"):
+
+    login = 181244000
+    password = 'ABCabc123!@#'
+    server = 'Exness-MT5Trial6'
+    path = "C:\Program Files\MetaTrader 5\\terminal64.exe"
+    timeout = 10000
+    portable = False
+
+    if not mt5.initialize(path=path, login=login, password=password, server=server, timeout=timeout, portable=portable):
         print("initialize() failed, error code =", mt5.last_error())
         quit()
     print(mt5.terminal_info())
     print(mt5.version())
 
     while True:
-        bot_1('EURUSDm', 0.01)
-        bot_1('USDJPYm', 0.01)
-        bot_1('EURJPYm', 0.01)
-        time.sleep(3)
+        bot_1('EURUSD', 0.01)
+        time.sleep(5)
+        bot_1('USDJPY', 0.01)
+        time.sleep(5)
+        bot_1('EURJPY', 0.01)
+        time.sleep(5)
+        bot_1('XAUUSD', 0.01)
+        time.sleep(5)
     '''
     plt.figure(figsize=(10, 6))
     # plt.plot(df.index, df['Close'], label='Close Price', marker='o')
