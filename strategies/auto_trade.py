@@ -1,6 +1,7 @@
 import time
-
+import datetime as dt
 #from ai_strategies import ai_trade
+from nahid_sir import bot_1
 from boillinger_macd_combo import boil_macd
 from fibonacci_price_action_combo import fibonacci_price_action
 from ichimoku_cloud_stochastic_oscillator_combo import ichimoku_stochastic
@@ -13,20 +14,21 @@ from three_white_soldiers_three_back_crows import strategy_3ws_3bc
 from all_combo_strategies import combo_strategies
 #from ai_strategies import ai_trade
 from boilinger_bands_xian import boil_xian
-from common_functions import add_csv
+from common_functions import add_csv, isNowInTimePeriod
+
 
 def trade(symbol):
     delay_sec = 1
     # Three White Soldiers & Three Black Crows
     #strategy_3ws_3bc(symbol)
     #
-    # ## TUNE
-    # time.sleep(delay_sec)
-    # try:
-    #     boil_macd(symbol)
-    #     #print(symbol, 'boil_macd')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
+    ## TUNE
+    time.sleep(delay_sec)
+    try:
+        boil_macd(symbol)
+        #print(symbol, 'boil_macd')
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
 
     # time.sleep(delay_sec)
     # try:
@@ -35,14 +37,14 @@ def trade(symbol):
     # except Exception as e:
     #     print(symbol, "ERROR", str(e))
 
-    # ## TUNE
-    # time.sleep(delay_sec)
-    #
-    # try:
-    #     ichimoku_stochastic(symbol)
-    #     #print(symbol, 'ichimoku_stochastic')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
+    ## TUNE
+    time.sleep(delay_sec)
+
+    try:
+        ichimoku_stochastic(symbol)
+        #print(symbol, 'ichimoku_stochastic')
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
 
     # time.sleep(delay_sec)
     # try:
@@ -59,15 +61,15 @@ def trade(symbol):
     # except Exception as e:
     #     print( e)
     #
-    # ## TUNE
-    # time.sleep(delay_sec)
-    # ##Bob Volman
-    # #volman_strategies(symbol)
-    # try:
-    #     volman_strategies(symbol)
-    #     #print(symbol, 'volman_strategies')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
+    ## TUNE
+    time.sleep(delay_sec)
+    ##Bob Volman
+    #volman_strategies(symbol)
+    try:
+        volman_strategies(symbol)
+        #print(symbol, 'volman_strategies')
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
 
     ##Akash
     #
@@ -116,21 +118,21 @@ def trade(symbol):
     # except Exception as e:
     #     print(symbol, "ERROR", str(e))
 
-    # ### XIAN
-    # time.sleep(delay_sec)
-    # try:
-    #     boil_xian(symbol)
-    #     #print(symbol, 'boil_xian')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-
-
+    ### XIAN
     time.sleep(delay_sec)
     try:
-        moving_average_nahid_signal(symbol)
+        boil_xian(symbol)
         #print(symbol, 'boil_xian')
     except Exception as e:
         print(symbol, "ERROR", str(e))
+
+
+    # time.sleep(delay_sec)
+    # try:
+    #     nahid_san()
+    #     #print(symbol, 'boil_xian')
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
 
 
 
@@ -147,24 +149,31 @@ def start_live_trade():
 
 
     while True:
-        for symbol in symbol_list:
-            trade(symbol)
+        # for symbol in symbol_list:
+        #     trade(symbol)
+
+        if isNowInTimePeriod(dt.time(14, 00), dt.time(22, 00), dt.datetime.now().time()):
+            for symbol in symbol_list:
+                trade(symbol)
+                #time.sleep(delay_sec)
+            # trade('EURUSD')
+            # time.sleep(delay_sec)
+        else:
+            print(dt.datetime.now().time(), '>>> > >> NOT A GOOD TIME FOR TRADE')
+            time.sleep(60*5)
 
 
-        ## BTCUSD 161.43
-
-        # trade('EURUSD')
-        # time.sleep(delay_sec)
-
-        # if isNowInTimePeriod(dt.time(4, 00), dt.time(21, 00), dt.datetime.now().time()):
-        #     for symbol in symbol_list:
-        #         trade(symbol)
-        #         time.sleep(delay_sec)
-        #     # trade('EURUSD')
-        #     # time.sleep(delay_sec)
-        # else:
-        #     print(dt.datetime.now().time(), '>>> > >> NOT A GOOD TIME FOR TRADE')
-        #     time.sleep(60*5)
+        try:
+            bot_1('EURUSD', 0.01)
+            time.sleep(3)
+            bot_1('USDJPY', 0.01)
+            time.sleep(3)
+            bot_1('EURJPY', 0.01)
+            time.sleep(3)
+            bot_1('XAUUSD', 0.01)
+            time.sleep(3)
+        except Exception as e:
+            print(symbol, "ERROR", str(e))
 
 
 start_live_trade()

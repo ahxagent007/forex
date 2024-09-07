@@ -8,7 +8,8 @@ import numpy as np
 # from hmmlearn import hmm
 # import matplotlib.pyplot as plt
 import time
-
+import datetime as dt
+from common_functions import isNowInTimePeriod
 from mt5_utils import get_live_data, trade_order_wo_tp_sl
 
 '''import time
@@ -224,6 +225,8 @@ def bot_1(symbol, lot):
         #print(len(lst))
         #print(lst)
 
+        if not isNowInTimePeriod(dt.time(14, 00), dt.time(22, 00), dt.datetime.now().time()):
+            return None
         if (lst=='bull' ):
             print(symbol, 'buy')
             trade_order_wo_tp_sl(symbol=symbol, lot=0.1, action='buy', magic=True)
@@ -411,8 +414,9 @@ def Mt5_backTest(muldhon, Current_time, window, totalTime):
 
 
 # Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    # Mt5()
-    Mt5_backTest(5000, datetime.now() - timedelta(days=0.5), 60, timedelta(minutes=120))
+
+# if __name__ == '__main__':
+#     # Mt5()
+#     Mt5_backTest(5000, datetime.now() - timedelta(days=0.5), 60, timedelta(minutes=120))
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
