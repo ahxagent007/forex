@@ -229,7 +229,7 @@ def bot_1(symbol, lot):
             return None
         if (lst=='bull' ):
             print(symbol, 'buy')
-            trade_order_wo_tp_sl(symbol=symbol, lot=0.1, action='buy', magic=True)
+            trade_order_wo_tp_sl(symbol=symbol, lot=0.05, action='buy', magic=True)
             # point = mt5.symbol_info(symbol).point
             # price = mt5.symbol_info_tick(symbol).ask
             #
@@ -257,7 +257,7 @@ def bot_1(symbol, lot):
 
         elif(lst=='bear' ):
             print(symbol, 'sell')
-            trade_order_wo_tp_sl(symbol=symbol, lot=0.1, action='sell', magic=True)
+            trade_order_wo_tp_sl(symbol=symbol, lot=0.05, action='sell', magic=True)
             # point = mt5.symbol_info(symbol).point
             # price = mt5.symbol_info_tick(symbol).bid
             #

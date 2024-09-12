@@ -39,7 +39,9 @@ def adx_decision(data, period=14):
     # Calculate the ADX
     data['ADX'] = data['DX'].rolling(window=period).mean()
 
-    #print('ADX VALUE -->>',data['ADX'].iloc[-1], data['+DI'].iloc[-1], data['-DI'].iloc[-1])
+    print('ADX VALUE -->>',data['ADX'].iloc[-2], '+DI -->', data['+DI'].iloc[-2],'-DI -->', data['-DI'].iloc[-2])
+    print('ADX VALUE -->>',data['ADX'].iloc[-1], '+DI -->', data['+DI'].iloc[-1],'-DI -->', data['-DI'].iloc[-1])
+
     adx_min = 20
     # if data['ADX'].iloc[-1] >= adx_min:
     #     #YES TRADE
@@ -55,10 +57,73 @@ def adx_decision(data, period=14):
     #     elif (data['-DI'].iloc[-1] > adx_min):
     #         return 'sell'
 
+    if not data['ADX'].iloc[-1] >= adx_min:
+        return None
+
     if data['+DI'].iloc[-1] > data['-DI'].iloc[-1]:
         return 'buy'
-    else:
+    elif data['+DI'].iloc[-1] < data['-DI'].iloc[-1]:
         return 'sell'
+    else:
+        return None
+
+def adx_decision_prev(data, period=14):
+    # Calculate the True Range (TR)
+    data['TR'] = np.maximum((data['high'] - data['low']), np.maximum(abs(data['high'] - data['close'].shift(1)),
+                                                                     abs(data['low'] - data['close'].shift(1))))
+
+    # Calculate +DM and -DM
+    data['+DM'] = np.where((data['high'] - data['high'].shift(1)) > (data['low'].shift(1) - data['low']),
+                           np.maximum(data['high'] - data['high'].shift(1), 0), 0)
+    data['-DM'] = np.where((data['low'].shift(1) - data['low']) > (data['high'] - data['high'].shift(1)),
+                           np.maximum(data['low'].shift(1) - data['low'], 0), 0)
+
+    # Calculate smoothed TR, +DM, and -DM
+    data['TR_smooth'] = data['TR'].rolling(window=period).sum()
+    data['+DM_smooth'] = data['+DM'].rolling(window=period).sum()
+    data['-DM_smooth'] = data['-DM'].rolling(window=period).sum()
+
+    # Calculate +DI and -DI
+    data['+DI'] = 100 * (data['+DM_smooth'] / data['TR_smooth'])
+    data['-DI'] = 100 * (data['-DM_smooth'] / data['TR_smooth'])
+
+    # Calculate the DI Difference and DI Sum
+    data['DI_diff'] = abs(data['+DI'] - data['-DI'])
+    data['DI_sum'] = data['+DI'] + data['-DI']
+
+    # Calculate the DX
+    data['DX'] = 100 * (data['DI_diff'] / data['DI_sum'])
+
+    # Calculate the ADX
+    data['ADX'] = data['DX'].rolling(window=period).mean()
+
+
+    adx_min = 20
+    # if data['ADX'].iloc[-1] >= adx_min:
+    #     #YES TRADE
+    #     if data['+DI'].iloc[-1] > data['-DI'].iloc[-1]:
+    #         return 'buy'
+    #     else:
+    #         return 'sell'
+    #print('ADX', data['ADX'].iloc[-1])
+    # if data['ADX'].iloc[-1] >= adx_min:
+    #     #YES TRADE
+    #     if (data['+DI'].iloc[-1] > data['-DI'].iloc[-1]) and (data['+DI'].iloc[-1] > adx_min):
+    #         return 'buy'
+    #     elif (data['-DI'].iloc[-1] > adx_min):
+    #         return 'sell'
+
+    if not data['ADX'].iloc[-2] >= adx_min:
+        return None
+
+    print('ADX', data['ADX'].iloc[-2], '+DI', data['+DI'].iloc[-2], '-DI', data['-DI'].iloc[-2])
+
+    if data['+DI'].iloc[-2] > data['-DI'].iloc[-2]:
+        return 'buy'
+    elif data['+DI'].iloc[-2] < data['-DI'].iloc[-2]:
+        return 'sell'
+    else:
+        return None
 
 
 def check_adx(data, period=14):

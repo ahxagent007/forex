@@ -274,9 +274,6 @@ def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
         type = mt5.ORDER_TYPE_BUY
 
         spread = abs(price - bid_price) / point
-
-
-
     elif action == 'sell':
         point = mt5.symbol_info(symbol).point
         price = mt5.symbol_info_tick(symbol).bid
@@ -513,6 +510,9 @@ def get_order_positions_count(symbol):
 
 def get_all_positions(symbol):
     return mt5.positions_get(symbol=symbol)
+def clsoe_position(symbol, ticket):
+    mt5.Close(symbol, ticket=ticket)
+
 
 def update_magic_number(symbol, MAGIC_NUMBER):
     #print('updating',symbol,MAGIC_NUMBER)
