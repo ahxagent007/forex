@@ -85,6 +85,36 @@ def get_live_data(symbol, time_frame, prev_n_candles):
     rates = mt5.copy_rates_from_pos(symbol, TIME_FRAME, 0, PREV_N_CANDLES)
 
     ticks_frame = pd.DataFrame(rates)
+    ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
+
+    return ticks_frame
+def get_prev_data(symbol, time_frame, prev_n_candles):
+
+    if time_frame == 'M1':
+        TIME_FRAME = mt5.TIMEFRAME_M1
+    elif time_frame == 'M5':
+        TIME_FRAME = mt5.TIMEFRAME_M5
+    elif time_frame == 'M10':
+        TIME_FRAME = mt5.TIMEFRAME_M10
+    elif time_frame == 'M30':
+        TIME_FRAME = mt5.TIMEFRAME_M30
+    elif time_frame == 'H1':
+        TIME_FRAME = mt5.TIMEFRAME_H1
+    elif time_frame == 'H4':
+        TIME_FRAME = mt5.TIMEFRAME_H4
+    elif time_frame == 'D1':
+        TIME_FRAME = mt5.TIMEFRAME_D1
+
+    PREV_N_CANDLES = prev_n_candles
+
+    #rates = mt5.copy_rates_from(symbol, TIME_FRAME, datetime.today(), PREV_N_CANDLES)
+    rates = mt5.copy_rates_range(symbol, TIME_FRAME,
+                                 datetime.now() - timedelta(minutes=10000),
+                                 datetime.now())
+
+
+    ticks_frame = pd.DataFrame(rates)
+    print(ticks_frame.head())
 
     ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
 

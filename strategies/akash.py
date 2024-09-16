@@ -1101,6 +1101,9 @@ def get_avg_candle_size(symbol, df, tp_multi = 2, sl_multi = 2):
         if sl < df['spread'].iloc[-1]+5:
             print('LOW SL')
             return
+    else:
+        sl = 100
+        tp = 400
 
     return avg_candle_size, sl, tp
 
