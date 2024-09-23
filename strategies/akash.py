@@ -574,7 +574,7 @@ def calculate_ema(data, period):
     return data['close'].ewm(span=period, adjust=False).mean()
 
 
-def moving_average_crossover(symbol):
+def moving_average_crossover_old(symbol):
     accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD']
     skip_min = 2
     time_frame = 'M1'
@@ -1015,7 +1015,7 @@ def moving_average_crossover_15_100(symbol):
     sl_multi = 2
 
     if df['ADX'].iloc[-1] < 23:
-        print(symbol, 'LOW ON ADX')
+        print(symbol, 'LOW ON ADX', df['ADX'].iloc[-1])
         return None
     elif (df['ADX'].iloc[-2] - df['ADX'].iloc[-3]) < 0.8:
         print(symbol, "ADX falling")
@@ -1058,15 +1058,23 @@ def moving_average_crossover_15_100(symbol):
             data_lst = [symbol, time_frame,  MAGIC_NUMBER, avg_candle_size, action, tp, sl, df['ADX'].iloc[-1], ]
             add_csv(data_lst)
 
-def get_avg_candle_size(symbol, df, tp_multi = 2, sl_multi = 2):
 
-    avg_high = (df['high'].iloc[-1] + df['high'].iloc[-2] + df['high'].iloc[-3] + df['high'].iloc[-4] + df['high'].iloc[
-        -5] + df['high'].iloc[-6]) / 7
-    avg_low = (df['low'].iloc[-1] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] +
-               df['low'].iloc[-6]) / 7
+def get_avg_candle_size(symbol, df, tp_multi, sl_multi):
 
+    avg_high = (df['close'].iloc[-7] + df['close'].iloc[-2] + df['close'].iloc[-3] + df['close'].iloc[-4] + df['close'].iloc[
+        -5] + df['close'].iloc[-6]) / 6
+    avg_low = (df['open'].iloc[-7] + df['open'].iloc[-2] + df['open'].iloc[-3] + df['open'].iloc[-4] + df['open'].iloc[-5] +
+               df['open'].iloc[-6]) / 6
+
+    print(df['close'].iloc[-2], df['close'].iloc[-3],df['close'].iloc[-4],df['close'].iloc[
+        -5],df['close'].iloc[-6], df['close'].iloc[-7])
+    print(df['open'].iloc[-2], df['open'].iloc[-3], df['open'].iloc[-4], df['open'].iloc[-5],
+               df['open'].iloc[-6], df['open'].iloc[-7])
     avg_candle_size = avg_high - avg_low
+    if avg_candle_size < 0:
+        avg_candle_size = avg_candle_size * -1
 
+    print(symbol,"AVERAGE CANDLE SIZE --> ",avg_candle_size)
     if symbol == 'XAUUSD':
         ## 0.8 == 800
         tp = avg_candle_size * 1000 * tp_multi
@@ -1074,25 +1082,26 @@ def get_avg_candle_size(symbol, df, tp_multi = 2, sl_multi = 2):
 
         if sl < 300:
             print('LOW SL')
-            return
+            return None, None, None
 
     elif symbol == 'EURUSD':
         ## 0.00016 = 16
         tp = avg_candle_size * 100000 * tp_multi
         sl = avg_candle_size * 100000 * sl_multi #+ df['spread'].iloc[-1]
+        print(tp, sl)
 
         if sl < df['spread'].iloc[-1]+5:
             print('LOW SL')
-            return
+            return None, None, None
 
     elif symbol == 'USDJPY':
-        ##  0.00017 = 17
-        tp = avg_candle_size * 1000 * tp_multi
-        sl = avg_candle_size * 1000 * sl_multi #+ df['spread'].iloc[-1]
+        ## 0.004857142857133567 = 48
+        tp = avg_candle_size * 10000 * tp_multi
+        sl = avg_candle_size * 10000 * sl_multi #+ df['spread'].iloc[-1]
 
         if sl < df['spread'].iloc[-1]+5:
             print('LOW SL')
-            return
+            return None, None, None
     elif symbol == 'GBPUSD':
         ## 0.00023 = 23
         tp = avg_candle_size * 100000 * tp_multi
@@ -1100,11 +1109,20 @@ def get_avg_candle_size(symbol, df, tp_multi = 2, sl_multi = 2):
 
         if sl < df['spread'].iloc[-1]+5:
             print('LOW SL')
-            return
+            return None, None, None
+
+    elif symbol == 'EURJPY':
+        ##  0.0034285714285715585 = 34
+        tp = avg_candle_size * 10000 * tp_multi
+        sl = avg_candle_size * 10000 * sl_multi #+ df['spread'].iloc[-1]
+
+        if sl < df['spread'].iloc[-1]+5:
+            print('LOW SL')
+            return None, None, None
     else:
         sl = 100
         tp = 400
-
+    print(symbol, 'TP', tp, 'SL', sl)
     return avg_candle_size, sl, tp
 
 
@@ -1166,3 +1184,141 @@ def stop_logic_nahid(ticks_frame1, symbol):
             print(position.profit)
             mt5.Close(symbol, ticket=position.ticket)
 
+
+def wilder_smoothing(values, period):
+    smoothed = np.zeros_like(values)
+    smoothed[period - 1] = np.sum(values[:period])
+    for i in range(period, len(values)):
+        smoothed[i] = (smoothed[i - 1] - (smoothed[i - 1] / period) + values[i])
+    return smoothed
+
+
+def calculate_adx_new(data, period=14):
+    # Calculate TR (True Range)
+    data['TR'] = np.maximum(data['high'] - data['low'],
+                            np.maximum(abs(data['high'] - data['close'].shift(1)),
+                                       abs(data['low'] - data['close'].shift(1))))
+
+    # Calculate +DM and -DM
+    data['+DM'] = np.where((data['high'] - data['high'].shift(1)) > (data['low'].shift(1) - data['low']),
+                           np.maximum(data['high'] - data['high'].shift(1), 0), 0)
+    data['-DM'] = np.where((data['low'].shift(1) - data['low']) > (data['high'] - data['high'].shift(1)),
+                           np.maximum(data['low'].shift(1) - data['low'], 0), 0)
+
+    # Apply Wilder's smoothing for TR, +DM, and -DM
+    data['TR_smoothed'] = wilder_smoothing(data['TR'], period)
+    data['+DM_smoothed'] = wilder_smoothing(data['+DM'], period)
+    data['-DM_smoothed'] = wilder_smoothing(data['-DM'], period)
+
+    # Calculate +DI and -DI
+    data['+DI'] = 100 * (data['+DM_smoothed'] / data['TR_smoothed'])
+    data['-DI'] = 100 * (data['-DM_smoothed'] / data['TR_smoothed'])
+
+    # Calculate DX (Directional Movement Index)
+    data['DX'] = 100 * abs(data['+DI'] - data['-DI']) / (data['+DI'] + data['-DI'])
+
+    data['ADX'] = data['DX'].rolling(window=period).mean()
+
+
+    return data
+
+
+def adx_slop(symbol):
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    skip_min = 6
+    time_frame = 'M5'
+
+    if not symbol in accepted_symbol_list:
+        # print('Symbol Not supported', symbol)
+        return None
+
+    json_file_name = 'akash_strategies_adx_meth'
+    running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
+                                                               json_file_name=json_file_name)
+    if running_trade_status:
+        # print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>')
+        return None
+
+    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
+
+    df = calculate_adx_new(df)
+
+    cur_dx = -2
+    print(symbol, '+DI',df['+DI'].iloc[cur_dx], '-DI', df['-DI'].iloc[cur_dx], df['+DI'].iloc[cur_dx] - df['+DI'].iloc[cur_dx-1], df['-DI'].iloc[cur_dx] - df['-DI'].iloc[cur_dx-1])
+    if (df['+DI'].iloc[cur_dx] - df['+DI'].iloc[cur_dx-1])>0 and (df['-DI'].iloc[cur_dx] - df['-DI'].iloc[cur_dx-1])<0 and \
+            (df['+DI'].iloc[cur_dx]<df['-DI'].iloc[cur_dx]):
+        adx_signal = 'buy'
+    elif (df['+DI'].iloc[cur_dx] - df['+DI'].iloc[cur_dx-1])<0 and (df['-DI'].iloc[cur_dx] - df['-DI'].iloc[cur_dx-1])>0 and \
+            (df['+DI'].iloc[cur_dx]>df['-DI'].iloc[cur_dx]):
+        adx_signal = 'sell'
+    else:
+        adx_signal = None
+
+
+    lot = 0.1
+
+    if adx_signal:
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol=symbol, df=df, tp_multi=1, sl_multi=1)
+
+        print(symbol, '## TP -->', tp, '## SL -->', sl, '## AVG -->', avg_candle_size, '## ACTION -->', adx_signal)
+        print('ADX -->', df['ADX'].iloc[-1])
+        print('-----------------------------------------------------------------------------------------')
+
+        if not avg_candle_size:
+            return
+
+        MAGIC_NUMBER = get_magic_number()
+        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=adx_signal, magic=True, code=8,
+                          MAGIC_NUMBER=MAGIC_NUMBER)
+        write_json(json_dict=orders_json, json_file_name=json_file_name)
+
+        data_lst = [symbol, time_frame, MAGIC_NUMBER, avg_candle_size, adx_signal, tp, sl, df['ADX'].iloc[cur_dx], ]
+        add_csv(data_lst)
+
+
+def ADX_stakoverflow(data: pd.DataFrame, period: int):
+    """
+    Computes the ADX indicator.
+    """
+
+    df = data.copy()
+    alpha = 1 / period
+
+    # TR
+    df['H-L'] = df['high'] - df['low']
+    df['H-C'] = np.abs(df['high'] - df['close'].shift(1))
+    df['L-C'] = np.abs(df['low'] - df['close'].shift(1))
+    df['TR'] = df[['H-L', 'H-C', 'L-C']].max(axis=1)
+    del df['H-L'], df['H-C'], df['L-C']
+
+    # ATR
+    df['ATR'] = df['TR'].ewm(alpha=alpha, adjust=False).mean()
+
+    # +-DX
+    df['H-pH'] = df['high'] - df['high'].shift(1)
+    df['pL-L'] = df['low'].shift(1) - df['low']
+    df['+DX'] = np.where(
+        (df['H-pH'] > df['pL-L']) & (df['H-pH'] > 0),
+        df['H-pH'],
+        0.0
+    )
+    df['-DX'] = np.where(
+        (df['H-pH'] < df['pL-L']) & (df['pL-L'] > 0),
+        df['pL-L'],
+        0.0
+    )
+    del df['H-pH'], df['pL-L']
+
+    # +- DMI
+    df['S+DM'] = df['+DX'].ewm(alpha=alpha, adjust=False).mean()
+    df['S-DM'] = df['-DX'].ewm(alpha=alpha, adjust=False).mean()
+    df['+DMI'] = (df['S+DM'] / df['ATR']) * 100
+    df['-DMI'] = (df['S-DM'] / df['ATR']) * 100
+    del df['S+DM'], df['S-DM']
+
+    # ADX
+    df['DX'] = (np.abs(df['+DMI'] - df['-DMI']) / (df['+DMI'] + df['-DMI'])) * 100
+    df['ADX'] = df['DX'].ewm(alpha=alpha, adjust=False).mean()
+    #del df['DX'], df['ATR'], df['TR'], df['-DX'], df['+DX'], df['+DMI'], df['-DMI']
+
+    return df

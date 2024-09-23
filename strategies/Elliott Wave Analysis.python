@@ -1,0 +1,55 @@
+import pandas as pd
+import numpy as np
+
+
+# Load historical price data
+def load_data(file):
+    data = pd.read_csv(file)
+    data['Date'] = pd.to_datetime(data['Date'])
+    data.set_index('Date', inplace=True)
+    return data
+
+
+# Function to identify impulse waves
+def identify_impulse_waves(data, threshold=0.02):
+    wave_points = []
+    for i in range(1, len(data)):
+        change = (data['Close'][i] - data['Close'][i - 1]) / data['Close'][i - 1]
+        if abs(change) > threshold:
+            wave_points.append(i)
+    return wave_points
+
+
+# Function to identify corrective waves
+def identify_corrective_waves(data, impulse_points, threshold=0.01):
+    corrective_points = []
+    for i in range(1, len(impulse_points)):
+        start = impulse_points[i - 1]
+        end = impulse_points[i]
+        change = (data['Close'][end] - data['Close'][start]) / data['Close'][start]
+        if abs(change) < threshold:
+            corrective_points.append(start)
+    return corrective_points
+
+
+# Combining waves into Elliott Wave pattern
+def identify_elliott_waves(data):
+    impulse_points = identify_impulse_waves(data)
+    corrective_points = identify_corrective_waves(data, impulse_points)
+    return {
+        'impulse': impulse_points,
+        'corrective': corrective_points
+    }
+
+
+# Main function to detect Elliott Waves
+if __name__ == '__main__':
+    data = load_data('forex_data.csv')
+
+    # Identify Elliott Waves
+    waves = identify_elliott_waves(data)
+
+    print("Impulse Waves:", waves['impulse'])
+    print("Corrective Waves:", waves['corrective'])
+
+    # You can further analyze or plot the identified waves here

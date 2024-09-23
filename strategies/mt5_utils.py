@@ -32,10 +32,15 @@ def get_magic_number():
 def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
-    ## NEW ACC
+    # NEW ACC
     login = 181244000
     password = 'ABCabc123!@#'
     server = 'Exness-MT5Trial6'
+
+    # ## Standard
+    # login = 189210373
+    # password = 'ABCabc123!@#'
+    # server = 'Exness-MT5Trial14'
 
     timeout = 10000
     portable = False
@@ -71,6 +76,8 @@ def get_live_data(symbol, time_frame, prev_n_candles):
         TIME_FRAME = mt5.TIMEFRAME_M5
     elif time_frame == 'M10':
         TIME_FRAME = mt5.TIMEFRAME_M10
+    elif time_frame == 'M15':
+        TIME_FRAME = mt5.TIMEFRAME_M15
     elif time_frame == 'M30':
         TIME_FRAME = mt5.TIMEFRAME_M30
     elif time_frame == 'H1':
@@ -88,7 +95,7 @@ def get_live_data(symbol, time_frame, prev_n_candles):
     ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
 
     return ticks_frame
-def get_prev_data(symbol, time_frame, prev_n_candles):
+def get_prev_data(symbol, time_frame, prev_start_min, prev_end_min):
 
     if time_frame == 'M1':
         TIME_FRAME = mt5.TIMEFRAME_M1
@@ -96,6 +103,8 @@ def get_prev_data(symbol, time_frame, prev_n_candles):
         TIME_FRAME = mt5.TIMEFRAME_M5
     elif time_frame == 'M10':
         TIME_FRAME = mt5.TIMEFRAME_M10
+    elif time_frame == 'M15':
+        TIME_FRAME = mt5.TIMEFRAME_M15
     elif time_frame == 'M30':
         TIME_FRAME = mt5.TIMEFRAME_M30
     elif time_frame == 'H1':
@@ -105,16 +114,14 @@ def get_prev_data(symbol, time_frame, prev_n_candles):
     elif time_frame == 'D1':
         TIME_FRAME = mt5.TIMEFRAME_D1
 
-    PREV_N_CANDLES = prev_n_candles
-
     #rates = mt5.copy_rates_from(symbol, TIME_FRAME, datetime.today(), PREV_N_CANDLES)
     rates = mt5.copy_rates_range(symbol, TIME_FRAME,
-                                 datetime.now() - timedelta(minutes=10000),
-                                 datetime.now())
+                                 datetime.now() - timedelta(minutes=prev_start_min),
+                                 datetime.now() - timedelta(minutes=prev_end_min))
 
 
     ticks_frame = pd.DataFrame(rates)
-    print(ticks_frame.head())
+    #print(ticks_frame.head())
 
     ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
 
@@ -395,12 +402,13 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
         'BTCUSD': 1900,
         'USDJPY': 15,
         'GBPUSD': 15,
+        'EURJPY': 20
     }
 
     if spread > spread_dict[symbol]:
         print('High Spread')
         return None
-    if tp <= spread or sl <= spread:
+    if tp_point <= spread or sl_point <= spread:
         print('LOW TP/SL')
         return None
 
@@ -536,7 +544,10 @@ def trade_order_wo_sl_magic(symbol, tp_point, lot, action, magic=False, code=0):
         print('Result '+action+' >> ', str(e))
 
 def get_order_positions_count(symbol):
-    return len(mt5.positions_get(symbol=symbol))
+    try:
+        return len(mt5.positions_get(symbol=symbol))
+    except:
+        return 0
 
 def get_all_positions(symbol):
     return mt5.positions_get(symbol=symbol)
