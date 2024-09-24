@@ -1,7 +1,7 @@
 import time
 import datetime as dt
 #from ai_strategies import ai_trade
-from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01
+from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01, take_the_profit
 from nahid_sir import bot_1
 from boillinger_macd_combo import boil_macd
 from fibonacci_price_action_combo import fibonacci_price_action
@@ -19,36 +19,36 @@ from common_functions import add_csv, isNowInTimePeriod, check_duplicate_orders_
 
 
 def trade(symbol):
-    delay_sec = 2
+    delay_sec = 1
 
-    # ## TUNE
-    # time.sleep(delay_sec)
-    # try:
-    #     boil_macd(symbol)
-    #     #print(symbol, 'boil_macd')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-    #
-    # ## TUNE
-    # time.sleep(delay_sec)
-    #
-    # try:
-    #     ichimoku_stochastic(symbol)
-    #     #print(symbol, 'ichimoku_stochastic')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-    #
-    # ## TUNE
-    # time.sleep(delay_sec)
-    # ##Bob Volman
-    # #volman_strategies(symbol)
-    # try:
-    #     volman_strategies(symbol)
-    #     #print(symbol, 'volman_strategies')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-    #
-    #
+    ## TUNE
+    time.sleep(delay_sec)
+    try:
+        boil_macd(symbol)
+        #print(symbol, 'boil_macd')
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
+
+    ## TUNE
+    time.sleep(delay_sec)
+
+    try:
+        ichimoku_stochastic(symbol)
+        #print(symbol, 'ichimoku_stochastic')
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
+
+    ## TUNE
+    time.sleep(delay_sec)
+    ##Bob Volman
+    #volman_strategies(symbol)
+    try:
+        volman_strategies(symbol)
+        #print(symbol, 'volman_strategies')
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
+
+
 
     time.sleep(delay_sec)
 
@@ -104,13 +104,12 @@ def start_live_trade():
         # for symbol in symbol_list:
         #     trade(symbol)
 
-        if isNowInTimePeriod(dt.time(10, 00), dt.time(23, 59), dt.datetime.now().time()):
-            for symbol in symbol_list:
-                trade(symbol)
+        for symbol in symbol_list:
+            time.sleep(1)
+            take_the_profit(symbol)
 
-        else:
-            print(dt.datetime.now().time(), '>>> > >> NOT A GOOD TIME FOR TRADE')
-            time.sleep(60*10)
+            if isNowInTimePeriod(dt.time(10, 00), dt.time(23, 59), dt.datetime.now().time()):
+                trade(symbol)
 
 
 start_live_trade()

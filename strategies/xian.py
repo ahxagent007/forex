@@ -334,8 +334,8 @@ def moving_average_crossover_01(symbol, short, long):
                                                                json_file_name=json_file_name)
     if running_trade_status:
         #print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>')
-        if not is_time:
-            take_the_profit(symbol) #706.70
+        # if not is_time:
+        #     take_the_profit(symbol) #706.70
         return None
 
 
@@ -401,93 +401,108 @@ def current_milli_time():
     return round(time.time() * 1000)
 
 def take_the_profit(symbol):
-    # get all positions
-    positions = get_all_positions(symbol)
+    json_file_name_lst = ['akash_strategies_ma_ema_5_100', 'volman', 'ichimoku_stochastic', 'boil_macd']
+    skip_min = 3
+    print('Take The Profit ####')
 
-    # loop through all
-    for position in positions:
-        # read the data file
-        magic_id = position.magic
-        file_name = 'magics/' + symbol + '_' + str(magic_id) + '.json'
-        data = {
-            'symbol': symbol,
-            'magic': None,
-            'profit_1': {
-                'profit': None,
-                'time': 0
-            },
-            'profit_2': {
-                'profit': None,
-                'time': 0
-            },
-            'profit_3': {
-                'profit': None,
-                'time': 0
+    for json_file_name in json_file_name_lst:
+        run_take_the_profit = False
+        running_trade_status_time, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol, skip_min=skip_min,
+                                                                                         json_file_name=json_file_name)
+        running_trade_status_magic = check_duplicate_orders_magic(symbol=symbol, code=77)
+        if running_trade_status_time or running_trade_status_magic:
+            if not is_time:
+                run_take_the_profit = True
+
+        if not run_take_the_profit:
+            return
+        # get all positions
+        positions = get_all_positions(symbol)
+
+        # loop through all
+        for position in positions:
+            # read the data file
+            magic_id = position.magic
+            file_name = 'magics/' + symbol + '_' + str(magic_id) + '.json'
+            data = {
+                'symbol': symbol,
+                'magic': None,
+                'profit_1': {
+                    'profit': None,
+                    'time': 0
+                },
+                'profit_2': {
+                    'profit': None,
+                    'time': 0
+                },
+                'profit_3': {
+                    'profit': None,
+                    'time': 0
+                }
             }
-        }
 
-        try:
-            with open(file_name) as json_file:
-                data = json.load(json_file)
+            try:
+                with open(file_name) as json_file:
+                    data = json.load(json_file)
 
-        except:
-            with open(file_name, 'x') as outfile:
-                json.dump(data, outfile)
+            except:
+                with open(file_name, 'x') as outfile:
+                    json.dump(data, outfile)
 
-        current_profit = position.profit
-        current_millis = current_milli_time()
-        time_gap = 20000
+            current_profit = position.profit
+            current_millis = current_milli_time()
+            time_gap = 20000
 
-        # check the logic
-        if data['profit_1']['profit'] is None:
-            data['profit_1']['profit'] = current_profit
-            data['profit_1']['time'] = current_millis
-
-        if (data['profit_1']['time'] + time_gap) < current_millis:
-            if data['profit_2']['profit'] is None:
-                data['profit_2']['profit'] = data['profit_1']['profit']
-                data['profit_2']['time'] = data['profit_1']['time']
-
-                data['profit_1']['profit'] = current_profit
-                data['profit_1']['time'] = current_millis
-            elif data['profit_3']['profit'] is None:
-                data['profit_3']['profit'] = data['profit_2']['profit']
-                data['profit_3']['time'] = data['profit_2']['time']
-
-                data['profit_2']['profit'] = data['profit_1']['profit']
-                data['profit_2']['time'] = data['profit_1']['time']
-
-                data['profit_1']['profit'] = current_profit
-                data['profit_1']['time'] = current_millis
-            else:
-                data['profit_3']['profit'] = data['profit_2']['profit']
-                data['profit_3']['time'] = data['profit_2']['time']
-
-                data['profit_2']['profit'] = data['profit_1']['profit']
-                data['profit_2']['time'] = data['profit_1']['time']
-
+            # check the logic
+            if data['profit_1']['profit'] is None:
                 data['profit_1']['profit'] = current_profit
                 data['profit_1']['time'] = current_millis
 
-        print(current_millis)
-        print(symbol, data['profit_3']['profit'], data['profit_2']['profit'], data['profit_1']['profit'])
-        print(symbol, data['profit_3']['time'], data['profit_2']['time'], data['profit_1']['time'])
+            if (data['profit_1']['time'] + time_gap) < current_millis:
+                if data['profit_2']['profit'] is None:
+                    data['profit_2']['profit'] = data['profit_1']['profit']
+                    data['profit_2']['time'] = data['profit_1']['time']
 
-        if data['profit_3']['profit'] and data['profit_2']['profit'] and data['profit_1']['profit']:
-            # if profit_1 < profit_2 < profit_3
-            if data['profit_3']['profit'] > data['profit_2']['profit'] > data['profit_1']['profit']:
-                print(position.profit)
-                print(position)
-                # close the trade
-                clsoe_position(symbol, ticket=position.ticket)
+                    data['profit_1']['profit'] = current_profit
+                    data['profit_1']['time'] = current_millis
+                elif data['profit_3']['profit'] is None:
+                    data['profit_3']['profit'] = data['profit_2']['profit']
+                    data['profit_3']['time'] = data['profit_2']['time']
+
+                    data['profit_2']['profit'] = data['profit_1']['profit']
+                    data['profit_2']['time'] = data['profit_1']['time']
+
+                    data['profit_1']['profit'] = current_profit
+                    data['profit_1']['time'] = current_millis
+                else:
+                    data['profit_3']['profit'] = data['profit_2']['profit']
+                    data['profit_3']['time'] = data['profit_2']['time']
+
+                    data['profit_2']['profit'] = data['profit_1']['profit']
+                    data['profit_2']['time'] = data['profit_1']['time']
+
+                    data['profit_1']['profit'] = current_profit
+                    data['profit_1']['time'] = current_millis
+
+            print(current_millis)
+            print(symbol, data['profit_3']['profit'], data['profit_2']['profit'], data['profit_1']['profit'])
+            print(symbol, data['profit_3']['time'], data['profit_2']['time'], data['profit_1']['time'])
+
+            if data['profit_3']['profit'] and data['profit_2']['profit'] and data['profit_1']['profit']:
+                # if profit_1 < profit_2 < profit_3
+                if data['profit_3']['profit'] > data['profit_2']['profit'] > data['profit_1']['profit']:
+                    print(position.profit)
+                    print(position)
+                    # close the trade
+                    clsoe_position(symbol, ticket=position.ticket)
+                else:
+                    # else write the data file
+                    with open(file_name, 'w') as outfile:
+                        json.dump(data, outfile)
             else:
                 # else write the data file
                 with open(file_name, 'w') as outfile:
                     json.dump(data, outfile)
-        else:
-            # else write the data file
-            with open(file_name, 'w') as outfile:
-                json.dump(data, outfile)
 
 
 

@@ -1,6 +1,7 @@
+from xian import take_the_profit
 from mt5_utils import get_live_data, trade_order
 from common_functions import check_duplicate_orders, write_json, check_duplicate_orders_time, \
-    check_duplicate_orders_magic
+    check_duplicate_orders_magic, check_duplicate_orders_is_time
 from mt5_utils import get_live_data, get_magic_number, trade_order_magic
 from common_functions import check_duplicate_orders, write_json, add_csv
 from akash import get_avg_candle_size
@@ -216,10 +217,12 @@ def volman_strategies(symbol):
     skip_min = 1
     time_frame = 'M1'
 
-    running_trade_status_time, orders_json = check_duplicate_orders_time(symbol=symbol, skip_min=skip_min,
+    running_trade_status_time, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol, skip_min=skip_min,
                                                                          json_file_name=json_file_name)
     running_trade_status_magic = check_duplicate_orders_magic(symbol=symbol, code=77)
     if running_trade_status_time or running_trade_status_magic:
+        # if not is_time:
+        #     take_the_profit(symbol)
         return None
 
 
