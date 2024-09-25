@@ -21,39 +21,39 @@ from common_functions import add_csv, isNowInTimePeriod, check_duplicate_orders_
 def trade(symbol):
     delay_sec = 1
 
-    ## TUNE
+    # ## TUNE
+    # time.sleep(delay_sec)
+    # try:
+    #     boil_macd(symbol)
+    #     #print(symbol, 'boil_macd')
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+    #
+    # ## TUNE
+    # time.sleep(delay_sec)
+    #
+    # try:
+    #     ichimoku_stochastic(symbol)
+    #     #print(symbol, 'ichimoku_stochastic')
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+    #
+    # ## TUNE
+    # time.sleep(delay_sec)
+    # ##Bob Volman
+    # #volman_strategies(symbol)
+    # try:
+    #     volman_strategies(symbol)
+    #     #print(symbol, 'volman_strategies')
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+    #
+    #
+
     time.sleep(delay_sec)
-    try:
-        boil_macd(symbol)
-        #print(symbol, 'boil_macd')
-    except Exception as e:
-        print(symbol, "ERROR", str(e))
-
-    ## TUNE
-    time.sleep(delay_sec)
 
     try:
-        ichimoku_stochastic(symbol)
-        #print(symbol, 'ichimoku_stochastic')
-    except Exception as e:
-        print(symbol, "ERROR", str(e))
-
-    ## TUNE
-    time.sleep(delay_sec)
-    ##Bob Volman
-    #volman_strategies(symbol)
-    try:
-        volman_strategies(symbol)
-        #print(symbol, 'volman_strategies')
-    except Exception as e:
-        print(symbol, "ERROR", str(e))
-
-
-
-    time.sleep(delay_sec)
-
-    try:
-        moving_average_crossover_01(symbol, 5, 100)
+        moving_average_crossover_01(symbol, 5, 50)
     except Exception as e:
         print(symbol, "ERROR", str(e))
 
