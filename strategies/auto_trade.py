@@ -19,7 +19,7 @@ from common_functions import add_csv, isNowInTimePeriod, check_duplicate_orders_
 
 
 def trade(symbol):
-    delay_sec = 1
+    delay_sec = 2
 
     # ## TUNE
     # time.sleep(delay_sec)
@@ -53,7 +53,7 @@ def trade(symbol):
     time.sleep(delay_sec)
 
     try:
-        moving_average_crossover_01(symbol, 5, 50)
+        moving_average_crossover_01(symbol, 2, 100)
     except Exception as e:
         print(symbol, "ERROR", str(e))
 
@@ -83,7 +83,7 @@ def start_live_trade():
     #symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY']
 
     #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
-    symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
 
     # # ## test order
     # json_file_name = 'akash_strategies_ma_ema_5_100'
@@ -108,7 +108,12 @@ def start_live_trade():
             time.sleep(1)
             take_the_profit(symbol)
 
-            if isNowInTimePeriod(dt.time(10, 00), dt.time(23, 59), dt.datetime.now().time()):
+            server_start = 4
+            server_end = 18
+            local_start = 10
+            local_end = 24
+
+            if isNowInTimePeriod(dt.time(server_start, 00), dt.time(server_end, 00), dt.datetime.now().time()):
                 trade(symbol)
 
 

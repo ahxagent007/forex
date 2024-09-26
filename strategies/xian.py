@@ -402,7 +402,7 @@ def current_milli_time():
     return round(time.time() * 1000)
 
 def take_the_profit(symbol):
-    json_file_name_lst = ['akash_strategies_ma_ema_5_100', 'volman', 'ichimoku_stochastic', 'boil_macd']
+    json_file_name_lst = ['akash_strategies_ma_ema_2_100']
     skip_min = 3
 
     for json_file_name in json_file_name_lst:
