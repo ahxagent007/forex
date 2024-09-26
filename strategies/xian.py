@@ -343,13 +343,13 @@ def moving_average_crossover_01(symbol, short, long):
     df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
 
     # Moving Average
-    df['EMA_short'] = df['close'].rolling(window=short).mean()
-    df['MA_long'] = df['close'].rolling(window=long).mean()
+    df['short'] = df['close'].rolling(window=short).mean()
+    df['long'] = df['close'].rolling(window=long).mean()
 
     action = None
-    if df['EMA_short'].iloc[-1] > df['MA_long'].iloc[-1] and df['EMA_short'].iloc[-3] < df['MA_long'].iloc[-1]:
+    if df['short'].iloc[-1] > df['long'].iloc[-1] and df['short'].iloc[-3] < df['long'].iloc[-1]:
         action = 'buy'
-    elif df['EMA_short'].iloc[-1] < df['MA_long'].iloc[-1] and df['EMA_short'].iloc[-3] > df['MA_long'].iloc[-1]:
+    elif df['short'].iloc[-1] < df['long'].iloc[-1] and df['short'].iloc[-3] > df['long'].iloc[-1]:
         action = 'sell'
 
     # if df['close'].iloc[-1] > df['MA_long'].iloc[-1] and df['close'].iloc[-3] < df['MA_long'].iloc[-1]:
@@ -370,8 +370,8 @@ def moving_average_crossover_01(symbol, short, long):
         if not action == cci_status:
             return
 
-        sl_multi = 2
-        tp_multi = 6
+        sl_multi = 3
+        tp_multi = 12
 
         avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, tp_multi, sl_multi)
         if avg_candle_size is None:
@@ -394,16 +394,16 @@ def moving_average_crossover_01(symbol, short, long):
         trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=888, MAGIC_NUMBER=MAGIC_NUMBER)
         write_json(json_dict=orders_json, json_file_name=json_file_name)
 
-        data_lst = [symbol, time_frame,  MAGIC_NUMBER, avg_candle_size, action, tp, sl, 0, ]
+        data = ""
+        data_lst = [symbol, time_frame, MAGIC_NUMBER, avg_candle_size, action, tp, sl, json_file_name, data]
         add_csv(data_lst)
 
 def current_milli_time():
     return round(time.time() * 1000)
 
 def take_the_profit(symbol):
-    json_file_name_lst = ['akash_strategies_ma_ema_5_100', 'volman', 'ichimoku_stochastic', 'boil_macd']
+    json_file_name_lst = ['akash_strategies_ma_ema_2_100']
     skip_min = 3
-    print('Take The Profit ####')
 
     for json_file_name in json_file_name_lst:
         run_take_the_profit = False

@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 {"symbol": "EURJPY", "magic": null, "profit_1": {"profit": 2.3, "time": 1727238183378}, "profit_2": {"profit": 2.37, "time": 1727238158175}, "profit_3": {"profit": 2.09, "time": 1727238133005}}
+=======
+{"symbol": "EURJPY", "magic": null, "profit_1": {"profit": -3.1, "time": 1727338484244}, "profit_2": {"profit": -2.0, "time": 1727338460187}, "profit_3": {"profit": -2.34, "time": 1727338436113}}
+>>>>>>> refs/remotes/origin/main
