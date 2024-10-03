@@ -32,15 +32,15 @@ def get_magic_number():
 def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
-    # NEW ACC
-    login = 181244000
+    # # NEW ACC
+    # login = 181244000
+    # password = 'ABCabc123!@#'
+    # server = 'Exness-MT5Trial6'
+
+    ## Standard
+    login = 181931686
     password = 'ABCabc123!@#'
     server = 'Exness-MT5Trial6'
-
-    # ## Standard
-    # login = 189210373
-    # password = 'ABCabc123!@#'
-    # server = 'Exness-MT5Trial14'
 
     timeout = 10000
     portable = False
@@ -399,7 +399,7 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
     spread_dict = {
         'EURUSD': 15,
         'XAUUSD': 150,
-        'BTCUSD': 1900,
+        'BTCUSD': 2000,
         'USDJPY': 15,
         'GBPUSD': 15,
         'EURJPY': 20

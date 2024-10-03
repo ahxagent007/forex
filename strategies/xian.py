@@ -146,8 +146,10 @@ def ADX_stakoverflow_check(data: pd.DataFrame, period: int, idx: int):
 
     adx_min = 20
     if df['ADX'].iloc[idx] > adx_min:
+        print('ADX', df['ADX'].iloc[idx])
         return True
     else:
+        print('ADX', df['ADX'].iloc[idx])
         return False
 
 def test_xian():
@@ -321,7 +323,7 @@ def moving_average_crossover_cci(symbol, short, long):
 
 
 def moving_average_crossover_01(symbol, short, long):
-    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY', 'BTCUSD']
     skip_min = 3
     time_frame = 'M1'
 
@@ -337,8 +339,6 @@ def moving_average_crossover_01(symbol, short, long):
         # if not is_time:
         #     take_the_profit(symbol) #706.70
         return None
-
-
 
     df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
 
@@ -360,26 +360,38 @@ def moving_average_crossover_01(symbol, short, long):
 
     lot = 0.1
 
+    if symbol == 'BTCUSD':
+        lot = 0.01
+
+
     if action:
         adx_min_bool = ADX_stakoverflow_check(df, 14, -1)
         if not adx_min_bool:
-            return
+            print(symbol,'ADX', adx_min_bool)
+            if symbol == 'BTCUSD':
+                None
+            elif symbol == 'XAUUSD':
+                None
+            else:
+                return
 
         cci_status = cci_signal(df)
 
         if not action == cci_status:
+            print(symbol,'CCI Negative')
             return
 
-        sl_multi = 3
+        sl_multi = 2
         tp_multi = 12
-
         avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, tp_multi, sl_multi)
         if avg_candle_size is None:
             return
-
         print(symbol, '## TP -->', tp, '## SL -->', sl, '## AVG -->', avg_candle_size, '## ACTION -->', action)
         print('CCI 14', df['CCI_14'].iloc[-1], 'CCI 25', df['CCI_25'].iloc[-1], 'CCI 50', df['CCI_50'].iloc[-1])
         print('-----------------------------------------------------------------------------------------')
+
+
+
 
         if action == 'buy':
             if not (df['CCI_14'].iloc[-1] > 0 and df['CCI_25'].iloc[-1] > 0 and df['CCI_50'].iloc[-1] > 0):
@@ -402,7 +414,7 @@ def current_milli_time():
     return round(time.time() * 1000)
 
 def take_the_profit(symbol):
-    json_file_name_lst = ['akash_strategies_ma_ema_2_100']
+    json_file_name_lst = ['xian_trade', 'akash_02']
     skip_min = 3
 
     for json_file_name in json_file_name_lst:
@@ -452,6 +464,11 @@ def take_the_profit(symbol):
             current_profit = position.profit
             current_millis = current_milli_time()
             time_gap = 20000
+            #
+            # if symbol == 'XAUUSD':
+            #     time_gap = 15000
+            # elif symbol == 'BTCUSD':
+            #     time_gap = 10000
 
             # check the logic
             if data['profit_1']['profit'] is None:
@@ -495,6 +512,25 @@ def take_the_profit(symbol):
                     print(position)
                     # close the trade
                     clsoe_position(symbol, ticket=position.ticket)
+                    data = {
+                        'symbol': symbol,
+                        'magic': None,
+                        'profit_1': {
+                            'profit': None,
+                            'time': 0
+                        },
+                        'profit_2': {
+                            'profit': None,
+                            'time': 0
+                        },
+                        'profit_3': {
+                            'profit': None,
+                            'time': 0
+                        }
+                    }
+                    with open(file_name, 'w') as outfile:
+                        json.dump(data, outfile)
+
                 else:
                     # else write the data file
                     with open(file_name, 'w') as outfile:
