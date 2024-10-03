@@ -375,6 +375,7 @@ def moving_average_crossover_01(symbol, short, long):
             else:
                 return
 
+<<<<<<< HEAD
         cci_status = cci_signal(df)
 
         if not action == cci_status:
@@ -382,14 +383,17 @@ def moving_average_crossover_01(symbol, short, long):
             return
 
         sl_multi = 2
+=======
+        
+        sl_multi = 3
+>>>>>>> 93be46a86d132921ca675007dbef8c2f32182f14
         tp_multi = 12
         avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, tp_multi, sl_multi)
         if avg_candle_size is None:
             return
         print(symbol, '## TP -->', tp, '## SL -->', sl, '## AVG -->', avg_candle_size, '## ACTION -->', action)
-        print('CCI 14', df['CCI_14'].iloc[-1], 'CCI 25', df['CCI_25'].iloc[-1], 'CCI 50', df['CCI_50'].iloc[-1])
-        print('-----------------------------------------------------------------------------------------')
 
+<<<<<<< HEAD
 
 
 
@@ -401,6 +405,8 @@ def moving_average_crossover_01(symbol, short, long):
             if not (df['CCI_14'].iloc[-1] < 0 and df['CCI_25'].iloc[-1] < 0 and df['CCI_50'].iloc[-1] < 0):
                 print('CCI SELL RETURNED')
                 return None
+=======
+>>>>>>> 93be46a86d132921ca675007dbef8c2f32182f14
 
         MAGIC_NUMBER = get_magic_number()
         trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=888, MAGIC_NUMBER=MAGIC_NUMBER)
@@ -463,12 +469,19 @@ def take_the_profit(symbol):
 
             current_profit = position.profit
             current_millis = current_milli_time()
+<<<<<<< HEAD
             time_gap = 20000
             #
             # if symbol == 'XAUUSD':
             #     time_gap = 15000
             # elif symbol == 'BTCUSD':
             #     time_gap = 10000
+=======
+            time_gap = 10000
+            
+            if symbol == 'XAUUSD':
+                time_gap = 10000
+>>>>>>> 93be46a86d132921ca675007dbef8c2f32182f14
 
             # check the logic
             if data['profit_1']['profit'] is None:
