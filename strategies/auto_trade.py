@@ -83,7 +83,7 @@ def start_live_trade():
     #symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY']
 
     #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
-    symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    symbol_list = ['XAUUSD']
 
     # # ## test order
     # json_file_name = 'akash_strategies_ma_ema_5_100'

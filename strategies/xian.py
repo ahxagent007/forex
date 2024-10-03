@@ -365,11 +365,7 @@ def moving_average_crossover_01(symbol, short, long):
         if not adx_min_bool:
             return
 
-        cci_status = cci_signal(df)
-
-        if not action == cci_status:
-            return
-
+        
         sl_multi = 3
         tp_multi = 12
 
@@ -378,17 +374,7 @@ def moving_average_crossover_01(symbol, short, long):
             return
 
         print(symbol, '## TP -->', tp, '## SL -->', sl, '## AVG -->', avg_candle_size, '## ACTION -->', action)
-        print('CCI 14', df['CCI_14'].iloc[-1], 'CCI 25', df['CCI_25'].iloc[-1], 'CCI 50', df['CCI_50'].iloc[-1])
-        print('-----------------------------------------------------------------------------------------')
 
-        if action == 'buy':
-            if not (df['CCI_14'].iloc[-1] > 0 and df['CCI_25'].iloc[-1] > 0 and df['CCI_50'].iloc[-1] > 0):
-                print('CCI BUY RETURNED')
-                return None
-        elif action == 'sell':
-            if not (df['CCI_14'].iloc[-1] < 0 and df['CCI_25'].iloc[-1] < 0 and df['CCI_50'].iloc[-1] < 0):
-                print('CCI SELL RETURNED')
-                return None
 
         MAGIC_NUMBER = get_magic_number()
         trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=888, MAGIC_NUMBER=MAGIC_NUMBER)
@@ -451,7 +437,10 @@ def take_the_profit(symbol):
 
             current_profit = position.profit
             current_millis = current_milli_time()
-            time_gap = 20000
+            time_gap = 10000
+            
+            if symbol == 'XAUUSD':
+                time_gap = 10000
 
             # check the logic
             if data['profit_1']['profit'] is None:
