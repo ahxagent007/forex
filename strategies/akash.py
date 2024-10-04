@@ -1066,15 +1066,15 @@ def get_avg_candle_size(symbol, df, tp_multi, sl_multi):
     avg_low = (df['low'].iloc[-7] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] +
                df['low'].iloc[-6]) / 6
 
-    print(df['close'].iloc[-2], df['close'].iloc[-3],df['close'].iloc[-4],df['close'].iloc[
-        -5],df['close'].iloc[-6], df['close'].iloc[-7])
-    print(df['open'].iloc[-2], df['open'].iloc[-3], df['open'].iloc[-4], df['open'].iloc[-5],
-               df['open'].iloc[-6], df['open'].iloc[-7])
+    # print(df['close'].iloc[-2], df['close'].iloc[-3],df['close'].iloc[-4],df['close'].iloc[
+    #     -5],df['close'].iloc[-6], df['close'].iloc[-7])
+    # print(df['open'].iloc[-2], df['open'].iloc[-3], df['open'].iloc[-4], df['open'].iloc[-5],
+    #            df['open'].iloc[-6], df['open'].iloc[-7])
     avg_candle_size = avg_high - avg_low
     if avg_candle_size < 0:
         avg_candle_size = avg_candle_size * -1
 
-    print(symbol,"AVERAGE CANDLE SIZE --> ",avg_candle_size)
+    # print(symbol,"AVERAGE CANDLE SIZE --> ",avg_candle_size)
     if symbol == 'XAUUSD':
         ## 0.8 == 800
         tp = avg_candle_size * 1000 * tp_multi
@@ -1119,10 +1119,19 @@ def get_avg_candle_size(symbol, df, tp_multi, sl_multi):
         if sl < df['spread'].iloc[-1]+10:
             print('LOW SL')
             return None, None, None
+    elif symbol == 'BTCUSD':
+        ##  0.0034285714285715585 = 34
+        tp = avg_candle_size * 100 * tp_multi
+        sl = avg_candle_size * 100 * sl_multi #+ df['spread'].iloc[-1]
+
+        if sl < df['spread'].iloc[-1]+2000:
+            print('LOW SL')
+            return None, None, None
+
     else:
         sl = 100
         tp = 400
-    print(symbol, 'TP', tp, 'SL', sl)
+    # print(symbol, 'TP', tp, 'SL', sl)
     return avg_candle_size, sl, tp
 
 
@@ -1312,13 +1321,103 @@ def ADX_stakoverflow(data: pd.DataFrame, period: int):
     # +- DMI
     df['S+DM'] = df['+DX'].ewm(alpha=alpha, adjust=False).mean()
     df['S-DM'] = df['-DX'].ewm(alpha=alpha, adjust=False).mean()
-    df['+DMI'] = (df['S+DM'] / df['ATR']) * 100
-    df['-DMI'] = (df['S-DM'] / df['ATR']) * 100
+    df['+DI'] = (df['S+DM'] / df['ATR']) * 100
+    df['-DI'] = (df['S-DM'] / df['ATR']) * 100
     del df['S+DM'], df['S-DM']
 
     # ADX
-    df['DX'] = (np.abs(df['+DMI'] - df['-DMI']) / (df['+DMI'] + df['-DMI'])) * 100
+    df['DX'] = (np.abs(df['+DI'] - df['-DI']) / (df['+DI'] + df['-DI'])) * 100
     df['ADX'] = df['DX'].ewm(alpha=alpha, adjust=False).mean()
     #del df['DX'], df['ATR'], df['TR'], df['-DX'], df['+DX'], df['+DMI'], df['-DMI']
 
     return df
+
+
+
+def calculate_cci(data, period=20):
+    # Calculate the typical price (TP)
+    data['TP'] = (data['high'] + data['low'] + data['close']) / 3
+
+    # Calculate the simple moving average of typical price (SMA_TP)
+    data['SMA_TP'] = data['TP'].rolling(window=period).mean()
+
+    # Calculate the Mean Absolute Deviation (MAD)
+    def mean_absolute_deviation(series):
+        return series.mad() if hasattr(series, 'mad') else (series - series.mean()).abs().mean()
+
+    # # Calculate the Mean Absolute Deviation (MAD)
+    # data['MAD'] = data['TP'].rolling(window=period).apply(lambda x: pd.Series(x).mad(), raw=True)
+
+    # Apply the MAD function
+    data['MAD'] = data['TP'].rolling(window=period).apply(mean_absolute_deviation)
+
+    # Calculate the CCI (Commodity Channel Index)
+    data['CCI'] = (data['TP'] - data['SMA_TP']) / (0.015 * data['MAD'])
+
+
+    return data['CCI']
+
+def cci_signal(df):
+    df['CCI_14'] = calculate_cci(data=df, period=14)
+    df['CCI_25'] = calculate_cci(data=df, period=25)
+    df['CCI_50'] = calculate_cci(data=df, period=50)
+
+    if df['CCI_14'].iloc[-1] > 0 and df['CCI_25'].iloc[-1] > 0 and df['CCI_50'].iloc[-1] > 0:
+        return 'buy'
+    elif df['CCI_14'].iloc[-1] < 0 and df['CCI_25'].iloc[-1] < 0 and df['CCI_50'].iloc[-1] < 0:
+        return 'sell'
+    else:
+        return None
+
+
+def akash_02(symbol):
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'BTCUSD']
+    skip_min = 2
+    time_frame = 'M1'
+
+    if not symbol in accepted_symbol_list:
+        # print('Symbol Not supported', symbol)
+        return None
+
+    json_file_name = 'akash_02'
+    running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
+                                                               json_file_name=json_file_name)
+    if running_trade_status:
+        # print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>')
+        return None
+
+    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
+
+    cci_action = cci_signal(df)
+
+    df = ADX_stakoverflow(df, 14)
+
+    tp_multi = 6
+    sl_multi = 2
+
+    avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, tp_multi, sl_multi)
+
+    lot = 0.02
+
+    adx_signal = None
+
+    if (df['ADX'].iloc[-1] - df['ADX'].iloc[-2]) > 0 and df['+DI'].iloc[-1] > df['-DI'].iloc[-1]:
+        adx_signal = 'buy'
+    elif (df['ADX'].iloc[-1] - df['ADX'].iloc[-2]) > 0 and df['-DI'].iloc[-1] > df['+DI'].iloc[-1]:
+        adx_signal = 'sell'
+
+    if adx_signal:
+
+
+        if adx_signal == cci_action:
+            print(symbol, '## TP -->', tp, '## SL -->', sl, '## AVG -->', avg_candle_size, '## ACTION -->', adx_signal)
+            print('ADX -->', df['ADX'].iloc[-1], 'tp_multi -->', tp_multi)
+            print('-----------------------------------------------------------------------------------------')
+
+            MAGIC_NUMBER = get_magic_number()
+            trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=adx_signal, magic=True, code=22,
+                              MAGIC_NUMBER=MAGIC_NUMBER)
+            write_json(json_dict=orders_json, json_file_name=json_file_name)
+
+            data_lst = [symbol, time_frame, MAGIC_NUMBER, avg_candle_size, adx_signal, tp, sl, df['ADX'].iloc[-1], ]
+            add_csv(data_lst)

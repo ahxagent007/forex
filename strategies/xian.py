@@ -10,7 +10,7 @@ from common_functions import check_duplicate_orders_time, check_duplicate_orders
     write_json, check_duplicate_orders, check_duplicate_orders_is_time
 
 from mt5_utils import get_live_data, get_prev_data, initialize_mt5, get_magic_number, trade_order_magic, \
-    get_all_positions, clsoe_position
+    get_all_positions, clsoe_position, trade_order_magic_value
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
@@ -146,8 +146,10 @@ def ADX_stakoverflow_check(data: pd.DataFrame, period: int, idx: int):
 
     adx_min = 20
     if df['ADX'].iloc[idx] > adx_min:
+        print('ADX', df['ADX'].iloc[idx])
         return True
     else:
+        print('ADX', df['ADX'].iloc[idx])
         return False
 
 def test_xian():
@@ -321,7 +323,7 @@ def moving_average_crossover_cci(symbol, short, long):
 
 
 def moving_average_crossover_01(symbol, short, long):
-    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY', 'BTCUSD']
     skip_min = 3
     time_frame = 'M1'
 
@@ -337,8 +339,6 @@ def moving_average_crossover_01(symbol, short, long):
         # if not is_time:
         #     take_the_profit(symbol) #706.70
         return None
-
-
 
     df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
 
@@ -360,24 +360,32 @@ def moving_average_crossover_01(symbol, short, long):
 
     lot = 0.1
 
+
     if action:
         adx_min_bool = ADX_stakoverflow_check(df, 14, -1)
         if not adx_min_bool:
-            return
+            print(symbol,'ADX', adx_min_bool)
+            if symbol == 'BTCUSD':
+                None
+            elif symbol == 'XAUUSD':
+                None
+            else:
+                return
 
-        
+        if action == 'buy':
+            sl_value = df['low'].iloc[-1]
+        else:
+            sl_value = df['high'].iloc[-1]
+
         sl_multi = 3
         tp_multi = 12
-
         avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, tp_multi, sl_multi)
         if avg_candle_size is None:
             return
-
         print(symbol, '## TP -->', tp, '## SL -->', sl, '## AVG -->', avg_candle_size, '## ACTION -->', action)
 
-
         MAGIC_NUMBER = get_magic_number()
-        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=888, MAGIC_NUMBER=MAGIC_NUMBER)
+        trade_order_magic_value(symbol=symbol, tp_point=tp, sl_value=sl_value, lot=lot, action=action, magic=True, code=888, MAGIC_NUMBER=MAGIC_NUMBER)
         write_json(json_dict=orders_json, json_file_name=json_file_name)
 
         data = ""
@@ -388,7 +396,7 @@ def current_milli_time():
     return round(time.time() * 1000)
 
 def take_the_profit(symbol):
-    json_file_name_lst = ['akash_strategies_ma_ema_2_100']
+    json_file_name_lst = ['xian_trade', 'akash_02']
     skip_min = 3
 
     for json_file_name in json_file_name_lst:
@@ -437,11 +445,9 @@ def take_the_profit(symbol):
 
             current_profit = position.profit
             current_millis = current_milli_time()
-            time_gap = 10000
-            
-            if symbol == 'XAUUSD':
-                time_gap = 10000
 
+            time_gap = 20000
+            
             # check the logic
             if data['profit_1']['profit'] is None:
                 data['profit_1']['profit'] = current_profit
@@ -484,6 +490,25 @@ def take_the_profit(symbol):
                     print(position)
                     # close the trade
                     clsoe_position(symbol, ticket=position.ticket)
+                    data = {
+                        'symbol': symbol,
+                        'magic': None,
+                        'profit_1': {
+                            'profit': None,
+                            'time': 0
+                        },
+                        'profit_2': {
+                            'profit': None,
+                            'time': 0
+                        },
+                        'profit_3': {
+                            'profit': None,
+                            'time': 0
+                        }
+                    }
+                    with open(file_name, 'w') as outfile:
+                        json.dump(data, outfile)
+
                 else:
                     # else write the data file
                     with open(file_name, 'w') as outfile:
