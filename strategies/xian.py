@@ -10,7 +10,7 @@ from common_functions import check_duplicate_orders_time, check_duplicate_orders
     write_json, check_duplicate_orders, check_duplicate_orders_is_time
 
 from mt5_utils import get_live_data, get_prev_data, initialize_mt5, get_magic_number, trade_order_magic, \
-    get_all_positions, clsoe_position
+    get_all_positions, clsoe_position, trade_order_magic_value
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
@@ -360,9 +360,6 @@ def moving_average_crossover_01(symbol, short, long):
 
     lot = 0.1
 
-    if symbol == 'BTCUSD':
-        lot = 0.01
-
 
     if action:
         adx_min_bool = ADX_stakoverflow_check(df, 14, -1)
@@ -375,41 +372,20 @@ def moving_average_crossover_01(symbol, short, long):
             else:
                 return
 
-<<<<<<< HEAD
-        cci_status = cci_signal(df)
+        if action == 'buy':
+            sl_value = df['low'].iloc[-1]
+        else:
+            sl_value = df['high'].iloc[-1]
 
-        if not action == cci_status:
-            print(symbol,'CCI Negative')
-            return
-
-        sl_multi = 2
-=======
-        
         sl_multi = 3
->>>>>>> 93be46a86d132921ca675007dbef8c2f32182f14
         tp_multi = 12
         avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, tp_multi, sl_multi)
         if avg_candle_size is None:
             return
         print(symbol, '## TP -->', tp, '## SL -->', sl, '## AVG -->', avg_candle_size, '## ACTION -->', action)
 
-<<<<<<< HEAD
-
-
-
-        if action == 'buy':
-            if not (df['CCI_14'].iloc[-1] > 0 and df['CCI_25'].iloc[-1] > 0 and df['CCI_50'].iloc[-1] > 0):
-                print('CCI BUY RETURNED')
-                return None
-        elif action == 'sell':
-            if not (df['CCI_14'].iloc[-1] < 0 and df['CCI_25'].iloc[-1] < 0 and df['CCI_50'].iloc[-1] < 0):
-                print('CCI SELL RETURNED')
-                return None
-=======
->>>>>>> 93be46a86d132921ca675007dbef8c2f32182f14
-
         MAGIC_NUMBER = get_magic_number()
-        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=888, MAGIC_NUMBER=MAGIC_NUMBER)
+        trade_order_magic_value(symbol=symbol, tp_point=tp, sl_value=sl_value, lot=lot, action=action, magic=True, code=888, MAGIC_NUMBER=MAGIC_NUMBER)
         write_json(json_dict=orders_json, json_file_name=json_file_name)
 
         data = ""
@@ -469,20 +445,9 @@ def take_the_profit(symbol):
 
             current_profit = position.profit
             current_millis = current_milli_time()
-<<<<<<< HEAD
-            time_gap = 20000
-            #
-            # if symbol == 'XAUUSD':
-            #     time_gap = 15000
-            # elif symbol == 'BTCUSD':
-            #     time_gap = 10000
-=======
-            time_gap = 10000
-            
-            if symbol == 'XAUUSD':
-                time_gap = 10000
->>>>>>> 93be46a86d132921ca675007dbef8c2f32182f14
 
+            time_gap = 20000
+            
             # check the logic
             if data['profit_1']['profit'] is None:
                 data['profit_1']['profit'] = current_profit

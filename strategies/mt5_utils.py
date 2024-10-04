@@ -459,6 +459,101 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
     except Exception as e:
         print('Result '+action+' >> ', str(e))
 
+def trade_order_magic_value(symbol, tp_point, sl_value, lot, action, magic=False, code=0, MAGIC_NUMBER=0):
+
+
+    if action == 'buy':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).ask
+        bid_price = mt5.symbol_info_tick(symbol).bid
+        type = mt5.ORDER_TYPE_BUY
+
+        spread = abs(price - bid_price) / point
+
+        if tp_point:
+            tp = price + tp_point * point
+            sl = sl_value
+
+
+    elif action == 'sell':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).bid
+        ask_price = mt5.symbol_info_tick(symbol).ask
+        type = mt5.ORDER_TYPE_SELL
+
+        spread = abs(price - ask_price) / point
+
+        if tp_point:
+            tp = price - tp_point * point
+            sl = sl_value
+
+
+    print(symbol, 'Spread pip: ', spread)
+
+    spread_dict = {
+        'EURUSD': 15,
+        'XAUUSD': 150,
+        'BTCUSD': 2000,
+        'USDJPY': 15,
+        'GBPUSD': 15,
+        'EURJPY': 20
+    }
+
+    if spread > spread_dict[symbol]:
+        print('High Spread')
+        return None
+    if tp_point <= spread:
+        print('LOW TP !!!!!!')
+        return None
+
+    deviation = 20
+    # MAGIC_NUMBER = get_magic_number()
+    if tp_point:
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": type,
+            "price": price,
+            "tp": tp,
+            "sl": sl,
+            "deviation": deviation,
+            "magic": MAGIC_NUMBER,
+            "comment": "python script open",
+            #"type_time": mt5.ORDER_TIME_GTC,
+            #"type_filling": mt5.ORDER_FILLING_IOC,
+        }
+    else:
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": type,
+            "price": price,
+            "sl": sl,
+            "deviation": deviation,
+            "magic": MAGIC_NUMBER,
+            "comment": "python script open",
+            # "type_time": mt5.ORDER_TIME_GTC,
+            # "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+    print(request)
+    # send a trading request
+    result = mt5.order_send(request)
+    print(result)
+
+    try:
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            print(symbol, ' ', action+' not done', result.retcode, MT5_error_code(result.retcode))
+
+        else:
+            print('>>>>>>>>>>>> ## ## ## '+action+' done with bot ', symbol)## update magic number
+            if magic:
+                update_magic_number(symbol+str(code), MAGIC_NUMBER)
+    except Exception as e:
+        print('Result '+action+' >> ', str(e))
+
+
 def trade_order_wo_sl_magic(symbol, tp_point, lot, action, magic=False, code=0):
 
 
