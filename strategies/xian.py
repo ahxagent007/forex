@@ -324,7 +324,7 @@ def moving_average_crossover_cci(symbol, short, long):
 
 def moving_average_crossover_01(symbol, short, long):
     accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY', 'BTCUSD']
-    skip_min = 3
+    skip_min = 2
     time_frame = 'M1'
 
     if not symbol in accepted_symbol_list:
@@ -365,17 +365,15 @@ def moving_average_crossover_01(symbol, short, long):
         adx_min_bool = ADX_stakoverflow_check(df, 14, -1)
         if not adx_min_bool:
             print(symbol,'ADX', adx_min_bool)
-            if symbol == 'BTCUSD':
-                None
-            elif symbol == 'XAUUSD':
+            if symbol == 'XAUUSD':
                 None
             else:
                 return
 
         if action == 'buy':
-            sl_value = df['low'].iloc[-1]
+            sl_value = df['low'].iloc[-2]
         else:
-            sl_value = df['high'].iloc[-1]
+            sl_value = df['high'].iloc[-2]
 
         sl_multi = 3
         tp_multi = 12
@@ -396,7 +394,7 @@ def current_milli_time():
     return round(time.time() * 1000)
 
 def take_the_profit(symbol):
-    json_file_name_lst = ['xian_trade', 'akash_02']
+    json_file_name_lst = ['akash_strategies_ma_ema_1_100']
     skip_min = 3
 
     for json_file_name in json_file_name_lst:
@@ -408,8 +406,8 @@ def take_the_profit(symbol):
             if not is_time:
                 run_take_the_profit = True
 
-        if not run_take_the_profit:
-            return
+        #if not run_take_the_profit:
+        #    return
         # get all positions
         positions = get_all_positions(symbol)
 
@@ -446,7 +444,21 @@ def take_the_profit(symbol):
             current_profit = position.profit
             current_millis = current_milli_time()
 
-            time_gap = 20000
+            if not run_take_the_profit:
+                time_gap = 30000
+            else:
+                if current_profit < 10:
+                    time_gap = 20000
+                elif current_profit > 100:
+                    time_gap = 40000
+                elif current_profit > 40:
+                    time_gap = 30000
+                elif current_profit > 10:
+                    time_gap = 25000
+                else:
+                    time_gap = 20000
+
+            print('TIME GAP -->', time_gap)
             
             # check the logic
             if data['profit_1']['profit'] is None:
@@ -488,6 +500,17 @@ def take_the_profit(symbol):
                 if data['profit_3']['profit'] > data['profit_2']['profit'] > data['profit_1']['profit']:
                     print(position.profit)
                     print(position)
+                    position_type = position.type # 0 == buy , 1 == sell
+                    df = get_live_data(symbol=symbol, time_frame='M1', prev_n_candles=300)
+                    if position_type == 0: # BUY
+                        # if Bull cancel close
+                        if df['open'].iloc[-1] < df['close'].iloc[-1]:
+                            print('Bullish candle ==== CANCEL Close Order !!!')
+                            return
+                    elif position_type == 1: # SELL
+                        if df['open'].iloc[-1] > df['close'].iloc[-1]:
+                            print('Bearish candle ==== CANCEL Close Order !!!')
+                            return
                     # close the trade
                     clsoe_position(symbol, ticket=position.ticket)
                     data = {

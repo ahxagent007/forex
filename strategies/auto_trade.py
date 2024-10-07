@@ -21,7 +21,7 @@ from common_functions import add_csv, isNowInTimePeriod, check_duplicate_orders_
 
 
 def trade(symbol):
-    delay_sec = 2
+    delay_sec = 3
 
 
     time.sleep(delay_sec)
