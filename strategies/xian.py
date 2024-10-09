@@ -345,11 +345,14 @@ def moving_average_crossover_01(symbol, short, long):
     # Moving Average
     df['short'] = df['close'].rolling(window=short).mean()
     df['long'] = df['close'].rolling(window=long).mean()
+    df['ma_200'] = df['close'].rolling(window=200).mean()
 
     action = None
     if df['short'].iloc[-1] > df['long'].iloc[-1] and df['short'].iloc[-3] < df['long'].iloc[-1]:
+        #if df['close'].iloc[-4] < df['long'].iloc[-1] and df['open'].iloc[-4] < df['long'].iloc[-1] and df['high'].iloc[-3] < df['long'].iloc[-1] and df['low'].iloc[-3] < df['long'].iloc[-1]:
         action = 'buy'
     elif df['short'].iloc[-1] < df['long'].iloc[-1] and df['short'].iloc[-3] > df['long'].iloc[-1]:
+        #if df['close'].iloc[-4] > df['long'].iloc[-1] and df['open'].iloc[-4] > df['long'].iloc[-1] and df['high'].iloc[-3] > df['long'].iloc[-1] and df['low'].iloc[-3] > df['long'].iloc[-1]:
         action = 'sell'
 
     # if df['close'].iloc[-1] > df['MA_long'].iloc[-1] and df['close'].iloc[-3] < df['MA_long'].iloc[-1]:
@@ -357,11 +360,21 @@ def moving_average_crossover_01(symbol, short, long):
     # elif df['close'].iloc[-1] < df['MA_long'].iloc[-1] and df['close'].iloc[-3] > df['MA_long'].iloc[-1]:
     #     action = 'sell'
 
+    if df['short'].iloc[-1] > df['ma_200'].iloc[-1]:
+        ma_200_action = 'buy'
+    elif df['short'].iloc[-1] < df['ma_200'].iloc[-1]:
+        ma_200_action = 'sell'
+    else:
+        ma_200_action = None
 
     lot = 0.1
 
 
     if action:
+        if not action == ma_200_action:
+            print('MA 200 Trend Negative')
+            return
+        
         adx_min_bool = ADX_stakoverflow_check(df, 14, -1)
         if not adx_min_bool:
             print(symbol,'ADX', adx_min_bool)
@@ -406,15 +419,16 @@ def take_the_profit(symbol):
             if not is_time:
                 run_take_the_profit = True
 
-        #if not run_take_the_profit:
-        #    return
+
         # get all positions
         positions = get_all_positions(symbol)
 
         # loop through all
         for position in positions:
+            #print(position)
             # read the data file
             magic_id = position.magic
+            position_type = position.type # 0 == buy , 1 == sell
             file_name = 'magics/' + symbol + '_' + str(magic_id) + '.json'
             data = {
                 'symbol': symbol,
@@ -459,7 +473,6 @@ def take_the_profit(symbol):
                     time_gap = 20000
 
             print('TIME GAP -->', time_gap)
-            
             # check the logic
             if data['profit_1']['profit'] is None:
                 data['profit_1']['profit'] = current_profit
@@ -500,16 +513,39 @@ def take_the_profit(symbol):
                 if data['profit_3']['profit'] > data['profit_2']['profit'] > data['profit_1']['profit']:
                     print(position.profit)
                     print(position)
-                    position_type = position.type # 0 == buy , 1 == sell
                     df = get_live_data(symbol=symbol, time_frame='M1', prev_n_candles=300)
                     if position_type == 0: # BUY
                         # if Bull cancel close
                         if df['open'].iloc[-1] < df['close'].iloc[-1]:
                             print('Bullish candle ==== CANCEL Close Order !!!')
+
+                            data['profit_3']['profit'] = data['profit_2']['profit']
+                            data['profit_3']['time'] = data['profit_2']['time']
+
+                            data['profit_2']['profit'] = data['profit_1']['profit']
+                            data['profit_2']['time'] = data['profit_1']['time']
+
+                            data['profit_1']['profit'] = current_profit
+                            data['profit_1']['time'] = current_millis
+
+                            with open(file_name, 'w') as outfile:
+                                json.dump(data, outfile)
                             return
                     elif position_type == 1: # SELL
                         if df['open'].iloc[-1] > df['close'].iloc[-1]:
                             print('Bearish candle ==== CANCEL Close Order !!!')
+
+                            data['profit_3']['profit'] = data['profit_2']['profit']
+                            data['profit_3']['time'] = data['profit_2']['time']
+
+                            data['profit_2']['profit'] = data['profit_1']['profit']
+                            data['profit_2']['time'] = data['profit_1']['time']
+
+                            data['profit_1']['profit'] = current_profit
+                            data['profit_1']['time'] = current_millis
+
+                            with open(file_name, 'w') as outfile:
+                                json.dump(data, outfile)
                             return
                     # close the trade
                     clsoe_position(symbol, ticket=position.ticket)
@@ -540,6 +576,3 @@ def take_the_profit(symbol):
                 # else write the data file
                 with open(file_name, 'w') as outfile:
                     json.dump(data, outfile)
-
-
-
