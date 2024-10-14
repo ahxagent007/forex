@@ -360,20 +360,20 @@ def moving_average_crossover_01(symbol, short, long):
     # elif df['close'].iloc[-1] < df['MA_long'].iloc[-1] and df['close'].iloc[-3] > df['MA_long'].iloc[-1]:
     #     action = 'sell'
 
-    if df['short'].iloc[-1] > df['ma_200'].iloc[-1]:
-        ma_200_action = 'buy'
-    elif df['short'].iloc[-1] < df['ma_200'].iloc[-1]:
-        ma_200_action = 'sell'
-    else:
-        ma_200_action = None
+    #if df['short'].iloc[-1] > df['ma_200'].iloc[-1]:
+    #    ma_200_action = 'buy'
+    #elif df['short'].iloc[-1] < df['ma_200'].iloc[-1]:
+    #    ma_200_action = 'sell'
+    #else:
+    #    ma_200_action = None
 
     lot = 0.1
 
 
     if action:
-        if not action == ma_200_action:
-            print('MA 200 Trend Negative')
-            return
+        #if not action == ma_200_action:
+        #    print('MA 200 Trend Negative')
+        #    return
         
         adx_min_bool = ADX_stakoverflow_check(df, 14, -1)
         if not adx_min_bool:
@@ -433,6 +433,9 @@ def take_the_profit(symbol):
             data = {
                 'symbol': symbol,
                 'magic': None,
+                'max_profit': -999,
+                'min_tp': 51,
+                'max_tp': 51,
                 'profit_1': {
                     'profit': None,
                     'time': 0
@@ -458,121 +461,171 @@ def take_the_profit(symbol):
             current_profit = position.profit
             current_millis = current_milli_time()
 
+            time_gap = None
             if not run_take_the_profit:
-                time_gap = 30000
-            else:
-                if current_profit < 10:
+                
+                if current_profit < 5:
+                    time_gap = 30000
+                elif current_profit < 10:
                     time_gap = 20000
                 elif current_profit > 100:
-                    time_gap = 40000
+                    time_gap = 50000
                 elif current_profit > 40:
-                    time_gap = 30000
+                    time_gap = 40000
                 elif current_profit > 10:
+                    time_gap = 30000
+                else:
                     time_gap = 25000
-                else:
-                    time_gap = 20000
+            
+            if time_gap:   
+           
 
-            print('TIME GAP -->', time_gap)
-            # check the logic
-            if data['profit_1']['profit'] is None:
-                data['profit_1']['profit'] = current_profit
-                data['profit_1']['time'] = current_millis
-
-            if (data['profit_1']['time'] + time_gap) < current_millis:
-                if data['profit_2']['profit'] is None:
-                    data['profit_2']['profit'] = data['profit_1']['profit']
-                    data['profit_2']['time'] = data['profit_1']['time']
-
-                    data['profit_1']['profit'] = current_profit
-                    data['profit_1']['time'] = current_millis
-                elif data['profit_3']['profit'] is None:
-                    data['profit_3']['profit'] = data['profit_2']['profit']
-                    data['profit_3']['time'] = data['profit_2']['time']
-
-                    data['profit_2']['profit'] = data['profit_1']['profit']
-                    data['profit_2']['time'] = data['profit_1']['time']
-
-                    data['profit_1']['profit'] = current_profit
-                    data['profit_1']['time'] = current_millis
-                else:
-                    data['profit_3']['profit'] = data['profit_2']['profit']
-                    data['profit_3']['time'] = data['profit_2']['time']
-
-                    data['profit_2']['profit'] = data['profit_1']['profit']
-                    data['profit_2']['time'] = data['profit_1']['time']
-
+                print('TIME GAP -->', time_gap)
+                # check the logic
+                if data['profit_1']['profit'] is None:
                     data['profit_1']['profit'] = current_profit
                     data['profit_1']['time'] = current_millis
 
-            print(current_millis)
-            print(symbol, data['profit_3']['profit'], data['profit_2']['profit'], data['profit_1']['profit'])
-            print(symbol, data['profit_3']['time'], data['profit_2']['time'], data['profit_1']['time'])
+                if (data['profit_1']['time'] + time_gap) < current_millis:
+                    if data['profit_2']['profit'] is None:
+                        data['profit_2']['profit'] = data['profit_1']['profit']
+                        data['profit_2']['time'] = data['profit_1']['time']
 
-            if data['profit_3']['profit'] and data['profit_2']['profit'] and data['profit_1']['profit']:
-                # if profit_1 < profit_2 < profit_3
-                if data['profit_3']['profit'] > data['profit_2']['profit'] > data['profit_1']['profit']:
-                    print(position.profit)
-                    print(position)
-                    df = get_live_data(symbol=symbol, time_frame='M1', prev_n_candles=300)
-                    if position_type == 0: # BUY
-                        # if Bull cancel close
-                        if df['open'].iloc[-1] < df['close'].iloc[-1]:
-                            print('Bullish candle ==== CANCEL Close Order !!!')
+                        data['profit_1']['profit'] = current_profit
+                        data['profit_1']['time'] = current_millis
+                    elif data['profit_3']['profit'] is None:
+                        data['profit_3']['profit'] = data['profit_2']['profit']
+                        data['profit_3']['time'] = data['profit_2']['time']
 
-                            data['profit_3']['profit'] = data['profit_2']['profit']
-                            data['profit_3']['time'] = data['profit_2']['time']
+                        data['profit_2']['profit'] = data['profit_1']['profit']
+                        data['profit_2']['time'] = data['profit_1']['time']
 
-                            data['profit_2']['profit'] = data['profit_1']['profit']
-                            data['profit_2']['time'] = data['profit_1']['time']
+                        data['profit_1']['profit'] = current_profit
+                        data['profit_1']['time'] = current_millis
+                    else:
+                        data['profit_3']['profit'] = data['profit_2']['profit']
+                        data['profit_3']['time'] = data['profit_2']['time']
 
-                            data['profit_1']['profit'] = current_profit
-                            data['profit_1']['time'] = current_millis
+                        data['profit_2']['profit'] = data['profit_1']['profit']
+                        data['profit_2']['time'] = data['profit_1']['time']
 
-                            with open(file_name, 'w') as outfile:
-                                json.dump(data, outfile)
-                            return
-                    elif position_type == 1: # SELL
-                        if df['open'].iloc[-1] > df['close'].iloc[-1]:
-                            print('Bearish candle ==== CANCEL Close Order !!!')
+                        data['profit_1']['profit'] = current_profit
+                        data['profit_1']['time'] = current_millis
 
-                            data['profit_3']['profit'] = data['profit_2']['profit']
-                            data['profit_3']['time'] = data['profit_2']['time']
+                print(current_millis)
+                print(symbol, data['profit_3']['profit'], data['profit_2']['profit'], data['profit_1']['profit'])
+                print(symbol, data['profit_3']['time'], data['profit_2']['time'], data['profit_1']['time'])
 
-                            data['profit_2']['profit'] = data['profit_1']['profit']
-                            data['profit_2']['time'] = data['profit_1']['time']
+                if data['profit_3']['profit'] and data['profit_2']['profit'] and data['profit_1']['profit']:
+                    # if profit_1 < profit_2 < profit_3
+                    if data['profit_3']['profit'] > data['profit_2']['profit'] > data['profit_1']['profit']:
+                        print(position.profit)
+                        print(position)
+                        df = get_live_data(symbol=symbol, time_frame='M1', prev_n_candles=300)
+                        if position_type == 0: # BUY
+                            # if Bull cancel close
+                            if df['open'].iloc[-1] < df['close'].iloc[-1]:
+                                print('Bullish candle ==== CANCEL Close Order !!!')
 
-                            data['profit_1']['profit'] = current_profit
-                            data['profit_1']['time'] = current_millis
+                                data['profit_3']['profit'] = data['profit_2']['profit']
+                                data['profit_3']['time'] = data['profit_2']['time']
 
-                            with open(file_name, 'w') as outfile:
-                                json.dump(data, outfile)
-                            return
-                    # close the trade
-                    clsoe_position(symbol, ticket=position.ticket)
-                    data = {
-                        'symbol': symbol,
-                        'magic': None,
-                        'profit_1': {
-                            'profit': None,
-                            'time': 0
-                        },
-                        'profit_2': {
-                            'profit': None,
-                            'time': 0
-                        },
-                        'profit_3': {
-                            'profit': None,
-                            'time': 0
+                                data['profit_2']['profit'] = data['profit_1']['profit']
+                                data['profit_2']['time'] = data['profit_1']['time']
+
+                                data['profit_1']['profit'] = current_profit
+                                data['profit_1']['time'] = current_millis
+
+                                with open(file_name, 'w') as outfile:
+                                    json.dump(data, outfile)
+                                return
+                        elif position_type == 1: # SELL
+                            if df['open'].iloc[-1] > df['close'].iloc[-1]:
+                                print('Bearish candle ==== CANCEL Close Order !!!')
+
+                                data['profit_3']['profit'] = data['profit_2']['profit']
+                                data['profit_3']['time'] = data['profit_2']['time']
+
+                                data['profit_2']['profit'] = data['profit_1']['profit']
+                                data['profit_2']['time'] = data['profit_1']['time']
+
+                                data['profit_1']['profit'] = current_profit
+                                data['profit_1']['time'] = current_millis
+
+                                with open(file_name, 'w') as outfile:
+                                    json.dump(data, outfile)
+                                return
+                        # close the trade
+                        clsoe_position(symbol, ticket=position.ticket)
+                        data = {
+                            'symbol': symbol,
+                            'magic': None,
+                            'max_profit': -999,
+                            'min_tp': 51,
+                            'max_tp': 51,
+                            'profit_1': {
+                                'profit': None,
+                                'time': 0
+                            },
+                            'profit_2': {
+                                'profit': None,
+                                'time': 0
+                            },
+                            'profit_3': {
+                                'profit': None,
+                                'time': 0
+                            }
                         }
-                    }
-                    with open(file_name, 'w') as outfile:
-                        json.dump(data, outfile)
+                        with open(file_name, 'w') as outfile:
+                            json.dump(data, outfile)
 
+                    else:
+                        # else write the data file
+                        with open(file_name, 'w') as outfile:
+                            json.dump(data, outfile)
                 else:
                     # else write the data file
                     with open(file_name, 'w') as outfile:
                         json.dump(data, outfile)
+                        
             else:
-                # else write the data file
+                print('current profit -->', current_profit)
+                max_drop = 0.6
+                if current_profit < 10:
+                    max_drop = 0.3
+                if current_profit > 100:
+                    max_drop = 0.4
+                if current_profit > 10:
+                    max_drop = 0.5
+                    
+                max_profit = data['max_profit']
+                
+                
+                
+                if max_profit * max_drop > current_profit:
+                    clsoe_position(symbol, ticket=position.ticket)
+                elif current_profit > data['min_tp']:
+                
+                    if current_profit < data['max_tp']:
+                        clsoe_position(symbol, ticket=position.ticket)
+                    else:
+                        if current_profit - current_profit*0.1 > data['max_tp']:
+                            data['max_tp'] = current_profit - current_profit*0.1                      
+                elif data['max_tp'] < data['min_tp']:
+                    clsoe_position(symbol, ticket=position.ticket)        
+                            
+                #elif current_profit > 45 and current_profit < data['min_tp']:
+                #   clsoe_position(symbol, ticket=position.ticket)
+                
+                
+                
+                if max_profit < current_profit:
+                    data['max_profit'] = current_profit              
+                
                 with open(file_name, 'w') as outfile:
-                    json.dump(data, outfile)
+                        json.dump(data, outfile)
+                
+                
+                
+                
+                
