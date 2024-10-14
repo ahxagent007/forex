@@ -605,18 +605,12 @@ def take_the_profit(symbol):
                 if max_profit * max_drop > current_profit:
                     clsoe_position(symbol, ticket=position.ticket)
                 elif current_profit > data['min_tp']:
+                    
+                    if current_profit - current_profit*0.1 > data['max_tp']:
+                        data['max_tp'] = current_profit - current_profit*0.1                      
                 
-                    if current_profit < data['max_tp']:
-                        clsoe_position(symbol, ticket=position.ticket)
-                    else:
-                        if current_profit - current_profit*0.1 > data['max_tp']:
-                            data['max_tp'] = current_profit - current_profit*0.1                      
-                elif data['max_tp'] < data['min_tp']:
-                    clsoe_position(symbol, ticket=position.ticket)        
-                            
-                #elif current_profit > 45 and current_profit < data['min_tp']:
-                #   clsoe_position(symbol, ticket=position.ticket)
-                
+                if current_profit < data['max_tp']:
+                    clsoe_position(symbol, ticket=position.ticket)
                 
                 
                 if max_profit < current_profit:
