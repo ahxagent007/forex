@@ -348,10 +348,10 @@ def moving_average_crossover_01(symbol, short, long):
     df['ma_200'] = df['close'].rolling(window=200).mean()
 
     action = None
-    if df['short'].iloc[-1] > df['long'].iloc[-1] and df['short'].iloc[-3] < df['long'].iloc[-1]:
+    if df['short'].iloc[-1] > df['long'].iloc[-1] and df['short'].iloc[-2] > df['long'].iloc[-1] and df['short'].iloc[-3] < df['long'].iloc[-1]:
         #if df['close'].iloc[-4] < df['long'].iloc[-1] and df['open'].iloc[-4] < df['long'].iloc[-1] and df['high'].iloc[-3] < df['long'].iloc[-1] and df['low'].iloc[-3] < df['long'].iloc[-1]:
         action = 'buy'
-    elif df['short'].iloc[-1] < df['long'].iloc[-1] and df['short'].iloc[-3] > df['long'].iloc[-1]:
+    elif df['short'].iloc[-1] < df['long'].iloc[-1] and df['short'].iloc[-2] < df['long'].iloc[-1] and df['short'].iloc[-3] > df['long'].iloc[-1]:
         #if df['close'].iloc[-4] > df['long'].iloc[-1] and df['open'].iloc[-4] > df['long'].iloc[-1] and df['high'].iloc[-3] > df['long'].iloc[-1] and df['low'].iloc[-3] > df['long'].iloc[-1]:
         action = 'sell'
 
@@ -435,7 +435,7 @@ def take_the_profit(symbol):
                 'magic': None,
                 'max_profit': -999,
                 'min_tp': 51,
-                'max_tp': 51,
+                'max_tp': 3,
                 'profit_1': {
                     'profit': None,
                     'time': 0
@@ -465,15 +465,15 @@ def take_the_profit(symbol):
             if not run_take_the_profit:
                 
                 if current_profit < 5:
-                    time_gap = 30000
-                elif current_profit < 10:
-                    time_gap = 20000
-                elif current_profit > 100:
-                    time_gap = 50000
-                elif current_profit > 40:
                     time_gap = 40000
-                elif current_profit > 10:
+                elif current_profit < 10:
                     time_gap = 30000
+                elif current_profit > 100:
+                    time_gap = 60000
+                elif current_profit > 40:
+                    time_gap = 50000
+                elif current_profit > 10:
+                    time_gap = 40000
                 else:
                     time_gap = 25000
             
@@ -562,7 +562,7 @@ def take_the_profit(symbol):
                             'magic': None,
                             'max_profit': -999,
                             'min_tp': 51,
-                            'max_tp': 51,
+                            'max_tp': 3,
                             'profit_1': {
                                 'profit': None,
                                 'time': 0
