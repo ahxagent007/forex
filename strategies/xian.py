@@ -435,7 +435,7 @@ def take_the_profit(symbol):
                 'magic': None,
                 'max_profit': -999,
                 'min_tp': 51,
-                'max_tp': 3,
+                'max_tp': -10,
                 'profit_1': {
                     'profit': None,
                     'time': 0
@@ -562,7 +562,7 @@ def take_the_profit(symbol):
                             'magic': None,
                             'max_profit': -999,
                             'min_tp': 51,
-                            'max_tp': 3,
+                            'max_tp': -10,
                             'profit_1': {
                                 'profit': None,
                                 'time': 0
@@ -609,7 +609,7 @@ def take_the_profit(symbol):
                     if current_profit - current_profit*0.1 > data['max_tp']:
                         data['max_tp'] = current_profit - current_profit*0.1                      
                 
-                if current_profit < data['max_tp']:
+                elif current_profit < data['max_tp']:
                     clsoe_position(symbol, ticket=position.ticket)
                 
                 
