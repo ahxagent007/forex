@@ -3,7 +3,8 @@ import datetime as dt
 #from ai_strategies import ai_trade
 from threading import Thread
 
-from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01, take_the_profit
+from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01, take_the_profit, \
+    moving_average_crossover_ema_02
 from nahid_sir import bot_1
 from boillinger_macd_combo import boil_macd
 from fibonacci_price_action_combo import fibonacci_price_action
@@ -21,15 +22,15 @@ from common_functions import add_csv, isNowInTimePeriod, check_duplicate_orders_
 
 
 def trade(symbol):
-    delay_sec = 2
+    delay_sec = 3
 
 
-    time.sleep(delay_sec)
-
-    try:
-        moving_average_crossover_01(symbol, 1, 100)
-    except Exception as e:
-        print(symbol, "ERROR", str(e))
+    # time.sleep(delay_sec)
+    #
+    # try:
+    #     moving_average_crossover_01(symbol, 1, 200)
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
 
 
     # try:
@@ -37,34 +38,34 @@ def trade(symbol):
     # except Exception as e:
     #     print(symbol, "ERROR", str(e))
 
-    # ## TUNE
-    # time.sleep(delay_sec)
-    # try:
-    #     boil_macd(symbol)
-    #     #print(symbol, 'boil_macd')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-    #
-    # ## TUNE
-    # time.sleep(delay_sec)
-    #
-    # try:
-    #     ichimoku_stochastic(symbol)
-    #     #print(symbol, 'ichimoku_stochastic')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-    #
-    # ## TUNE
-    # time.sleep(delay_sec)
-    # ##Bob Volman
-    # #volman_strategies(symbol)
-    # try:
-    #     volman_strategies(symbol)
-    #     #print(symbol, 'volman_strategies')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-    #
-    #
+    ## TUNE
+    time.sleep(delay_sec)
+    try:
+        boil_macd(symbol)
+        #print(symbol, 'boil_macd')
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
+
+    ## TUNE
+    time.sleep(delay_sec)
+
+    try:
+        ichimoku_stochastic(symbol)
+        #print(symbol, 'ichimoku_stochastic')
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
+
+    ## TUNE
+    time.sleep(delay_sec)
+    ##Bob Volman
+    #volman_strategies(symbol)
+    try:
+        volman_strategies(symbol)
+        #print(symbol, 'volman_strategies')
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
+
+
 
 
 
@@ -95,9 +96,9 @@ def start_live_trade():
 
     #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
 
-    #symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
     #symbol_list = ['BTCUSD', 'XAUUSD']
-    symbol_list = ['XAUUSD']
+    #symbol_list = ['XAUUSD']
 
 
     # # ## test order
@@ -126,9 +127,9 @@ def start_live_trade():
             local_start = 10
             local_end = 23
             local_end_min = 59
-            ## trade(symbol)
+            #trade(symbol)
 
-            if isNowInTimePeriod(dt.time(server_start, 00), dt.time(server_end, local_end_min), dt.datetime.now().time()):
+            if isNowInTimePeriod(dt.time(local_start, 00), dt.time(local_end, local_end_min), dt.datetime.now().time()):
                 trade(symbol)
 
         # print('1. BTCUSD 2. XAUUSD')
