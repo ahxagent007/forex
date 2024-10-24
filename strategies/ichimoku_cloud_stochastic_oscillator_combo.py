@@ -81,7 +81,7 @@ def ichimoku_stochastic(symbol):
 
     if action:
         print(symbol, 'ichimoku_stochastic')
-        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 2, 2)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 10, 2)
 
         lot = 0.1
 

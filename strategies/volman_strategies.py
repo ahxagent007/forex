@@ -256,7 +256,7 @@ def volman_strategies(symbol):
 
     if action:
         print(symbol, 'volman_strategies')
-        avg_candle_size, sl, tp = get_avg_candle_size(symbol, tick_df, 3, 2)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, tick_df, 12, 2)
 
         lot = 0.1
 

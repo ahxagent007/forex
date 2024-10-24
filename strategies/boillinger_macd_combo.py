@@ -57,7 +57,7 @@ def boil_macd(symbol, window=20, num_std=2):
 
     if action:
         print(symbol, 'boil_macd')
-        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 6, 3)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 12, 3)
 
         lot = 0.1
 
