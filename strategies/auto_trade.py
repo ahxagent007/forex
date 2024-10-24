@@ -121,7 +121,7 @@ def start_live_trade():
             time.sleep(1)
             take_the_profit(symbol)
 
-            server_start = 4
+            server_start = 11
             server_end = 17
             local_start = 10
             local_end = 23
