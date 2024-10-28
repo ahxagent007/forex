@@ -10,7 +10,7 @@ from common_functions import check_duplicate_orders_time, check_duplicate_orders
     write_json, check_duplicate_orders, check_duplicate_orders_is_time
 
 from mt5_utils import get_live_data, get_prev_data, initialize_mt5, get_magic_number, trade_order_magic, \
-    get_all_positions, clsoe_position, trade_order_magic_value
+    get_all_positions, clsoe_position, trade_order_magic_value, get_balance
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
@@ -631,6 +631,29 @@ def take_the_profit(symbol):
                 # else write the data file
                 with open(file_name, 'w') as outfile:
                     json.dump(data, outfile)
+
+def cumulative_lot():
+    file_name = 'cumulative_lot'
+    balance = get_balance()
+    try:
+        with open(file_name) as json_file:
+            data = json.load(json_file)
+
+        if data['balance'] + 100 > balance:
+            data['lot'] += 0.01
+            data['balance'] = balance
+
+            with open(file_name, 'w') as outfile:
+                json.dump(data, outfile)
+
+    except Exception as e:
+        print(file_name,' ', str(e))
+        data = {
+            'balance': 1000,
+            'lot': 0.1
+        }
+    print(balance, data)
+    return data['lot']
 
 
 

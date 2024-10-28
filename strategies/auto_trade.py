@@ -4,7 +4,7 @@ import datetime as dt
 from threading import Thread
 
 from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01, take_the_profit, \
-    moving_average_crossover_ema_02
+    moving_average_crossover_ema_02, cumulative_lot
 from nahid_sir import bot_1
 from boillinger_macd_combo import boil_macd
 from fibonacci_price_action_combo import fibonacci_price_action

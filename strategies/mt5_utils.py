@@ -686,3 +686,6 @@ def get_current_price(symbol):
 
     return data
 
+def get_balance():
+    balance = mt5.account_info().balance
+    return balance
