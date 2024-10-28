@@ -408,9 +408,9 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
     if spread > spread_dict[symbol]:
         print('High Spread')
         return None
-    if tp_point <= spread or sl_point <= spread:
-        print('LOW TP/SL')
-        return None
+    # if tp_point <= spread or sl_point <= spread:
+    #     print('LOW TP/SL')
+    #     return None
 
     deviation = 20
     # MAGIC_NUMBER = get_magic_number()
