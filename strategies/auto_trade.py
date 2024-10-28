@@ -96,9 +96,9 @@ def start_live_trade():
 
     #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
 
-    symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    #symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
     #symbol_list = ['BTCUSD', 'XAUUSD']
-    #symbol_list = ['XAUUSD']
+    symbol_list = ['XAUUSD']
 
 
     # # ## test order
