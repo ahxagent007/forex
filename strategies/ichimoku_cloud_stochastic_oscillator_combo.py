@@ -1,4 +1,4 @@
-from xian import take_the_profit
+from xian import take_the_profit, cumulative_lot
 from mt5_utils import get_live_data, get_magic_number, trade_order_magic
 from common_functions import check_duplicate_orders, write_json, add_csv, check_duplicate_orders_time, \
     check_duplicate_orders_magic, check_duplicate_orders_is_time
@@ -81,9 +81,9 @@ def ichimoku_stochastic(symbol):
 
     if action:
         print(symbol, 'ichimoku_stochastic')
-        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 2, 2)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 10, 2)
 
-        lot = 0.1
+        lot = cumulative_lot()
 
         MAGIC_NUMBER = get_magic_number()
         trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=5,

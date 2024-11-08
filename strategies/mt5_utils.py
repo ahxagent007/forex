@@ -33,14 +33,14 @@ def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
     # # NEW ACC
-    # login = 181244000
-    # password = 'ABCabc123!@#'
-    # server = 'Exness-MT5Trial6'
-
-    ## Standard
-    login = 181931686
+    login = 181244000
     password = 'ABCabc123!@#'
     server = 'Exness-MT5Trial6'
+
+    # ## Standard
+    # login = 181931686
+    # password = 'ABCabc123!@#'
+    # server = 'Exness-MT5Trial6'
 
     timeout = 10000
     portable = False
@@ -121,7 +121,7 @@ def get_prev_data(symbol, time_frame, prev_start_min, prev_end_min):
 
 
     ticks_frame = pd.DataFrame(rates)
-    #print(ticks_frame.head())
+    print(ticks_frame.head())
 
     ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
 
@@ -408,9 +408,9 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
     if spread > spread_dict[symbol]:
         print('High Spread')
         return None
-    if tp_point <= spread or sl_point <= spread:
-        print('LOW TP/SL')
-        return None
+    # if tp_point <= spread or sl_point <= spread:
+    #     print('LOW TP/SL')
+    #     return None
 
     deviation = 20
     # MAGIC_NUMBER = get_magic_number()
@@ -686,3 +686,6 @@ def get_current_price(symbol):
 
     return data
 
+def get_balance():
+    balance = mt5.account_info().balance
+    return balance

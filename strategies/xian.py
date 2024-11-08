@@ -10,7 +10,7 @@ from common_functions import check_duplicate_orders_time, check_duplicate_orders
     write_json, check_duplicate_orders, check_duplicate_orders_is_time
 
 from mt5_utils import get_live_data, get_prev_data, initialize_mt5, get_magic_number, trade_order_magic, \
-    get_all_positions, clsoe_position, trade_order_magic_value
+    get_all_positions, clsoe_position, trade_order_magic_value, get_balance
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
@@ -323,15 +323,15 @@ def moving_average_crossover_cci(symbol, short, long):
 
 
 def moving_average_crossover_01(symbol, short, long):
-    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY', 'BTCUSD']
-    skip_min = 3
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    skip_min = 2
     time_frame = 'M1'
 
     if not symbol in accepted_symbol_list:
         # print('Symbol Not supported', symbol)
         return None
 
-    json_file_name = 'akash_strategies_ma_ema_'+str(short)+'_'+str(long)
+    json_file_name = 'xian_ma_cross'
     running_trade_status, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol, skip_min=skip_min,
                                                                json_file_name=json_file_name)
     if running_trade_status:
@@ -373,9 +373,74 @@ def moving_average_crossover_01(symbol, short, long):
                 return
 
         if action == 'buy':
-            sl_value = df['low'].iloc[-1]
+            sl_value = df['low'].iloc[-2]
         else:
-            sl_value = df['high'].iloc[-1]
+            sl_value = df['high'].iloc[-2]
+
+        sl_multi = 3
+        tp_multi = 12
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, tp_multi, sl_multi)
+        if avg_candle_size is None:
+            return
+        print(symbol, '## TP -->', tp, '## SL -->', sl, '## AVG -->', avg_candle_size, '## ACTION -->', action)
+
+        MAGIC_NUMBER = get_magic_number()
+        trade_order_magic_value(symbol=symbol, tp_point=tp, sl_value=sl_value, lot=lot, action=action, magic=True, code=888, MAGIC_NUMBER=MAGIC_NUMBER)
+        write_json(json_dict=orders_json, json_file_name=json_file_name)
+
+        data = ""
+        data_lst = [symbol, time_frame, MAGIC_NUMBER, avg_candle_size, action, tp, sl, json_file_name, data]
+        add_csv(data_lst)
+
+def moving_average_crossover_ema_02(symbol, short, long):
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    skip_min = 2
+    time_frame = 'M1'
+
+    if not symbol in accepted_symbol_list:
+        # print('Symbol Not supported', symbol)
+        return None
+
+    json_file_name = 'xian_ma_cross'
+    running_trade_status, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol, skip_min=skip_min,
+                                                               json_file_name=json_file_name)
+    if running_trade_status:
+        print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>', is_time)
+        # if not is_time:
+        #     take_the_profit(symbol) #706.70
+        return None
+
+    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
+
+    # Moving Average
+    df['short'] = df['close'].ewm(span=short, adjust=False).mean()
+    df['long'] = df['close'].ewm(span=long, adjust=False).mean()
+
+    action = None
+    if df['short'].iloc[-1] > df['long'].iloc[-1] and df['short'].iloc[-3] < df['long'].iloc[-1]:
+        action = 'buy'
+    elif df['short'].iloc[-1] < df['long'].iloc[-1] and df['short'].iloc[-3] > df['long'].iloc[-1]:
+        action = 'sell'
+
+    # if df['close'].iloc[-1] > df['MA_long'].iloc[-1] and df['close'].iloc[-3] < df['MA_long'].iloc[-1]:
+    #     action = 'buy'
+    # elif df['close'].iloc[-1] < df['MA_long'].iloc[-1] and df['close'].iloc[-3] > df['MA_long'].iloc[-1]:
+    #     action = 'sell'
+
+    #print(df['short'].iloc[-1], df['long'].iloc[-1])
+
+    lot = 0.1
+
+
+    if action:
+        adx_min_bool = ADX_stakoverflow_check(df, 14, -1)
+        if not adx_min_bool:
+            return
+
+        if action == 'buy':
+            sl_value = df['low'].iloc[-2]
+        else:
+            sl_value = df['high'].iloc[-2]
 
         sl_multi = 3
         tp_multi = 12
@@ -396,7 +461,8 @@ def current_milli_time():
     return round(time.time() * 1000)
 
 def take_the_profit(symbol):
-    json_file_name_lst = ['xian_trade', 'akash_02']
+
+    json_file_name_lst = ['xian_ma_cross']
     skip_min = 3
 
     for json_file_name in json_file_name_lst:
@@ -408,15 +474,16 @@ def take_the_profit(symbol):
             if not is_time:
                 run_take_the_profit = True
 
-        if not run_take_the_profit:
-            return
+
         # get all positions
         positions = get_all_positions(symbol)
 
         # loop through all
         for position in positions:
+            #print(position)
             # read the data file
             magic_id = position.magic
+            position_type = position.type # 0 == buy , 1 == sell
             file_name = 'magics/' + symbol + '_' + str(magic_id) + '.json'
             data = {
                 'symbol': symbol,
@@ -446,8 +513,21 @@ def take_the_profit(symbol):
             current_profit = position.profit
             current_millis = current_milli_time()
 
-            time_gap = 20000
-            
+            if not run_take_the_profit:
+                time_gap = 30000
+            else:
+                if current_profit < 10:
+                    time_gap = 20000
+                elif current_profit > 100:
+                    time_gap = 60000
+                elif current_profit > 30:
+                    time_gap = 40000
+                elif current_profit > 10:
+                    time_gap = 30000
+                else:
+                    time_gap = 20000
+
+            print('TIME GAP -->', time_gap)
             # check the logic
             if data['profit_1']['profit'] is None:
                 data['profit_1']['profit'] = current_profit
@@ -488,6 +568,40 @@ def take_the_profit(symbol):
                 if data['profit_3']['profit'] > data['profit_2']['profit'] > data['profit_1']['profit']:
                     print(position.profit)
                     print(position)
+                    df = get_live_data(symbol=symbol, time_frame='M1', prev_n_candles=300)
+                    if position_type == 0: # BUY
+                        # if Bull cancel close
+                        if df['open'].iloc[-1] < df['close'].iloc[-1]:
+                            print('Bullish candle ==== CANCEL Close Order !!!')
+
+                            data['profit_3']['profit'] = data['profit_2']['profit']
+                            data['profit_3']['time'] = data['profit_2']['time']
+
+                            data['profit_2']['profit'] = data['profit_1']['profit']
+                            data['profit_2']['time'] = data['profit_1']['time']
+
+                            data['profit_1']['profit'] = current_profit
+                            data['profit_1']['time'] = current_millis
+
+                            with open(file_name, 'w') as outfile:
+                                json.dump(data, outfile)
+                            return
+                    elif position_type == 1: # SELL
+                        if df['open'].iloc[-1] > df['close'].iloc[-1]:
+                            print('Bearish candle ==== CANCEL Close Order !!!')
+
+                            data['profit_3']['profit'] = data['profit_2']['profit']
+                            data['profit_3']['time'] = data['profit_2']['time']
+
+                            data['profit_2']['profit'] = data['profit_1']['profit']
+                            data['profit_2']['time'] = data['profit_1']['time']
+
+                            data['profit_1']['profit'] = current_profit
+                            data['profit_1']['time'] = current_millis
+
+                            with open(file_name, 'w') as outfile:
+                                json.dump(data, outfile)
+                            return
                     # close the trade
                     clsoe_position(symbol, ticket=position.ticket)
                     data = {
@@ -517,6 +631,29 @@ def take_the_profit(symbol):
                 # else write the data file
                 with open(file_name, 'w') as outfile:
                     json.dump(data, outfile)
+
+def cumulative_lot():
+    file_name = 'cumulative_lot.json'
+    balance = get_balance()
+    try:
+        with open(file_name) as json_file:
+            data = json.load(json_file)
+
+        if data['balance'] + 100 < balance:
+            data['lot'] += 0.01
+            data['balance'] = balance
+
+            with open(file_name, 'w') as outfile:
+                json.dump(data, outfile)
+
+    except Exception as e:
+        print(file_name,' ', str(e))
+        data = {
+            'balance': 1000,
+            'lot': 0.1
+        }
+    print(balance, data)
+    return data['lot']
 
 
 

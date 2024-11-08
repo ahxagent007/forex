@@ -1,4 +1,4 @@
-from xian import take_the_profit
+from xian import take_the_profit, cumulative_lot
 from mt5_utils import get_live_data, get_magic_number, trade_order_magic
 from common_functions import check_duplicate_orders, write_json, add_csv, check_duplicate_orders_time, \
     check_duplicate_orders_magic, check_duplicate_orders_is_time
@@ -57,9 +57,9 @@ def boil_macd(symbol, window=20, num_std=2):
 
     if action:
         print(symbol, 'boil_macd')
-        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 6, 3)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 12, 3)
 
-        lot = 0.1
+        lot = cumulative_lot()
 
         MAGIC_NUMBER = get_magic_number()
         trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=2, MAGIC_NUMBER=MAGIC_NUMBER)

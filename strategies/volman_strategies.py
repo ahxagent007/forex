@@ -1,4 +1,4 @@
-from xian import take_the_profit
+from xian import take_the_profit, cumulative_lot
 from mt5_utils import get_live_data, trade_order
 from common_functions import check_duplicate_orders, write_json, check_duplicate_orders_time, \
     check_duplicate_orders_magic, check_duplicate_orders_is_time
@@ -256,9 +256,9 @@ def volman_strategies(symbol):
 
     if action:
         print(symbol, 'volman_strategies')
-        avg_candle_size, sl, tp = get_avg_candle_size(symbol, tick_df, 3, 2)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, tick_df, 12, 2)
 
-        lot = 0.1
+        lot = cumulative_lot()
 
         MAGIC_NUMBER = get_magic_number()
         trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=77, MAGIC_NUMBER=MAGIC_NUMBER)
