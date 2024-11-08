@@ -33,14 +33,14 @@ def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
     # # NEW ACC
-    login = 181244000
-    password = 'ABCabc123!@#'
-    server = 'Exness-MT5Trial6'
-
-    # ## Standard
-    # login = 181931686
+    # login = 181244000
     # password = 'ABCabc123!@#'
     # server = 'Exness-MT5Trial6'
+
+    ## PRO NEW
+    login = 182331894
+    password = 'ABCabc123!@#'
+    server = 'Exness-MT5Trial6'
 
     timeout = 10000
     portable = False
@@ -92,7 +92,7 @@ def get_live_data(symbol, time_frame, prev_n_candles):
     rates = mt5.copy_rates_from_pos(symbol, TIME_FRAME, 0, PREV_N_CANDLES)
 
     ticks_frame = pd.DataFrame(rates)
-    ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
+    #ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
 
     return ticks_frame
 def get_prev_data(symbol, time_frame, prev_start_min, prev_end_min):

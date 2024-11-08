@@ -3,8 +3,9 @@ import datetime as dt
 #from ai_strategies import ai_trade
 from threading import Thread
 
+from fair_value_gap import FVG_trade
 from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01, take_the_profit, \
-    moving_average_crossover_ema_02, cumulative_lot
+    moving_average_crossover_ema_02, cumulative_lot, random_walk
 from nahid_sir import bot_1
 from boillinger_macd_combo import boil_macd
 from fibonacci_price_action_combo import fibonacci_price_action
@@ -89,6 +90,16 @@ def trade(symbol):
     # except Exception as e:
     #     print(symbol, "ERROR", str(e))
 
+def trade_test(symbol):
+    delay_sec = 2
+
+    time.sleep(delay_sec)
+    #price_action(symbol)
+    try:
+        random_walk(symbol)
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
+
 def start_live_trade():
     initialize_mt5()
 
@@ -96,9 +107,9 @@ def start_live_trade():
 
     #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
 
-    #symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'GBPUSD', 'EURJPY']
     #symbol_list = ['BTCUSD', 'XAUUSD']
-    symbol_list = ['XAUUSD']
+    #symbol_list = ['XAUUSD']
 
 
     # # ## test order
@@ -130,7 +141,7 @@ def start_live_trade():
             #trade(symbol)
 
             if isNowInTimePeriod(dt.time(local_start, 00), dt.time(local_end, local_end_min), dt.datetime.now().time()):
-                trade(symbol)
+                trade_test(symbol)
 
         # print('1. BTCUSD 2. XAUUSD')
         # symbol = int(input('SYMBOL: -->>'))
