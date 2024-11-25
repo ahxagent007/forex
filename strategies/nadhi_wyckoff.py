@@ -10,7 +10,7 @@ from hmmlearn import hmm
 import matplotlib.pyplot as plt
 import time
 
-from mt5_utils import get_live_data, get_all_positions
+from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl
 
 '''import time
 # Press Shift+F10 to execute it or replace it with your code.
@@ -334,47 +334,52 @@ def bot_wyckoff(symbol, lot):
 
         i = -1
         if (lst[-1] == True and d[-1] == 'buy'):
-            print('buy')
-            point = mt5.symbol_info(symbol).point
-            price = mt5.symbol_info_tick(symbol).ask
-            deviation = 20
-            request = {
-                "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": symbol,
-                "volume": lot,
-                "type": mt5.ORDER_TYPE_BUY,
-                "price": price,
-                "deviation": deviation,
-                "magic": 234000,
-                "comment": "buy",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
-            }
+            print(symbol, 'buy')
+            trade_order_wo_tp_sl(symbol, lot, 'buy', magic=False)
 
-            # send a trading request
-            result = mt5.order_send(request)
+            # point = mt5.symbol_info(symbol).point
+            # price = mt5.symbol_info_tick(symbol).ask
+            # deviation = 20
+            # request = {
+            #     "action": mt5.TRADE_ACTION_DEAL,
+            #     "symbol": symbol,
+            #     "volume": lot,
+            #     "type": mt5.ORDER_TYPE_BUY,
+            #     "price": price,
+            #     "deviation": deviation,
+            #     "magic": 234000,
+            #     "comment": "buy",
+            #     "type_time": mt5.ORDER_TIME_GTC,
+            #     "type_filling": mt5.ORDER_FILLING_IOC,
+            # }
+            #
+            # # send a trading request
+            # result = mt5.order_send(request)
 
         elif (lst[-1] == True and d[-1] == 'sell'):
-            print('sell')
-            point = mt5.symbol_info(symbol).point
-            price = mt5.symbol_info_tick(symbol).bid
+            print(symbol, 'sell')
+            trade_order_wo_tp_sl(symbol, lot, 'sell', magic=False)
 
-            deviation = 20
-            request = {
-                "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": symbol,
-                "volume": lot,
-                "type": mt5.ORDER_TYPE_SELL,
-                "price": price,
-                "deviation": deviation,
-                "magic": 234000,
-                "comment": "sell",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
-            }
-
-            # send a trading request
-            result = mt5.order_send(request)
+            #
+            # point = mt5.symbol_info(symbol).point
+            # price = mt5.symbol_info_tick(symbol).bid
+            #
+            # deviation = 20
+            # request = {
+            #     "action": mt5.TRADE_ACTION_DEAL,
+            #     "symbol": symbol,
+            #     "volume": lot,
+            #     "type": mt5.ORDER_TYPE_SELL,
+            #     "price": price,
+            #     "deviation": deviation,
+            #     "magic": 234000,
+            #     "comment": "sell",
+            #     "type_time": mt5.ORDER_TIME_GTC,
+            #     "type_filling": mt5.ORDER_FILLING_IOC,
+            # }
+            #
+            # # send a trading request
+            # result = mt5.order_send(request)
         else:
             #print('no')
             None
