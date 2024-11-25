@@ -3,6 +3,7 @@ import datetime as dt
 #from ai_strategies import ai_trade
 from threading import Thread
 
+from nadhi_wyckoff import bot_wyckoff
 from fair_value_gap import FVG_trade
 from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01, take_the_profit, \
     moving_average_crossover_ema_02, cumulative_lot, random_walk
@@ -91,14 +92,21 @@ def trade(symbol):
     #     print(symbol, "ERROR", str(e))
 
 def trade_test(symbol):
-    delay_sec = 2
+    delay_sec = 1
 
     time.sleep(delay_sec)
     #price_action(symbol)
+    # try:
+    #     random_walk(symbol)
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+
+    ## Nahid Wyckoff
     try:
-        random_walk(symbol)
+        bot_wyckoff(symbol, 0.01)
     except Exception as e:
-        print(symbol, "ERROR", str(e))
+         print(symbol, "ERROR", str(e))
+
 
 def start_live_trade():
     initialize_mt5()
@@ -130,8 +138,8 @@ def start_live_trade():
     while True:
         for symbol in symbol_list:
 
-            time.sleep(1)
-            take_the_profit(symbol)
+            #time.sleep(1)
+            #take_the_profit(symbol)
 
             server_start = 4
             server_end = 17

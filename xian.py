@@ -32,7 +32,7 @@ def initialize_mt5():
     # server = "Exness-MT5Trial7"
 
     #new Testing account
-    login = 116363058
+    login = 182331894
     password = "abcdABCD123!@#"
     server = "Exness-MT5Trial6"
 

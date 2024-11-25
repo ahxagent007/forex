@@ -30,6 +30,13 @@ def read_json(json_file_name):
         data = json.load(json_file)
         return data
 
+def check_dup_orders_count(symbol):
+    order_count = get_order_positions_count(symbol)
+    if order_count > 0:
+        return True
+    else:
+        return False
+
 def check_duplicate_orders(symbol, skip_min, json_file_name):
     orders = get_order_positions_count(symbol)
     orders_json = read_json(json_file_name)

@@ -33,14 +33,14 @@ def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
     # # NEW ACC
-    # login = 181244000
-    # password = 'ABCabc123!@#'
-    # server = 'Exness-MT5Trial6'
-
-    ## PRO NEW
-    login = 182331894
+    login = 181244000
     password = 'ABCabc123!@#'
     server = 'Exness-MT5Trial6'
+
+    ## PRO NEW
+    # login = 182331894
+    # password = 'ABCabc123!@#'
+    # server = 'Exness-MT5Trial6'
 
     timeout = 10000
     portable = False
@@ -74,6 +74,8 @@ def get_live_data(symbol, time_frame, prev_n_candles):
         TIME_FRAME = mt5.TIMEFRAME_M1
     elif time_frame == 'M5':
         TIME_FRAME = mt5.TIMEFRAME_M5
+    elif time_frame == 'M2':
+        TIME_FRAME = mt5.TIMEFRAME_M2
     elif time_frame == 'M10':
         TIME_FRAME = mt5.TIMEFRAME_M10
     elif time_frame == 'M15':
@@ -392,6 +394,8 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
         if tp_point:
             tp = price - tp_point * point
             sl = price + sl_point * point
+    else:
+        return None
 
 
     print(symbol, 'Spread pip: ', spread)

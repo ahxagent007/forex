@@ -9,7 +9,7 @@ import time
 from random_walk import get_random_action
 from akash import get_avg_candle_size, calculate_ema, ADX_stakoverflow, calculate_rsi
 from common_functions import check_duplicate_orders_time, check_duplicate_orders_magic, add_csv, \
-    write_json, check_duplicate_orders, check_duplicate_orders_is_time
+    write_json, check_duplicate_orders, check_duplicate_orders_is_time, check_dup_orders_count
 
 from mt5_utils import get_live_data, get_prev_data, initialize_mt5, get_magic_number, trade_order_magic, \
     get_all_positions, clsoe_position, trade_order_magic_value, get_balance, trade_order_wo_tp_sl
@@ -87,7 +87,76 @@ def create_candle_type(df):
         # elif (oc_diff/length)*100 < 10 and (lc_diff/length)*100 < 15 and ho_diff > oc_diff*2 and open>close:
         #     df.loc[idx, 'candle_type'] = 'bearish_shooting_star'
 
+    return df
+def create_candle_type_RL(df):
+    df['candle_type'] = 'None'
 
+    for idx, row in df.iterrows():
+        high = row['high']
+        low = row['low']
+        open = row['open']
+        close = row['close']
+
+        #AVG
+        diff_array = []
+        for i in range(1, 6):
+            try:
+                diff = abs(df.loc[idx-i, 'open'] - df.loc[idx-1, 'close'])
+                diff_array.append(diff)
+            except:
+                None
+        try:
+            prev_5_avg_candle_size = sum(diff_array) / len(diff_array)
+        except:
+            prev_5_avg_candle_size = 0
+
+        length = abs(high - low)
+        if length == 0:
+            continue
+
+        hc_diff = abs(high - close)
+        lo_diff = abs(low - open)
+
+        ho_diff = abs(high - open)
+        lc_diff = abs(low - close)
+
+        oc_diff = abs(open-close)
+
+        ## Bullish Marubozu
+        if (hc_diff/length)*100 < 5 and (lo_diff/length)*100 < 5 and close>open and oc_diff > prev_5_avg_candle_size:
+            df.loc[idx, 'candle_type'] = 'bullish_marubozu'
+
+        ## bearish Marubozu
+        elif (ho_diff/length)*100 < 5 and (lc_diff/length)*100 < 5 and open>close and oc_diff > prev_5_avg_candle_size:
+            df.loc[idx, 'candle_type'] = 'bearish_marubozu'
+
+        # ## Hammer
+        # elif (oc_diff/length)*100 < 10 and (hc_diff/length)*100 < 15 and lo_diff > oc_diff*2 and close>open:
+        #     df.loc[idx, 'candle_type'] = 'bullish_hammer'
+
+        ## Doji
+        elif (oc_diff / length) * 100 < 5:
+            df.loc[idx, 'candle_type'] = 'doji'
+
+        ## HAMMER
+        elif is_hammer(row):
+            df.loc[idx, 'candle_type'] = 'hammer'
+
+        ## SHOOTING STAR
+        elif is_shooting_star(row):
+            df.loc[idx, 'candle_type'] = 'shooting_star'
+
+        ## Hanging Man
+        elif (oc_diff/length)*100 < 10 and (ho_diff/length)*100 < 15 and lc_diff > oc_diff*2 and open>close:
+            df.loc[idx, 'candle_type'] = 'bearish_hanging_man'
+
+        ## inverted Hammer
+        elif (oc_diff/length)*100 < 10 and (lo_diff/length)*100 < 15 and hc_diff > oc_diff*2 and close>open:
+            df.loc[idx, 'candle_type'] = 'bullish_inverted_hammer'
+
+        # ## Shooting Star
+        # elif (oc_diff/length)*100 < 10 and (lc_diff/length)*100 < 15 and ho_diff > oc_diff*2 and open>close:
+        #     df.loc[idx, 'candle_type'] = 'bearish_shooting_star'
 
     return df
 
@@ -545,7 +614,7 @@ def current_milli_time():
 def take_the_profit(symbol):
 
     # VARIABLE FOR 1M
-    time_frame = 60000 * 1
+    time_frame = 60000 * 2              #60000
     time_gap_d = time_frame/2           #30000 #half
     time_gap_10_less = time_frame/6     #20000 #1/3
     time_gap_10_great = time_gap_d
@@ -766,8 +835,7 @@ def random_walk(symbol):
         return None
 
     json_file_name = 'xian_random_walk'
-    running_trade_status, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol, skip_min=skip_min,
-                                                                                json_file_name=json_file_name)
+    running_trade_status = check_dup_orders_count(symbol=symbol)
     if running_trade_status:
         # print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>')
         # if not is_time:
@@ -780,6 +848,3 @@ def random_walk(symbol):
     if action:
         lot = 0.01
         trade_order_wo_tp_sl(symbol=symbol, lot=lot, action=action, magic=True)
-        write_json(json_dict=orders_json, json_file_name=json_file_name)
-
-
