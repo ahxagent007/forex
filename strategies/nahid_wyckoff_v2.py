@@ -1,43 +1,6 @@
-# This is a sample Python script.
-import time
-import math
-from datetime import datetime
-from datetime import datetime, timedelta
-import MetaTrader5 as mt5
 import pandas as pd
 import numpy as np
-from hmmlearn import hmm
-import matplotlib.pyplot as plt
-import time
-
 from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, clsoe_position
-
-'''import time
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-from pandas.plotting import register_matplotlib_converters
-
-
-
-
-register_matplotlib_converters()
-import MetaTrader5 as mt5
-from datetime import datetime, timedelta
-from candlestick import candlestick
-
-
-
-
-'''
-import pandas as pd
-import numpy as np
 
 
 def detect_phase_a(data, rolling_window=20, volume_multiplier=2, debug=False):
@@ -192,7 +155,6 @@ def crossover(a, b, accum):
     d = c.shift(1)
     lst = []
     dec = []
-    # print('hurra')
 
     for i in range(len(a)):
         if c.iloc[i] != d.iloc[i] and accum.iloc[i] == False:
@@ -306,29 +268,18 @@ def detect_accumulation_and_markup(
     return data
 
 
-def bot_wyckoff(symbol, lot):
+def wyckoff_bot_v2(symbol, lot):
     # Actions: 0 = Hold, 1 = Buy, 2 = Sell
     positions = get_all_positions(symbol)
-
-
     time_frame = 'M5'
     ticks_frame1 = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
 
-
-    '''ticks_frame1 = pd.DataFrame(rates)
-    rates = mt5.copy_rates_range(symbol, mt5.TIMEFRAME_M5,
-                                 datetime.now() - timedelta(days=0) - timedelta(hours=120),
-                                 datetime.now() - timedelta(days=0))
-    '''
     phase_a_data = detect_accumulation_and_markup(ticks_frame1)
-    a = Ema(ticks_frame1)
     b = Ma(ticks_frame1)
+    a = Ema(ticks_frame1)
     # Visualize Phase A events
     lst, d = crossover(a, b, phase_a_data['accumulation'])
-    exit_dec = crossover_exit(a, b)
-    # print('dec')
-    # print(lst[-1])
-    # print(d[-1])
+
 
     if len(positions) == 0:
 
@@ -337,67 +288,28 @@ def bot_wyckoff(symbol, lot):
             print(symbol, 'buy')
             trade_order_wo_tp_sl(symbol, lot, 'buy', magic=False)
 
-            # point = mt5.symbol_info(symbol).point
-            # price = mt5.symbol_info_tick(symbol).ask
-            # deviation = 20
-            # request = {
-            #     "action": mt5.TRADE_ACTION_DEAL,
-            #     "symbol": symbol,
-            #     "volume": lot,
-            #     "type": mt5.ORDER_TYPE_BUY,
-            #     "price": price,
-            #     "deviation": deviation,
-            #     "magic": 234000,
-            #     "comment": "buy",
-            #     "type_time": mt5.ORDER_TIME_GTC,
-            #     "type_filling": mt5.ORDER_FILLING_IOC,
-            # }
-            #
-            # # send a trading request
-            # result = mt5.order_send(request)
-
         elif (lst[-1] == True and d[-1] == 'sell'):
             print(symbol, 'sell')
             trade_order_wo_tp_sl(symbol, lot, 'sell', magic=False)
 
-            #
-            # point = mt5.symbol_info(symbol).point
-            # price = mt5.symbol_info_tick(symbol).bid
-            #
-            # deviation = 20
-            # request = {
-            #     "action": mt5.TRADE_ACTION_DEAL,
-            #     "symbol": symbol,
-            #     "volume": lot,
-            #     "type": mt5.ORDER_TYPE_SELL,
-            #     "price": price,
-            #     "deviation": deviation,
-            #     "magic": 234000,
-            #     "comment": "sell",
-            #     "type_time": mt5.ORDER_TIME_GTC,
-            #     "type_filling": mt5.ORDER_FILLING_IOC,
-            # }
-            #
-            # # send a trading request
-            # result = mt5.order_send(request)
-        else:
             #print('no')
-            None
         # Visualize Accumulation and Markup
         # for i in range(len(wyckoff_data)):
     elif len(positions) > 0:
-        i = -1
-        for position in positions:
-            # rint(position.comment)
-            if (position.comment == 'buy' and exit_dec[-1] == True):
+        P1 = (0, b.iloc[-7])
+        Q1 = (7, b.iloc[-1])
+        # print(P1, " ", Q1)
+        P2 = (0, a.iloc[-7])
+        Q2 = (7, a.iloc[-1])
+        # print(P2, " ", Q2)
+        intersection_point = find_intersection(P1, Q1, P2, Q2, 7)
+        # print(intersection_point)
+        if intersection_point != 'not cross':
+            print('Forced off')
 
-                #mt5.Close(symbol, ticket=position.ticket)
+            for position in positions:
+                print('EXIT:', position.profit)
                 clsoe_position(symbol, position.ticket)
-                print('buy_exit')
-            elif (position.comment == 'sell' and exit_dec[-1] == True):
-                #mt5.Close(symbol, ticket=position.ticket)
-                clsoe_position(symbol, position.ticket)
-                print('sell_exit')
 
     # Discretization function for high and low prices
 
@@ -410,36 +322,3 @@ def bot_wyckoff(symbol, lot):
     # Function to initialize Q-values for a given state if it doesn't exist
 
     # Initialize Q-table for the generated state
-
-
-def Mt5_backTest(muldhon, Current_time, window, totalTime):
-    capital = muldhon
-    pt = Current_time
-
-    isOneCandle = False
-    prev_time = datetime.now().minute
-
-    while True:
-        # print(prev_time,'    ',cur_time)
-        cur_time = datetime.now().minute
-        if prev_time == cur_time:
-            isOneCandle = False
-        else:
-            isOneCandle = True
-        if (cur_time % 5) == 0 and isOneCandle:
-            print()
-            bot_wyckoff('EURUSDm', 0.01)
-            bot_wyckoff('EURJPYm', 0.01)
-            bot_wyckoff('USDJPYm', 0.01)
-            print('------------------------------------------')
-            prev_time = cur_time
-
-    mt5.shutdown()
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    # Mt5()
-    Mt5_backTest(5000, datetime.now() - timedelta(days=0.5), 60, timedelta(minutes=120))
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/

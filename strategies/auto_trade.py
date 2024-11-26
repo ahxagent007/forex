@@ -3,6 +3,7 @@ import datetime as dt
 #from ai_strategies import ai_trade
 from threading import Thread
 
+from nahid_wyckoff_v2 import wyckoff_bot_v2
 from nadhi_wyckoff import bot_wyckoff
 from fair_value_gap import FVG_trade
 from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01, take_the_profit, \
@@ -103,7 +104,7 @@ def trade_test(symbol):
 
     ## Nahid Wyckoff
     try:
-        bot_wyckoff(symbol, 0.01)
+        wyckoff_bot_v2(symbol, 0.01)
     except Exception as e:
          print(symbol, "ERROR", str(e))
 
@@ -146,10 +147,10 @@ def start_live_trade():
             local_start = 10
             local_end = 23
             local_end_min = 59
-            #trade(symbol)
+            trade_test(symbol)
 
-            if isNowInTimePeriod(dt.time(local_start, 00), dt.time(local_end, local_end_min), dt.datetime.now().time()):
-                trade_test(symbol)
+            # if isNowInTimePeriod(dt.time(local_start, 00), dt.time(local_end, local_end_min), dt.datetime.now().time()):
+            #     trade_test(symbol)
 
         # print('1. BTCUSD 2. XAUUSD')
         # symbol = int(input('SYMBOL: -->>'))
