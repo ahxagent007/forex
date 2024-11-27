@@ -118,7 +118,7 @@ def Ma(prices):
 
 
 def Ema(prices):
-    a = prices['close'].ewm(span=20, adjust=False).mean()
+    a = prices['close'].ewm(span=10, adjust=False).mean()
     return a
 
 
@@ -309,7 +309,7 @@ def wyckoff_bot_v2(symbol, lot):
 
             for position in positions:
                 print('EXIT:', position.profit)
-                clsoe_position(symbol, position.ticket)
+                #clsoe_position(symbol, position.ticket)
 
     # Discretization function for high and low prices
 

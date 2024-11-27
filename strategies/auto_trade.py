@@ -140,7 +140,7 @@ def start_live_trade():
         for symbol in symbol_list:
 
             #time.sleep(1)
-            #take_the_profit(symbol)
+            take_the_profit(symbol)
 
             server_start = 4
             server_end = 17

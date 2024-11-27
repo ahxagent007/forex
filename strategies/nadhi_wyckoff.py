@@ -155,7 +155,7 @@ def Ma(prices):
 
 
 def Ema(prices):
-    a = prices['close'].ewm(span=20, adjust=False).mean()
+    a = prices['close'].ewm(span=10, adjust=False).mean()
     return a
 
 
