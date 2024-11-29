@@ -33,14 +33,14 @@ def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
     # # NEW ACC
-    login = 181244000
-    password = 'ABCabc123!@#'
-    server = 'Exness-MT5Trial6'
-
-    ## PRO NEW
-    # login = 182331894
+    # login = 181244000
     # password = 'ABCabc123!@#'
     # server = 'Exness-MT5Trial6'
+
+    ## PRO NEW
+    login = 182331894
+    password = 'ABCabc123!@#'
+    server = 'Exness-MT5Trial6'
 
     timeout = 10000
     portable = False
@@ -349,7 +349,7 @@ def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
             "price": price,
             "deviation": deviation,
             "magic": MAGIC_NUMBER,
-            "comment": "python script open"
+            "comment": action
         }
     print(request)
     # send a trading request
@@ -557,7 +557,6 @@ def trade_order_magic_value(symbol, tp_point, sl_value, lot, action, magic=False
     except Exception as e:
         print('Result '+action+' >> ', str(e))
 
-
 def trade_order_wo_sl_magic(symbol, tp_point, lot, action, magic=False, code=0):
 
 
@@ -650,9 +649,9 @@ def get_order_positions_count(symbol):
 
 def get_all_positions(symbol):
     return mt5.positions_get(symbol=symbol)
+
 def clsoe_position(symbol, ticket):
     mt5.Close(symbol, ticket=ticket)
-
 
 def update_magic_number(symbol, MAGIC_NUMBER):
     #print('updating',symbol,MAGIC_NUMBER)
@@ -665,7 +664,6 @@ def update_magic_number(symbol, MAGIC_NUMBER):
 
     with open(file_name, 'w') as outfile:
         json.dump(json_data, outfile)
-
 
 def get_current_price(symbol):
     # Get current price

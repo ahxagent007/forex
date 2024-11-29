@@ -614,7 +614,7 @@ def current_milli_time():
 def take_the_profit(symbol):
 
     # VARIABLE FOR 1M
-    time_frame = 60000 * 2              #60000
+    time_frame = 60000 * 5              #60000
     time_gap_d = time_frame/2           #30000 #half
     time_gap_10_less = time_frame/6     #20000 #1/3
     time_gap_10_great = time_gap_d
@@ -848,3 +848,19 @@ def random_walk(symbol):
     if action:
         lot = 0.01
         trade_order_wo_tp_sl(symbol=symbol, lot=lot, action=action, magic=True)
+
+def get_max_profit(symbol, lot):
+
+    base_amount = 200
+    return base_amount * lot
+    # if symbol == 'XAUUSD':
+    #     return base_amount * lot * 2
+    # else:
+    #     return base_amount * lot
+
+def get_max_loss(symbol, lot):
+    base_amount = 20
+    if symbol == 'XAUUSD':
+        return -(base_amount * lot * 2)
+    else:
+        return -(base_amount * lot)

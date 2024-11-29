@@ -1,6 +1,14 @@
+import math
+from datetime import datetime, timedelta
+
+from common_functions import write_json
+from xian import get_max_profit, get_max_loss
+from xian import check_duplicate_orders
+from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, clsoe_position
+
+
 import pandas as pd
 import numpy as np
-from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, clsoe_position
 
 
 def detect_phase_a(data, rolling_window=20, volume_multiplier=2, debug=False):
@@ -118,7 +126,7 @@ def Ma(prices):
 
 
 def Ema(prices):
-    a = prices['close'].ewm(span=1, adjust=False).mean()
+    a = prices['close'].ewm(span=20, adjust=False).mean()
     return a
 
 
@@ -132,29 +140,81 @@ def line_from_points(P, Q):
 
 def find_intersection(P1, Q1, P2, Q2, lim):
     # Get the line equations Ax + By = C for both lines
-    A1, B1, C1 = line_from_points(P1, Q1)
-    A2, B2, C2 = line_from_points(P2, Q2)
 
-    # Calculate the determinant
-    determinant = A1 * B2 - A2 * B1
-    # print(determinant)
-    if determinant == 0:
-        return "not cross"
+
+    delta_x = P2 - P1
+    delta_y = Q2 - Q1
+
+
+        # Compute the slope
+    slope = delta_y / delta_x
+
+    # Calculate the angle in radians using arctangent
+    angle_rad = math.atan(slope)
+
+    # Adjust based on quadrant
+    angle=angle_rad*(180/math.pi)*100
+
+    if angle>30:
+        #print(angle)
+        return True
     else:
-        # Using Cramer's rule to find the intersection point (x, y)
-        x = (C1 * B2 - C2 * B1) / determinant
-        y = (A1 * C2 - A2 * C1) / determinant
-        if (x <= lim):
-            return "not cross"
-        else:
-            return x, y
+        return False
 
+def find_intersection2(P1, Q1, P2, Q2, lim):
+    # Get the line equations Ax + By = C for both lines
+
+
+    delta_x = P2 - P1
+    delta_y = Q2 - Q1
+
+
+        # Compute the slope
+    slope = delta_y / delta_x
+
+    # Calculate the angle in radians using arctangent
+    angle_rad = math.atan(slope)
+
+    # Adjust based on quadrant
+    angle=angle_rad*(180/math.pi)*100
+
+    if angle<-30:
+        #print(angle)
+        return True
+    else:
+        return False
+
+
+def all_deg(ema):
+    deg=[]
+    for i in range(len(ema)):
+        #P1 = (0, b.iloc[-7])
+        #Q1 = (7, b.iloc[-1])
+        if(i>=20):
+            a=find_intersection(0 ,ema[i-20], 0.1, ema[i], 1)
+            deg.append(a)
+        else:
+            deg.append(False)
+    return deg
+
+def all_deg2(ema):
+    deg=[]
+    for i in range(len(ema)):
+        #P1 = (0, b.iloc[-7])
+        #Q1 = (7, b.iloc[-1])
+        if(i>=20):
+            a=find_intersection2(0 ,ema[i-20], 0.1, ema[i], 1)
+            deg.append(a)
+        else:
+            deg.append(False)
+    return deg
 
 def crossover(a, b, accum):
     c = (a > b).astype(int) - (a < b).astype(int)
     d = c.shift(1)
     lst = []
     dec = []
+    print('hurra')
 
     for i in range(len(a)):
         if c.iloc[i] != d.iloc[i] and accum.iloc[i] == False:
@@ -204,20 +264,6 @@ def detect_accumulation_and_markup(
         markdown_multiplier=2,
         debug=False
 ):
-    """
-    Detect accumulation and markup phases using dynamic thresholds.
-
-    Args:
-        data (pd.DataFrame): A DataFrame containing 'close', 'high', 'low', and 'volume'.
-        base_accumulation (float): Base threshold for accumulation detection.
-        acc_multiplier (float): Multiplier for dynamic accumulation threshold adjustment.
-        base_markup (float): Base threshold for markup detection.
-        markup_multiplier (float): Multiplier for dynamic markup threshold adjustment.
-        debug (bool): If True, print debug information.
-
-    Returns:
-        pd.DataFrame: Original data with additional 'accumulation' and 'markup' columns.
-    """
 
     # Calculate rolling mean and standard deviation
     data['mean_price'] = data['close'].rolling(100, min_periods=1).mean()
@@ -268,57 +314,55 @@ def detect_accumulation_and_markup(
     return data
 
 
-def wyckoff_bot_v2(symbol, lot):
+def bot_wyckoff_v4(symbol, lot):
+    skip_min = 11
+    time_frame = 'M5'
+
     # Actions: 0 = Hold, 1 = Buy, 2 = Sell
     positions = get_all_positions(symbol)
-    time_frame = 'M5'
     ticks_frame1 = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
 
     phase_a_data = detect_accumulation_and_markup(ticks_frame1)
     b = Ma(ticks_frame1)
     a = Ema(ticks_frame1)
     # Visualize Phase A events
-    lst, d = crossover(a, b, phase_a_data['accumulation'])
-
-
+    deg=all_deg(a)
+    deg2=all_deg2(a)
+    # print(P1, " ", Q1)
     if len(positions) == 0:
+        json_file_name = 'Nahid_wyckoff_scalping'
+        running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
+                                                                   json_file_name=json_file_name)
+        if running_trade_status:
+            # print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>')
+            return None
 
         i = -1
-        if (lst[-1] == True and d[-1] == 'buy'):
-            print(symbol, 'buy')
+        if (deg[i]==True):
+            print('buy')
             trade_order_wo_tp_sl(symbol, lot, 'buy', magic=False)
+            write_json(json_dict=orders_json, json_file_name=json_file_name)
 
-        elif (lst[-1] == True and d[-1] == 'sell'):
-            print(symbol, 'sell')
+        elif (deg2[i]==True):
+            print('sell')
             trade_order_wo_tp_sl(symbol, lot, 'sell', magic=False)
+            write_json(json_dict=orders_json, json_file_name=json_file_name)
 
-            #print('no')
+
         # Visualize Accumulation and Markup
         # for i in range(len(wyckoff_data)):
     elif len(positions) > 0:
-        P1 = (0, b.iloc[-7])
-        Q1 = (7, b.iloc[-1])
-        # print(P1, " ", Q1)
-        P2 = (0, a.iloc[-7])
-        Q2 = (7, a.iloc[-1])
-        # print(P2, " ", Q2)
-        intersection_point = find_intersection(P1, Q1, P2, Q2, 7)
-        # print(intersection_point)
-        if intersection_point != 'not cross':
-            print('Forced off')
+        for position in positions:
+            #print(position.comment, 'buy' and deg[-1] == False)
+            if (position.comment == 'buy' and deg[-1] == False):
+                clsoe_position(symbol, position.ticket)
+                print('buy_exit')
+            elif (position.comment == 'sell' and deg2[-1] == False):
+                clsoe_position(symbol, position.ticket)
+                print('sell_exit')
+            else:
+                if position.profit > get_max_profit(symbol, lot) or position.profit < get_max_loss(symbol, lot):
+                    clsoe_position(symbol, position.ticket)
+                    print('Profit or Loss Taken: ', position.profit)
 
-            for position in positions:
-                print('EXIT:', position.profit)
-                #clsoe_position(symbol, position.ticket)
 
-    # Discretization function for high and low prices
-
-    # Initialize state with random high and low prices for the last 10 candles
-
-    # Convert state to tuple to make it hashable
-
-    # Initialize Q-table as a dictionary with default Q-values for each action
-
-    # Function to initialize Q-values for a given state if it doesn't exist
-
-    # Initialize Q-table for the generated state
