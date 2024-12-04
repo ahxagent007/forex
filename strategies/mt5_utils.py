@@ -305,7 +305,7 @@ def trade_order_wo_sl(symbol, tp_point, lot, action, magic=False):
 
 def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
 
-
+    print(action)
     if action == 'buy':
         point = mt5.symbol_info(symbol).point
         price = mt5.symbol_info_tick(symbol).ask
@@ -349,7 +349,7 @@ def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
             "price": price,
             "deviation": deviation,
             "magic": MAGIC_NUMBER,
-            "comment": "python script open"
+            "comment": action
         }
     print(request)
     # send a trading request

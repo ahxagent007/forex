@@ -614,7 +614,7 @@ def current_milli_time():
 def take_the_profit(symbol):
 
     # VARIABLE FOR 1M
-    time_frame = 60000 * 2              #60000
+    time_frame = 60000 * 5              #60000
     time_gap_d = time_frame/2           #30000 #half
     time_gap_10_less = time_frame/6     #20000 #1/3
     time_gap_10_great = time_gap_d
@@ -646,6 +646,9 @@ def take_the_profit(symbol):
 
         # get all positions
         positions = get_all_positions(symbol)
+        
+        if positions is None:
+            return
 
         # loop through all
         for position in positions:

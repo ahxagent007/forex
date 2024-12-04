@@ -304,12 +304,17 @@ def wyckoff_bot_v2(symbol, lot):
         # print(P2, " ", Q2)
         intersection_point = find_intersection(P1, Q1, P2, Q2, 7)
         # print(intersection_point)
+        base_tp = 150
         if intersection_point != 'not cross':
             print('Forced off')
 
             for position in positions:
                 print('EXIT:', position.profit)
-                #clsoe_position(symbol, position.ticket)
+                clsoe_position(symbol, position.ticket)
+        for position in positions:
+            if position.profit > base_tp*lot:
+                clsoe_position(symbol, position.ticket)
+                trade_order_wo_tp_sl(symbol, round(lot/2, 2), position.comment, magic=False)
 
     # Discretization function for high and low prices
 
