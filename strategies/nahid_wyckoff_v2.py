@@ -296,13 +296,14 @@ def wyckoff_bot_v2(symbol, lot):
         # Visualize Accumulation and Markup
         # for i in range(len(wyckoff_data)):
     elif len(positions) > 0:
-        P1 = (0, b.iloc[-7])
-        Q1 = (7, b.iloc[-1])
+        line_size = 3
+        P1 = (0, b.iloc[-line_size])
+        Q1 = (line_size, b.iloc[-1])
         # print(P1, " ", Q1)
-        P2 = (0, a.iloc[-7])
-        Q2 = (7, a.iloc[-1])
+        P2 = (0, a.iloc[-line_size])
+        Q2 = (line_size, a.iloc[-1])
         # print(P2, " ", Q2)
-        intersection_point = find_intersection(P1, Q1, P2, Q2, 7)
+        intersection_point = find_intersection(P1, Q1, P2, Q2, line_size)
         # print(intersection_point)
         base_tp = 150
         if intersection_point != 'not cross':
