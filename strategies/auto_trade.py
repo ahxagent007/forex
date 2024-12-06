@@ -3,6 +3,7 @@ import datetime as dt
 #from ai_strategies import ai_trade
 from threading import Thread
 
+from nahid_wyckoff_v4 import bot_wyckoff_v4
 from nahid_wyckoff_v2 import wyckoff_bot_v2
 from nadhi_wyckoff import bot_wyckoff
 from fair_value_gap import FVG_trade
@@ -105,6 +106,7 @@ def trade_test(symbol):
     ## Nahid Wyckoff
     try:
         wyckoff_bot_v2(symbol, 2.0)
+
     except Exception as e:
          print(symbol, "ERROR", str(e))
 

@@ -851,3 +851,19 @@ def random_walk(symbol):
     if action:
         lot = 0.01
         trade_order_wo_tp_sl(symbol=symbol, lot=lot, action=action, magic=True)
+
+def get_max_profit(symbol, lot):
+
+    base_amount = 200
+    return base_amount * lot
+    # if symbol == 'XAUUSD':
+    #     return base_amount * lot * 2
+    # else:
+    #     return base_amount * lot
+
+def get_max_loss(symbol, lot):
+    base_amount = 20
+    if symbol == 'XAUUSD':
+        return -(base_amount * lot * 2)
+    else:
+        return -(base_amount * lot)
