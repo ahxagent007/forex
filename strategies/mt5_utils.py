@@ -329,7 +329,7 @@ def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
         'EURJPY': 15,
         'USDJPY': 15,
         'XAUUSD': 150,
-        'BTCUSD': 1900,
+        'BTCUSD': 2300,
         'GBPUSD': 15
     }
 

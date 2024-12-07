@@ -614,7 +614,7 @@ def current_milli_time():
 def take_the_profit(symbol):
 
     # VARIABLE FOR 1M
-    time_frame = 60000 * 5              #60000
+    time_frame = 60000 * 0.5              #60000
     time_gap_d = time_frame/2           #30000 #half
     time_gap_10_less = time_frame/6     #20000 #1/3
     time_gap_10_great = time_gap_d
@@ -631,7 +631,7 @@ def take_the_profit(symbol):
     # time_gap_100 = time_frame           #60000 #full
     # time_gap_else = time_frame/3        #20000 #1/3
 
-    json_file_name_lst = ['xian_price_action', 'FVG_trade']
+    json_file_name_lst = ['xian_price_action', 'Nahid_wyckoff_scalping']
     skip_min = 2
 
     for json_file_name in json_file_name_lst:
@@ -826,7 +826,7 @@ def cumulative_lot():
 
 
 def random_walk(symbol):
-    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY']
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY', 'BTCUSD']
     skip_min = 2
     time_frame = 'M1'
 
@@ -848,6 +848,27 @@ def random_walk(symbol):
     if action:
         lot = 0.01
         trade_order_wo_tp_sl(symbol=symbol, lot=lot, action=action, magic=True)
+
+def random_walk_both(symbol):
+    accepted_symbol_list = ['EURUSD', 'GBPUSD', 'XAUUSD', 'USDJPY', 'EURJPY', 'BTCUSD']
+    skip_min = 2
+    time_frame = 'M1'
+
+    if not symbol in accepted_symbol_list:
+        # print('Symbol Not supported', symbol)
+        return None
+
+    json_file_name = 'xian_random_walk'
+    running_trade_status = check_dup_orders_count(symbol=symbol)
+    if running_trade_status:
+        return None
+
+    #df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
+    #action = get_random_action()
+
+    lot = 0.01
+    trade_order_wo_tp_sl(symbol=symbol, lot=lot, action='buy', magic=True)
+    trade_order_wo_tp_sl(symbol=symbol, lot=lot, action='sell', magic=True)
 
 def get_max_profit(symbol, lot):
 

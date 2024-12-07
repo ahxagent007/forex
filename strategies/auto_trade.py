@@ -8,7 +8,7 @@ from nahid_wyckoff_v2 import wyckoff_bot_v2
 from nadhi_wyckoff import bot_wyckoff
 from fair_value_gap import FVG_trade
 from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01, take_the_profit, \
-    moving_average_crossover_ema_02, cumulative_lot, random_walk
+    moving_average_crossover_ema_02, cumulative_lot, random_walk, random_walk_both
 from nahid_sir import bot_1
 from boillinger_macd_combo import boil_macd
 from fibonacci_price_action_combo import fibonacci_price_action
@@ -98,16 +98,12 @@ def trade_test(symbol):
 
     time.sleep(delay_sec)
     #price_action(symbol)
-    # try:
-    #     random_walk(symbol)
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-
-    ## Nahid Wyckoff
     try:
-        bot_wyckoff_v4(symbol, 0.05)
+        random_walk_both(symbol)
     except Exception as e:
-         print(symbol, "ERROR", str(e))
+        print(symbol, "ERROR", str(e))
+
+
 
 
 def start_live_trade():
@@ -117,8 +113,8 @@ def start_live_trade():
 
     #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
 
-    symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'GBPUSD', 'EURJPY']
-    #symbol_list = ['BTCUSD', 'XAUUSD']
+    #symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'GBPUSD', 'EURJPY']
+    symbol_list = ['BTCUSD']
     #symbol_list = ['XAUUSD']
 
 
@@ -141,17 +137,17 @@ def start_live_trade():
         for symbol in symbol_list:
 
             #time.sleep(1)
-            #take_the_profit(symbol)
+            take_the_profit(symbol)
 
             server_start = 4
             server_end = 17
             local_start = 10
             local_end = 23
             local_end_min = 59
-            trade_test(symbol)
+            #trade_test(symbol)
 
-            # if isNowInTimePeriod(dt.time(local_start, 00), dt.time(local_end, local_end_min), dt.datetime.now().time()):
-            #     trade_test(symbol)
+            if isNowInTimePeriod(dt.time(local_start, 00), dt.time(local_end, local_end_min), dt.datetime.now().time()):
+                trade_test(symbol)
 
         # print('1. BTCUSD 2. XAUUSD')
         # symbol = int(input('SYMBOL: -->>'))
