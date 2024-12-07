@@ -646,6 +646,9 @@ def take_the_profit(symbol):
 
         # get all positions
         positions = get_all_positions(symbol)
+        
+        if positions is None:
+            return
 
         # loop through all
         for position in positions:

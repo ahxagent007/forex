@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+
+from common_functions import skip_trade_time, write_json
 from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, clsoe_position
 
 
@@ -282,6 +284,14 @@ def wyckoff_bot_v2(symbol, lot):
 
 
     if len(positions) == 0:
+        skip_min = 5
+        json_file_name = 'nahid_wyckoff_v2'
+        running_trade_status, orders_json = skip_trade_time(symbol=symbol, skip_min=skip_min,
+                                                                   json_file_name=json_file_name)
+        if running_trade_status:
+            return None
+        else:
+            write_json(json_dict=orders_json, json_file_name=json_file_name)
 
         i = -1
         if (lst[-1] == True and d[-1] == 'buy'):
@@ -296,20 +306,32 @@ def wyckoff_bot_v2(symbol, lot):
         # Visualize Accumulation and Markup
         # for i in range(len(wyckoff_data)):
     elif len(positions) > 0:
-        P1 = (0, b.iloc[-7])
-        Q1 = (7, b.iloc[-1])
+        line_size = 4
+        P1 = (0, b.iloc[-line_size])
+        Q1 = (line_size, b.iloc[-1])
         # print(P1, " ", Q1)
-        P2 = (0, a.iloc[-7])
-        Q2 = (7, a.iloc[-1])
+        P2 = (0, a.iloc[-line_size])
+        Q2 = (line_size, a.iloc[-1])
         # print(P2, " ", Q2)
-        intersection_point = find_intersection(P1, Q1, P2, Q2, 7)
+        intersection_point = find_intersection(P1, Q1, P2, Q2, line_size)
         # print(intersection_point)
+        base_tp = 150
+        base_sl = 200
         if intersection_point != 'not cross':
             print('Forced off')
 
             for position in positions:
                 print('EXIT:', position.profit)
-                #clsoe_position(symbol, position.ticket)
+                clsoe_position(symbol, position.ticket)
+        for position in positions:
+            current_lot = position.volume
+            if position.profit > base_tp*current_lot:
+                clsoe_position(symbol, position.ticket)
+                trade_order_wo_tp_sl(symbol, round(current_lot/2, 2), position.comment, magic=False)
+            # else:
+            #     if position.profit < base_sl*current_lot:
+            #         clsoe_position(symbol, position.ticket)
+
 
     # Discretization function for high and low prices
 

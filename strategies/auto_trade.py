@@ -26,7 +26,14 @@ from common_functions import add_csv, isNowInTimePeriod, check_duplicate_orders_
 
 
 def trade(symbol):
-    delay_sec = 3
+    delay_sec = 1
+
+    time.sleep(delay_sec)
+    # price_action(symbol)
+    try:
+        wyckoff_bot_v2(symbol, 2.0)
+    except Exception as e:
+        print(symbol, "ERROR", str(e))
 
 
     # time.sleep(delay_sec)
@@ -42,32 +49,32 @@ def trade(symbol):
     # except Exception as e:
     #     print(symbol, "ERROR", str(e))
 
-    ## TUNE
-    time.sleep(delay_sec)
-    try:
-        boil_macd(symbol)
-        #print(symbol, 'boil_macd')
-    except Exception as e:
-        print(symbol, "ERROR", str(e))
-
-    ## TUNE
-    time.sleep(delay_sec)
-
-    try:
-        ichimoku_stochastic(symbol)
-        #print(symbol, 'ichimoku_stochastic')
-    except Exception as e:
-        print(symbol, "ERROR", str(e))
-
-    ## TUNE
-    time.sleep(delay_sec)
-    ##Bob Volman
-    #volman_strategies(symbol)
-    try:
-        volman_strategies(symbol)
-        #print(symbol, 'volman_strategies')
-    except Exception as e:
-        print(symbol, "ERROR", str(e))
+    # ## TUNE
+    # time.sleep(delay_sec)
+    # try:
+    #     boil_macd(symbol)
+    #     #print(symbol, 'boil_macd')
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+    #
+    # ## TUNE
+    # time.sleep(delay_sec)
+    #
+    # try:
+    #     ichimoku_stochastic(symbol)
+    #     #print(symbol, 'ichimoku_stochastic')
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
+    #
+    # ## TUNE
+    # time.sleep(delay_sec)
+    # ##Bob Volman
+    # #volman_strategies(symbol)
+    # try:
+    #     volman_strategies(symbol)
+    #     #print(symbol, 'volman_strategies')
+    # except Exception as e:
+    #     print(symbol, "ERROR", str(e))
 
 
 
@@ -99,7 +106,7 @@ def trade_test(symbol):
     time.sleep(delay_sec)
     #price_action(symbol)
     try:
-        random_walk_both(symbol)
+        wyckoff_bot_v2(symbol, 2.0)
     except Exception as e:
         print(symbol, "ERROR", str(e))
 
@@ -109,12 +116,12 @@ def trade_test(symbol):
 def start_live_trade():
     initialize_mt5()
 
-    #symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY']
+    symbol_list = ['XAUUSD', 'EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY']
 
     #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
 
     #symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'GBPUSD', 'EURJPY']
-    symbol_list = ['BTCUSD']
+    #symbol_list = ['BTCUSD']
     #symbol_list = ['XAUUSD']
 
 
@@ -137,17 +144,17 @@ def start_live_trade():
         for symbol in symbol_list:
 
             #time.sleep(1)
-            take_the_profit(symbol)
+            #take_the_profit(symbol)
 
             server_start = 4
             server_end = 17
             local_start = 10
             local_end = 23
             local_end_min = 59
-            #trade_test(symbol)
+            trade(symbol)
 
-            if isNowInTimePeriod(dt.time(local_start, 00), dt.time(local_end, local_end_min), dt.datetime.now().time()):
-                trade_test(symbol)
+            # if isNowInTimePeriod(dt.time(local_start, 00), dt.time(local_end, local_end_min), dt.datetime.now().time()):
+            #     trade_test(symbol)
 
         # print('1. BTCUSD 2. XAUUSD')
         # symbol = int(input('SYMBOL: -->>'))
