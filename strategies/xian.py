@@ -12,10 +12,12 @@ from common_functions import check_duplicate_orders_time, check_duplicate_orders
     write_json, check_duplicate_orders, check_duplicate_orders_is_time, check_dup_orders_count
 
 from mt5_utils import get_live_data, get_prev_data, initialize_mt5, get_magic_number, trade_order_magic, \
-    get_all_positions, clsoe_position, trade_order_magic_value, get_balance, trade_order_wo_tp_sl
+    get_all_positions, close_position, trade_order_magic_value, get_balance, trade_order_wo_tp_sl, get_symbol_point, \
+    modify_position
 import plotly.graph_objects as go
 import matplotlib.pyplot as plt
 
+from time import gmtime, strftime
 
 def create_candle_type(df):
     df['candle_type'] = None
@@ -775,7 +777,7 @@ def take_the_profit(symbol):
                                 json.dump(data, outfile)
                             return
                     # close the trade
-                    clsoe_position(symbol, ticket=position.ticket)
+                    close_position(symbol, ticket=position.ticket)
                     data = {
                         'symbol': symbol,
                         'magic': None,
@@ -888,3 +890,159 @@ def get_max_loss(symbol, lot):
         return -(base_amount * lot * 2)
     else:
         return -(base_amount * lot)
+
+def trailing_stop(symbol):
+    time_frame = 'M5'
+    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=20)
+    time_gap = 20000
+    max_drop = 0.25
+    # get all positions
+    positions = get_all_positions(symbol)
+
+    if positions is None:
+        return
+
+    # loop through all
+    for position in positions:
+        # print(position)
+        # read the data file
+        magic_id = position.magic
+        position_type = position.type  # 0 == buy , 1 == sell
+        file_name = 'magics/' + symbol + '_' + str(magic_id) + '.json'
+        data = {
+            'symbol': symbol,
+            'sl': None,
+            'time': None,
+            'type': position.type
+        }
+        try:
+            with open(file_name) as json_file:
+                data = json.load(json_file)
+
+        except:
+            with open(file_name, 'x') as outfile:
+                json.dump(data, outfile)
+
+        #current_profit = position.profit
+        curr_price = df['close'].iloc[-1]
+        current_millis = current_milli_time()
+        order_type = position.type
+
+        curr_sl = get_trailing_sl_value(symbol, df, order_type)
+
+        # check the logic
+        if data['sl'] is None:
+            data['sl'] = curr_sl
+            data['time'] = current_millis
+
+            with open(file_name, 'w') as outfile:
+                json.dump(data, outfile)
+
+            # SET SL
+            modify_position(position.ticket, symbol, curr_sl)
+
+        if (data['time'] + time_gap) < current_millis:
+            #print_time()
+            #print(symbol, '>>>', '## Tailing Stop:', data['sl'], 'CUR_PRICE:', curr_price)
+
+
+            if order_type == 1 and data['sl'] > curr_sl: ## SELL
+                green_signal = True
+            elif order_type == 0 and data['sl'] < curr_sl: ## BUY
+                green_signal = True
+            else:
+                data['time'] = current_millis
+
+                with open(file_name, 'w') as outfile:
+                    json.dump(data, outfile)
+
+                return
+            data['sl'] = curr_sl
+            data['time'] = current_millis
+
+            with open(file_name, 'w') as outfile:
+                json.dump(data, outfile)
+
+            #SET SL
+            modify_position(position.ticket, symbol, curr_sl)
+
+        ## Manual OFF
+        if order_type == 1 and data['sl'] > curr_sl:  ## SELL
+            if curr_price > data['sl']:
+                print(symbol, 'FORCE TRADE CLOSE SELL')
+                close_position(symbol, position.ticket)
+
+                data = {
+                    'symbol': symbol,
+                    'sl': None,
+                    'time': None,
+                    'type': position.type
+                }
+                with open(file_name, 'w') as outfile:
+                    json.dump(data, outfile)
+        elif order_type == 0 and data['sl'] < curr_sl:  ## BUY
+            if curr_price < data['sl']:
+                print(symbol, 'FORCE TRADE CLOSE BUY')
+                close_position(symbol, position.ticket)
+
+                data = {
+                        'symbol': symbol,
+                        'sl': None,
+                        'time': None,
+                        'type': position.type
+                    }
+                with open(file_name, 'w') as outfile:
+                    json.dump(data, outfile)
+
+        # if data['sl'] > curr_price:
+        #     # close the trade
+        #     close_position(symbol, ticket=position.ticket)
+        #     print('close the trade')
+        #     print(data)
+
+def print_time():
+    print(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+
+
+def get_trailing_sl_value(symbol, df, order_type):
+
+    if symbol == 'XAUUSD':
+        ## 0.8 == 800
+        sl = 2000
+
+    elif symbol == 'EURUSD':
+        ## 0.00016 = 16
+        sl = 100
+
+
+    elif symbol == 'USDJPY':
+        ## 0.004857142857133567 = 48
+        sl = 150
+
+    elif symbol == 'GBPUSD':
+        ## 0.00023 = 23
+        sl = 150
+
+    elif symbol == 'EURJPY':
+        ##  0.0034285714285715585 = 34
+        sl = 200
+
+    elif symbol == 'BTCUSD':
+        ##  0.0034285714285715585 = 34
+        sl = 5000
+
+    else:
+        sl = 100
+
+    symbol_point = get_symbol_point(symbol)
+    price = df['close'].iloc[-1]
+
+    if order_type == 0: ## BUY
+        sl_value = price - sl * symbol_point
+    elif order_type == 1: ##SELL
+        sl_value = price + sl * symbol_point
+    else:
+        sl_value = 0
+
+
+    return sl_value

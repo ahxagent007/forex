@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from common_functions import write_json
 from xian import get_max_profit, get_max_loss
 from xian import check_duplicate_orders
-from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, clsoe_position
+from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, close_position
 
 
 import pandas as pd
@@ -355,14 +355,14 @@ def bot_wyckoff_v4(symbol, lot):
         for position in positions:
             #print(position.comment, 'buy' and deg[-1] == False)
             if (position.comment == 'buy' and deg[-1] == False):
-                clsoe_position(symbol, position.ticket)
+                close_position(symbol, position.ticket)
                 print('buy_exit')
             elif (position.comment == 'sell' and deg2[-1] == False):
-                clsoe_position(symbol, position.ticket)
+                close_position(symbol, position.ticket)
                 print('sell_exit')
             else:
                 if position.profit > get_max_profit(symbol, lot) or position.profit < get_max_loss(symbol, lot):
-                    clsoe_position(symbol, position.ticket)
+                    close_position(symbol, position.ticket)
                     print('Profit or Loss Taken: ', position.profit)
 
 

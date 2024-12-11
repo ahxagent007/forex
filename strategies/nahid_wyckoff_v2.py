@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
 
+from akash import get_avg_candle_size
 from common_functions import skip_trade_time, write_json
-from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, clsoe_position
+from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, close_position, trade_order_wo_tp, \
+    print_time
 
 
 def detect_phase_a(data, rolling_window=20, volume_multiplier=2, debug=False):
@@ -294,15 +296,18 @@ def wyckoff_bot_v2(symbol, lot):
             write_json(json_dict=orders_json, json_file_name=json_file_name)
 
         i = -1
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, ticks_frame1, 10, 2)
         if (lst[-1] == True and d[-1] == 'buy'):
             print(symbol, 'buy')
-            trade_order_wo_tp_sl(symbol, lot, 'buy', magic=False)
+            trade_order_wo_tp(symbol, sl, lot, 'buy', magic=False)
 
         elif (lst[-1] == True and d[-1] == 'sell'):
             print(symbol, 'sell')
-            trade_order_wo_tp_sl(symbol, lot, 'sell', magic=False)
+            trade_order_wo_tp(symbol, sl, lot, 'sell', magic=False)
 
-            #print('no')
+        else:
+            print_time()
+            print(symbol, 'no trade found')
         # Visualize Accumulation and Markup
         # for i in range(len(wyckoff_data)):
     elif len(positions) > 0:
@@ -322,25 +327,20 @@ def wyckoff_bot_v2(symbol, lot):
 
             for position in positions:
                 print('EXIT:', position.profit)
-                clsoe_position(symbol, position.ticket)
-        for position in positions:
-            current_lot = position.volume
-            if position.profit > base_tp*current_lot:
-                clsoe_position(symbol, position.ticket)
-                trade_order_wo_tp_sl(symbol, round(current_lot/2, 2), position.comment, magic=False)
-            # else:
-            #     if position.profit < base_sl*current_lot:
-            #         clsoe_position(symbol, position.ticket)
+                close_position(symbol, position.ticket)
+                # if position.comment == 'sell':
+                #     trade_order_wo_tp_sl(symbol, lot, 'buy', magic=False)
+                # if position.comment == 'buy':
+                #     trade_order_wo_tp_sl(symbol, lot, 'sell', magic=False)
 
+        ## NEW TRADE LOGIC
+        # for position in positions:
+        #     current_lot = position.volume
+        #     if position.profit > base_tp*current_lot:
+        #         close_position(symbol, position.ticket)
+        #         trade_order_wo_tp_sl(symbol, round(current_lot/2, 2), position.comment, magic=False)
+        #     # else:
+        #     #     if position.profit < base_sl*current_lot:
+        #     #         close_position(symbol, position.ticket)
+        #
 
-    # Discretization function for high and low prices
-
-    # Initialize state with random high and low prices for the last 10 candles
-
-    # Convert state to tuple to make it hashable
-
-    # Initialize Q-table as a dictionary with default Q-values for each action
-
-    # Function to initialize Q-values for a given state if it doesn't exist
-
-    # Initialize Q-table for the generated state

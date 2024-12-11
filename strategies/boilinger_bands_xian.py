@@ -1,6 +1,6 @@
 from akash import calculate_rsi, adx_decision, get_avg_candle_size, create_adx, adx_decision_prev
 from mt5_utils import get_live_data, trade_order, trade_order_wo_sl, trade_order_magic, get_magic_number, \
-    trade_order_wo_tp_sl, get_all_positions, clsoe_position
+    trade_order_wo_tp_sl, get_all_positions, close_position
 from common_functions import check_duplicate_orders_time, write_json, check_duplicate_orders_magic, add_csv
 import talib
 
@@ -226,7 +226,7 @@ def boil_xian_akash(symbol, window=20, num_std=2):
             for position in positions:
                 print(position.profit)
                 print(position)
-                clsoe_position(symbol, ticket=position.ticket)
+                close_position(symbol, ticket=position.ticket)
 
         return None
 

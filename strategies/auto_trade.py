@@ -8,7 +8,7 @@ from nahid_wyckoff_v2 import wyckoff_bot_v2
 from nadhi_wyckoff import bot_wyckoff
 from fair_value_gap import FVG_trade
 from xian import price_action, moving_average_crossover_cci, moving_average_crossover_01, take_the_profit, \
-    moving_average_crossover_ema_02, cumulative_lot, random_walk, random_walk_both
+    moving_average_crossover_ema_02, cumulative_lot, random_walk, random_walk_both, trailing_stop
 from nahid_sir import bot_1
 from boillinger_macd_combo import boil_macd
 from fibonacci_price_action_combo import fibonacci_price_action
@@ -26,7 +26,7 @@ from common_functions import add_csv, isNowInTimePeriod, check_duplicate_orders_
 
 
 def trade(symbol):
-    delay_sec = 1
+    delay_sec = 0.2
 
     time.sleep(delay_sec)
     # price_action(symbol)
@@ -35,70 +35,6 @@ def trade(symbol):
     except Exception as e:
         print(symbol, "ERROR", str(e))
 
-
-    # time.sleep(delay_sec)
-    #
-    # try:
-    #     moving_average_crossover_01(symbol, 1, 200)
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-
-
-    # try:
-    #     akash_02(symbol)
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-
-    # ## TUNE
-    # time.sleep(delay_sec)
-    # try:
-    #     boil_macd(symbol)
-    #     #print(symbol, 'boil_macd')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-    #
-    # ## TUNE
-    # time.sleep(delay_sec)
-    #
-    # try:
-    #     ichimoku_stochastic(symbol)
-    #     #print(symbol, 'ichimoku_stochastic')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-    #
-    # ## TUNE
-    # time.sleep(delay_sec)
-    # ##Bob Volman
-    # #volman_strategies(symbol)
-    # try:
-    #     volman_strategies(symbol)
-    #     #print(symbol, 'volman_strategies')
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-
-
-
-
-
-
-    # try:
-    #     moving_average_crossover(symbol, 8, 50)
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-    #
-    #
-    # time.sleep(delay_sec)
-    # try:
-    #     price_action(symbol)
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
-
-    # time.sleep(delay_sec)
-    # #adx_slop(symbol)
-    # try:
-    #     adx_slop(symbol)
-    # except Exception as e:
-    #     print(symbol, "ERROR", str(e))
 
 def trade_test(symbol):
     delay_sec = 1
@@ -118,83 +54,19 @@ def start_live_trade():
 
     symbol_list = ['XAUUSD', 'EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY']
 
-    #symbol_list = ['EURUSD', 'XAUUSD', 'GBPUSD']
-
-    #symbol_list = ['EURUSD', 'XAUUSD', 'USDJPY', 'GBPUSD', 'EURJPY']
-    #symbol_list = ['BTCUSD']
-    #symbol_list = ['XAUUSD']
-
-
-    # # ## test order
-    # json_file_name = 'akash_strategies_ma_ema_5_100'
-    # symbol = 'XAUUSD'
-    # skip_min = 3
-    # running_trade_status, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol, skip_min=skip_min,
-    #                                                                             json_file_name=json_file_name)
-    # MAGIC_NUMBER = get_magic_number()
-    # sl = 2633.900
-    # tp = 2625.325
-    # lot = 0.01
-    # action = 'sell'
-    # trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=888,
-    #                   MAGIC_NUMBER=MAGIC_NUMBER)
-    # write_json(json_dict=orders_json, json_file_name=json_file_name)
-
     while True:
         for symbol in symbol_list:
-
-            #time.sleep(1)
-            #take_the_profit(symbol)
 
             server_start = 4
             server_end = 17
             local_start = 10
             local_end = 23
             local_end_min = 59
+            trailing_stop(symbol)
             trade(symbol)
 
             # if isNowInTimePeriod(dt.time(local_start, 00), dt.time(local_end, local_end_min), dt.datetime.now().time()):
             #     trade_test(symbol)
-
-        # print('1. BTCUSD 2. XAUUSD')
-        # symbol = int(input('SYMBOL: -->>'))
-        # print('1. BUY 2.SELL')
-        # action = int(input('ACTION:: '))
-        #
-        # if symbol == 1:
-        #     symbol = 'BTCUSD'
-        # else:
-        #     symbol = 'XAUUSD'
-        #
-        # if action == 1:
-        #     action = 'buy'
-        # else:
-        #     action = 'sell'
-        #
-        #
-        # json_file_name = 'xian_trade'
-        # skip_min = 3
-        # time_frame = 'M1'
-        # tp_multi = 6
-        # sl_multi = 2
-        #
-        # running_trade_status, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol, skip_min=skip_min,
-        #                                                                             json_file_name=json_file_name)
-        # df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
-        #
-        # avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, tp_multi, sl_multi)
-        # if avg_candle_size is None:
-        #     return
-        # if action == 'buy':
-        #     sl_value = df['low'].iloc[-1]
-        # else:
-        #     sl_value = df['high'].iloc[-1]
-        #
-        # MAGIC_NUMBER = get_magic_number()
-        # lot = 0.15
-        # trade_order_magic_value(symbol=symbol, tp_point=tp, sl_value=sl_value, lot=lot, action=action, magic=True, code=3669,
-        #                   MAGIC_NUMBER=MAGIC_NUMBER)
-        # write_json(json_dict=orders_json, json_file_name=json_file_name)
 
 
 

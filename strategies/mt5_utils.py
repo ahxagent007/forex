@@ -10,7 +10,8 @@ import time
 import datetime as dt
 from scipy.signal import argrelextrema
 
-
+def print_time():
+    print(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))
 
 def get_magic_number():
     with open('magic_number.json') as json_file:
@@ -37,7 +38,7 @@ def initialize_mt5():
     password = 'ABCabc123!@#'
     server = 'Exness-MT5Trial6'
 
-    ## PRO NEW
+    # ## PRO NEW
     # login = 182331894
     # password = 'ABCabc123!@#'
     # server = 'Exness-MT5Trial6'
@@ -131,7 +132,6 @@ def get_prev_data(symbol, time_frame, prev_start_min, prev_end_min):
 
 def trade_order(symbol, tp_point, sl_point, lot, action, magic=False):
 
-
     if action == 'buy':
         point = mt5.symbol_info(symbol).point
         price = mt5.symbol_info_tick(symbol).ask
@@ -219,6 +219,27 @@ def trade_order(symbol, tp_point, sl_point, lot, action, magic=False):
     except Exception as e:
         print('Result '+action+' >> ', str(e))
 
+def get_symbol_point(symbol):
+    return mt5.symbol_info(symbol).point
+
+def modify_position(order_number, symbol, new_stop_loss):
+    print_time()
+    # Create the request
+    request = {
+        "action": mt5.TRADE_ACTION_SLTP,
+        "symbol": symbol,
+        "sl": new_stop_loss,
+        "position": order_number
+    }
+    # Send order to MT5
+    order_result = mt5.order_send(request)
+    if order_result[0] == 10009:
+        print('ORDER UPDATED', order_number, symbol, new_stop_loss)
+        return True
+    else:
+        print('ORDER UPDATE FAILED !!! ! !! ! ! ')
+        print(order_result)
+        return False
 def trade_order_wo_sl(symbol, tp_point, lot, action, magic=False):
 
 
@@ -250,8 +271,16 @@ def trade_order_wo_sl(symbol, tp_point, lot, action, magic=False):
 
     spread_dict = {
         'EURUSD': 15,
+        'EURJPY': 15,
+        'USDJPY': 15,
         'XAUUSD': 150,
-        'BTCUSD': 1900
+        'BTCUSD': 2300,
+        'GBPUSD': 15,
+        'AUDUSD': 20,
+        'NZDUSD': 20,
+        'USDCHF': 20,
+        'EURGBP': 20,
+        'USDCAD': 20,
     }
 
     if spread > spread_dict[symbol]:
@@ -286,6 +315,95 @@ def trade_order_wo_sl(symbol, tp_point, lot, action, magic=False):
             "comment": "python script open",
             # "type_time": mt5.ORDER_TIME_GTC,
             # "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+    print(request)
+    # send a trading request
+    result = mt5.order_send(request)
+    print(result)
+
+    try:
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            print(symbol, ' ', action+' not done', result.retcode, MT5_error_code(result.retcode))
+
+        else:
+            print('>>>>>>>>>>>> ## ## ## '+action+' done with bot ', symbol)## update magic number
+            if magic:
+                update_magic_number(symbol, MAGIC_NUMBER)
+    except Exception as e:
+        print('Result '+action+' >> ', str(e))
+def trade_order_wo_tp(symbol, sl_point, lot, action, magic=False):
+
+
+    if action == 'buy':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).ask
+        bid_price = mt5.symbol_info_tick(symbol).bid
+        type = mt5.ORDER_TYPE_BUY
+
+        spread = abs(price - bid_price) / point
+
+        if sl_point:
+            sl = price - sl_point * point
+
+
+    elif action == 'sell':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).bid
+        ask_price = mt5.symbol_info_tick(symbol).ask
+        type = mt5.ORDER_TYPE_SELL
+
+        spread = abs(price - ask_price) / point
+
+        if sl_point:
+            sl = price + sl_point * point
+
+
+    print(symbol, 'Spread pip: ', spread)
+
+    spread_dict = {
+        'EURUSD': 15,
+        'EURJPY': 15,
+        'USDJPY': 15,
+        'XAUUSD': 150,
+        'BTCUSD': 2300,
+        'GBPUSD': 15,
+        'AUDUSD': 15,
+        'NZDUSD': 15,
+        'USDCHF': 15,
+        'EURGBP': 15,
+        'USDCAD': 15,
+    }
+
+    if spread > spread_dict[symbol]:
+        print('High Spread')
+        return None
+
+    deviation = 20
+    MAGIC_NUMBER = get_magic_number()
+    if sl_point:
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": type,
+            "price": price,
+            "sl": sl,
+            "deviation": deviation,
+            "magic": MAGIC_NUMBER,
+            "comment": action,
+            #"type_time": mt5.ORDER_TIME_GTC,
+            #"type_filling": mt5.ORDER_FILLING_IOC,
+        }
+    else:
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": type,
+            "price": price,
+            "deviation": deviation,
+            "magic": MAGIC_NUMBER,
+            "comment": action
         }
     print(request)
     # send a trading request
@@ -330,7 +448,12 @@ def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
         'USDJPY': 15,
         'XAUUSD': 150,
         'BTCUSD': 2300,
-        'GBPUSD': 15
+        'GBPUSD': 15,
+        'AUDUSD': 20,
+        'NZDUSD': 20,
+        'USDCHF': 20,
+        'EURGBP': 20,
+        'USDCAD': 20,
     }
 
     if spread > spread_dict[symbol]:
@@ -650,7 +773,7 @@ def get_order_positions_count(symbol):
 def get_all_positions(symbol):
     return mt5.positions_get(symbol=symbol)
 
-def clsoe_position(symbol, ticket):
+def close_position(symbol, ticket):
     mt5.Close(symbol, ticket=ticket)
 
 def update_magic_number(symbol, MAGIC_NUMBER):

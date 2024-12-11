@@ -10,7 +10,7 @@ from hmmlearn import hmm
 import matplotlib.pyplot as plt
 import time
 
-from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, clsoe_position
+from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, close_position
 
 '''import time
 # Press Shift+F10 to execute it or replace it with your code.
@@ -392,11 +392,11 @@ def bot_wyckoff(symbol, lot):
             if (position.comment == 'buy' and exit_dec[-1] == True):
 
                 #mt5.Close(symbol, ticket=position.ticket)
-                clsoe_position(symbol, position.ticket)
+                close_position(symbol, position.ticket)
                 print('buy_exit')
             elif (position.comment == 'sell' and exit_dec[-1] == True):
                 #mt5.Close(symbol, ticket=position.ticket)
-                clsoe_position(symbol, position.ticket)
+                close_position(symbol, position.ticket)
                 print('sell_exit')
 
     # Discretization function for high and low prices
