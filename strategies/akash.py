@@ -1088,7 +1088,6 @@ def get_avg_candle_size(symbol, df, tp_multi, sl_multi):
         ## 0.00016 = 16
         tp = avg_candle_size * 100000 * tp_multi
         sl = avg_candle_size * 100000 * sl_multi #+ df['spread'].iloc[-1]
-        print(tp, sl)
 
         if sl < df['spread'].iloc[-1]+10:
             print('LOW SL')

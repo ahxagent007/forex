@@ -333,14 +333,9 @@ def wyckoff_bot_v2(symbol, lot):
                 # if position.comment == 'buy':
                 #     trade_order_wo_tp_sl(symbol, lot, 'sell', magic=False)
 
-        ## NEW TRADE LOGIC
-        # for position in positions:
-        #     current_lot = position.volume
-        #     if position.profit > base_tp*current_lot:
-        #         close_position(symbol, position.ticket)
-        #         trade_order_wo_tp_sl(symbol, round(current_lot/2, 2), position.comment, magic=False)
-        #     # else:
-        #     #     if position.profit < base_sl*current_lot:
-        #     #         close_position(symbol, position.ticket)
-        #
-
+        # NEW TRADE LOGIC
+        for position in positions:
+            current_lot = position.volume
+            if position.profit > base_tp*current_lot:
+                close_position(symbol, position.ticket)
+                trade_order_wo_tp_sl(symbol, round(current_lot/2, 2), position.comment, magic=False)
