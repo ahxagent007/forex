@@ -1,10 +1,11 @@
 import pandas as pd
 import numpy as np
 
+from xian import get_prev_sl
 from akash import get_avg_candle_size
 from common_functions import skip_trade_time, write_json
 from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, close_position, trade_order_wo_tp, \
-    print_time
+    print_time, trade_order_wo_tp_price
 
 
 def detect_phase_a(data, rolling_window=20, volume_multiplier=2, debug=False):
@@ -296,14 +297,16 @@ def wyckoff_bot_v2(symbol, lot):
             write_json(json_dict=orders_json, json_file_name=json_file_name)
 
         i = -1
-        avg_candle_size, sl, tp = get_avg_candle_size(symbol, ticks_frame1, 10, 2)
+        #avg_candle_size, sl, tp = get_avg_candle_size(symbol, ticks_frame1, 10, 2)
         if (lst[-1] == True and d[-1] == 'buy'):
             print(symbol, 'buy')
-            trade_order_wo_tp(symbol, sl, lot, 'buy', magic=False)
+            sl = get_prev_sl(ticks_frame1, 'buy')
+            trade_order_wo_tp_price(symbol, sl, lot, 'buy', magic=False)
 
         elif (lst[-1] == True and d[-1] == 'sell'):
             print(symbol, 'sell')
-            trade_order_wo_tp(symbol, sl, lot, 'sell', magic=False)
+            sl = get_prev_sl(ticks_frame1, 'sell')
+            trade_order_wo_tp_price(symbol, sl, lot, 'sell', magic=False)
 
         else:
             print_time()

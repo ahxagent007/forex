@@ -1046,3 +1046,15 @@ def get_trailing_sl_value(symbol, df, order_type):
 
 
     return sl_value
+
+
+def get_prev_sl(df, order_type):
+
+    if order_type == 'buy':
+        sl = min(df['open'].iloc[-1], df['open'].iloc[-2], df['open'].iloc[-3])
+    elif order_type == 'sell':
+        sl = max(df['open'].iloc[-1], df['open'].iloc[-2], df['open'].iloc[-3])
+    else:
+        sl = 0
+
+    return sl
