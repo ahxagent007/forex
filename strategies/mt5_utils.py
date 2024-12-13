@@ -34,14 +34,14 @@ def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
     # # NEW ACC LIVE
-    login = 181244000
-    password = 'ABCabc123!@#'
-    server = 'Exness-MT5Trial6'
-
-    # ## PRO NEW
-    # login = 182331894
+    # login = 181244000
     # password = 'ABCabc123!@#'
     # server = 'Exness-MT5Trial6'
+
+    # ## PRO NEW
+    login = 182331894
+    password = 'ABCabc123!@#'
+    server = 'Exness-MT5Trial6'
 
     timeout = 10000
     portable = False
