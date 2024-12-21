@@ -89,6 +89,8 @@ def get_live_data(symbol, time_frame, prev_n_candles):
         TIME_FRAME = mt5.TIMEFRAME_H4
     elif time_frame == 'D1':
         TIME_FRAME = mt5.TIMEFRAME_D1
+    elif time_frame == 'W1':
+        TIME_FRAME = mt5.TIMEFRAME_W1
 
     PREV_N_CANDLES = prev_n_candles
 

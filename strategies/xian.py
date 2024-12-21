@@ -6,7 +6,7 @@ import pandas as pd
 # from stock_indicators import Quote
 import time
 
-from random_walk import get_random_action
+from OLD.random_walk import get_random_action
 from akash import get_avg_candle_size, calculate_ema, ADX_stakoverflow, calculate_rsi
 from common_functions import check_duplicate_orders_time, check_duplicate_orders_magic, add_csv, \
     write_json, check_duplicate_orders, check_duplicate_orders_is_time, check_dup_orders_count
@@ -613,16 +613,16 @@ def moving_average_crossover_ema_02(symbol, short, long):
 def current_milli_time():
     return round(time.time() * 1000)
 
-def take_the_profit(symbol):
 
+def take_the_profit(symbol, candle_size=60000):
     # VARIABLE FOR 1M
-    time_frame = 60000 * 0.5              #60000
-    time_gap_d = time_frame/2           #30000 #half
-    time_gap_10_less = time_frame/6     #20000 #1/3
-    time_gap_10_great = time_gap_d
-    time_gap_30 = (time_frame*2)/3      #40000 #2/3
-    time_gap_100 = time_frame           #60000 #full
-    time_gap_else = time_frame/3        #20000 #1/3
+    time_frame = candle_size  # 60000
+    time_gap_d = time_frame / 2  # 30000 #half
+    time_gap_10_less = time_frame  # 20000 #1/3
+    time_gap_10_great = time_frame
+    time_gap_30 = time_frame  # 40000 #2/3
+    time_gap_100 = time_frame  # 60000 #full
+    time_gap_else = time_frame  # 20000 #1/3
 
     # # VARIABLE FOR 5M
     # time_frame = 60000 * 5
@@ -633,31 +633,31 @@ def take_the_profit(symbol):
     # time_gap_100 = time_frame           #60000 #full
     # time_gap_else = time_frame/3        #20000 #1/3
 
-    json_file_name_lst = ['xian_price_action', 'Nahid_wyckoff_scalping']
+    json_file_name_lst = ['nahid_wyckoff_v2']
     skip_min = 2
 
     for json_file_name in json_file_name_lst:
         run_take_the_profit = False
-        running_trade_status_time, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol, skip_min=skip_min,
+        running_trade_status_time, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol,
+                                                                                         skip_min=skip_min,
                                                                                          json_file_name=json_file_name)
         running_trade_status_magic = check_duplicate_orders_magic(symbol=symbol, code=77)
         if running_trade_status_time or running_trade_status_magic:
             if not is_time:
                 run_take_the_profit = True
 
-
         # get all positions
         positions = get_all_positions(symbol)
-        
+
         if positions is None:
             return
 
         # loop through all
         for position in positions:
-            #print(position)
+            # print(position)
             # read the data file
             magic_id = position.magic
-            position_type = position.type # 0 == buy , 1 == sell
+            position_type = position.type  # 0 == buy , 1 == sell
             file_name = 'magics/' + symbol + '_' + str(magic_id) + '.json'
             data = {
                 'symbol': symbol,
@@ -686,6 +686,27 @@ def take_the_profit(symbol):
 
             current_profit = position.profit
             current_millis = current_milli_time()
+            # if current_profit> 10:
+            #     # close the trade
+            #     close_position(symbol, ticket=position.ticket)
+            #     data = {
+            #         'symbol': symbol,
+            #         'magic': None,
+            #         'profit_1': {
+            #             'profit': None,
+            #             'time': 0
+            #         },
+            #         'profit_2': {
+            #             'profit': None,
+            #             'time': 0
+            #         },
+            #         'profit_3': {
+            #             'profit': None,
+            #             'time': 0
+            #         }
+            #     }
+            #     with open(file_name, 'w') as outfile:
+            #         json.dump(data, outfile)
 
             if not run_take_the_profit:
                 time_gap = time_gap_d
@@ -743,7 +764,7 @@ def take_the_profit(symbol):
                     print(position.profit)
                     print(position)
                     df = get_live_data(symbol=symbol, time_frame='M1', prev_n_candles=300)
-                    if position_type == 0: # BUY
+                    if position_type == 0:  # BUY
                         # if Bull cancel close
                         if df['open'].iloc[-1] < df['close'].iloc[-1]:
                             print('Bullish candle ==== CANCEL Close Order !!!')
@@ -760,7 +781,7 @@ def take_the_profit(symbol):
                             with open(file_name, 'w') as outfile:
                                 json.dump(data, outfile)
                             return
-                    elif position_type == 1: # SELL
+                    elif position_type == 1:  # SELL
                         if df['open'].iloc[-1] > df['close'].iloc[-1]:
                             print('Bearish candle ==== CANCEL Close Order !!!')
 
@@ -805,6 +826,42 @@ def take_the_profit(symbol):
                 # else write the data file
                 with open(file_name, 'w') as outfile:
                     json.dump(data, outfile)
+
+
+def take_the_profit_shot(symbol, candle_size=60000):
+    # get all positions
+    positions = get_all_positions(symbol)
+
+    if positions is None:
+        return
+
+    # loop through all
+    for position in positions:
+        # print(position)
+        # read the data file
+        magic_id = position.magic
+        position_type = position.type  # 0 == buy , 1 == sell
+        current_profit = position.profit
+        current_millis = current_milli_time()
+        #print(magic_id, current_profit)
+        if current_profit > 10:
+            close_position(symbol, position.ticket)
+            if position_type == 0:
+                action = 'buy'
+            elif position_type == 1:
+                action = 'sell'
+            lot = 0.1
+            trade_order_wo_tp_sl(symbol, lot, action, magic=False)
+        elif current_profit < -5:
+            close_position(symbol, position.ticket)
+            if position_type == 1:
+                action = 'buy'
+            elif position_type == 0:
+                action = 'sell'
+            lot = 0.05
+            trade_order_wo_tp_sl(symbol, lot, action, magic=False)
+
+
 
 def cumulative_lot():
     file_name = 'cumulative_lot.json'

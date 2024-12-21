@@ -96,7 +96,7 @@ def backtest_random_walk(data):
 
 
 def multiple_backtest():
-    data = pd.read_csv('eurusd_1m.csv')
+    data = pd.read_csv('../eurusd_1m.csv')
 
     for i in range(0, 10):
         print('RANDOM CASE ', i + 1)
