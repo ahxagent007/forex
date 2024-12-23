@@ -458,7 +458,7 @@ def trade_order_wo_tp_price(symbol, sl, lot, action, magic=False):
 
     if spread > spread_dict[symbol]:
         print('High Spread')
-        return None
+        #return None
 
     deviation = 20
     MAGIC_NUMBER = get_magic_number()

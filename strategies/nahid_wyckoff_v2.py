@@ -287,14 +287,14 @@ def wyckoff_bot_v2(symbol, lot):
 
 
     if len(positions) == 0:
-        skip_min = 5
-        json_file_name = 'nahid_wyckoff_v2'
-        running_trade_status, orders_json = skip_trade_time(symbol=symbol, skip_min=skip_min,
-                                                                   json_file_name=json_file_name)
-        if running_trade_status:
-            return None
-        else:
-            write_json(json_dict=orders_json, json_file_name=json_file_name)
+        #skip_min = 5
+        #json_file_name = 'nahid_wyckoff_v2'
+        #running_trade_status, orders_json = skip_trade_time(symbol=symbol, skip_min=skip_min,
+        #                                                           json_file_name=json_file_name)
+        #if running_trade_status:
+        #    return None
+        #else:
+        #    write_json(json_dict=orders_json, json_file_name=json_file_name)
 
         i = -1
         #avg_candle_size, sl, tp = get_avg_candle_size(symbol, ticks_frame1, 10, 2)
@@ -308,9 +308,9 @@ def wyckoff_bot_v2(symbol, lot):
             sl = get_prev_sl(ticks_frame1, 'sell')
             trade_order_wo_tp_price(symbol, sl, lot, 'sell', magic=False)
 
-        else:
-            print_time()
-            print(symbol, 'no trade found')
+        #else:
+        #    print_time()
+        #    print(symbol, 'no trade found')
         # Visualize Accumulation and Markup
         # for i in range(len(wyckoff_data)):
     elif len(positions) > 0:
