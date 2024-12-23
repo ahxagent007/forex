@@ -484,6 +484,27 @@ def trade_order_wo_tp_price(symbol, sl, lot, action, magic=False):
     try:
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             print(symbol, ' ', action+' not done', result.retcode, MT5_error_code(result.retcode))
+            
+            if result.retcode == 10019:
+                # NOT ENOUGH MONEY
+                print('NOT ENOUGH MONEY TRYING AGAIN WITH LESS LOT')
+                request = {
+                    "action": mt5.TRADE_ACTION_DEAL,
+                    "symbol": symbol,
+                    "volume": lot/2,
+                    "type": type,
+                    "price": price,
+                    "sl": sl,
+                    "deviation": deviation,
+                    "magic": MAGIC_NUMBER,
+                    "comment": action,
+                    # "type_time": mt5.ORDER_TIME_GTC,
+                    # "type_filling": mt5.ORDER_FILLING_IOC,
+                }
+                print(request)
+                # send a trading request
+                result = mt5.order_send(request)
+                print(result)
 
         else:
             print('>>>>>>>>>>>> ## ## ## '+action+' done with bot ', symbol)## update magic number
