@@ -2,6 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,windows
 
 strategies/magics/
+strategies/time_counts/
+strategies/magic_number.json
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

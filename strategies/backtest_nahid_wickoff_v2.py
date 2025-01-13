@@ -115,12 +115,12 @@ def generate_wyckoff_data(start_date, end_date, interval='D', seed=42):
 
 
 def Ma(prices):
-    a = prices['close'].rolling(window=100).mean()
+    a = prices['close'].rolling(window=80).mean()
     return a
 
 
 def Ema(prices):
-    a = prices['close'].ewm(span=1, adjust=False).mean()
+    a = prices['close'].ewm(span=20, adjust=False).mean()
     return a
 
 
@@ -288,7 +288,7 @@ def convert_minutes_to_days(total_minutes):
 def backtest_wyckoff_bot_v2(symbol):
 
     time_frame = 'M5'
-    prev_n_candle= 50000
+    prev_n_candle= 220
     data_df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=prev_n_candle)
 
     window = 100
@@ -386,7 +386,7 @@ warnings.filterwarnings("ignore")
 
 initialize_mt5()
 
-symbol_list = ['EURUSD', 'USDJPY', 'GBPUSD', 'EURJPY']
+symbol_list = ['EURUSD', 'USDJPY', 'GBPUSD', 'EURJPY', 'XAUUSD']
 
 for symbol in symbol_list:
     backtest_wyckoff_bot_v2(symbol)

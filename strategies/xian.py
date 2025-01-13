@@ -1115,3 +1115,247 @@ def get_prev_sl(df, order_type):
         sl = 0
 
     return sl
+
+def tp_manual(symbol):
+    time_gap = 2000
+
+    # get all positions
+    positions = get_all_positions(symbol)
+
+    if positions is None:
+        return
+
+    # loop through all
+    for position in positions:
+        # print(position)
+        # read the data file
+        magic_id = position.magic
+        position_type = position.type  # 0 == buy , 1 == sell
+        file_name = 'magics/' + symbol + '_' + str(magic_id) + '.json'
+        data = {
+            'symbol': symbol,
+            'magic': None,
+            'profit_1': {
+                'profit': None,
+                'time': 0
+            },
+            'profit_2': {
+                'profit': None,
+                'time': 0
+            },
+            'profit_3': {
+                'profit': None,
+                'time': 0
+            },
+            'profit_4': {
+                'profit': None,
+                'time': 0
+            },
+            'profit_5': {
+                'profit': None,
+                'time': 0
+            }
+        }
+
+        try:
+            with open(file_name) as json_file:
+                data = json.load(json_file)
+
+        except:
+            with open(file_name, 'x') as outfile:
+                json.dump(data, outfile)
+
+        current_profit = position.profit
+        current_millis = current_milli_time()
+
+        max_profit = 100 * position.volume
+
+        if position.profit > max_profit:
+            close_position(symbol, ticket=position.ticket)
+            data = {
+                'symbol': symbol,
+                'magic': None,
+                'profit_1': {
+                    'profit': None,
+                    'time': 0
+                },
+                'profit_2': {
+                    'profit': None,
+                    'time': 0
+                },
+                'profit_3': {
+                    'profit': None,
+                    'time': 0
+                },
+                'profit_4': {
+                    'profit': None,
+                    'time': 0
+                },
+                'profit_5': {
+                    'profit': None,
+                    'time': 0
+                }
+            }
+            with open(file_name, 'w') as outfile:
+                json.dump(data, outfile)
+
+        print('TIME GAP -->', time_gap)
+        # check the logic
+        if data['profit_1']['profit'] is None:
+            data['profit_1']['profit'] = current_profit
+            data['profit_1']['time'] = current_millis
+
+        if (data['profit_1']['time'] + time_gap) < current_millis:
+            if data['profit_2']['profit'] is None:
+                data['profit_2']['profit'] = data['profit_1']['profit']
+                data['profit_2']['time'] = data['profit_1']['time']
+
+                data['profit_1']['profit'] = current_profit
+                data['profit_1']['time'] = current_millis
+            elif data['profit_3']['profit'] is None:
+                data['profit_3']['profit'] = data['profit_2']['profit']
+                data['profit_3']['time'] = data['profit_2']['time']
+
+                data['profit_2']['profit'] = data['profit_1']['profit']
+                data['profit_2']['time'] = data['profit_1']['time']
+
+                data['profit_1']['profit'] = current_profit
+                data['profit_1']['time'] = current_millis
+
+            elif data['profit_4']['profit'] is None:
+                data['profit_4']['profit'] = data['profit_3']['profit']
+                data['profit_4']['time'] = data['profit_3']['time']
+
+                data['profit_3']['profit'] = data['profit_2']['profit']
+                data['profit_3']['time'] = data['profit_2']['time']
+
+                data['profit_2']['profit'] = data['profit_1']['profit']
+                data['profit_2']['time'] = data['profit_1']['time']
+
+                data['profit_1']['profit'] = current_profit
+                data['profit_1']['time'] = current_millis
+
+            elif data['profit_5']['profit'] is None:
+
+                data['profit_5']['profit'] = data['profit_4']['profit']
+                data['profit_5']['time'] = data['profit_4']['time']
+
+                data['profit_4']['profit'] = data['profit_3']['profit']
+                data['profit_4']['time'] = data['profit_3']['time']
+
+                data['profit_3']['profit'] = data['profit_2']['profit']
+                data['profit_3']['time'] = data['profit_2']['time']
+
+                data['profit_2']['profit'] = data['profit_1']['profit']
+                data['profit_2']['time'] = data['profit_1']['time']
+
+                data['profit_1']['profit'] = current_profit
+                data['profit_1']['time'] = current_millis
+            else:
+                data['profit_5']['profit'] = data['profit_4']['profit']
+                data['profit_5']['time'] = data['profit_4']['time']
+
+                data['profit_4']['profit'] = data['profit_3']['profit']
+                data['profit_4']['time'] = data['profit_3']['time']
+
+                data['profit_3']['profit'] = data['profit_2']['profit']
+                data['profit_3']['time'] = data['profit_2']['time']
+
+                data['profit_2']['profit'] = data['profit_1']['profit']
+                data['profit_2']['time'] = data['profit_1']['time']
+
+                data['profit_1']['profit'] = current_profit
+                data['profit_1']['time'] = current_millis
+
+        print(current_millis)
+        print(symbol, data['profit_5']['profit'], data['profit_4']['profit'], data['profit_3']['profit'], data['profit_2']['profit'], data['profit_1']['profit'])
+        #print(symbol, data['profit_3']['time'], data['profit_2']['time'], data['profit_1']['time'])
+
+        if data['profit_5']['profit'] and data['profit_4']['profit'] and data['profit_3']['profit'] and data['profit_2']['profit'] and data['profit_1']['profit']:
+            # if profit_1 < profit_2 < profit_3
+            if data['profit_5']['profit'] > data['profit_4']['profit'] > data['profit_3']['profit'] > data['profit_2']['profit'] > data['profit_1']['profit']:
+                print(position.profit)
+                print(position)
+                df = get_live_data(symbol=symbol, time_frame='M1', prev_n_candles=300)
+                if position_type == 0:  # BUY
+                    # if Bull cancel close
+                    if df['open'].iloc[-1] < df['close'].iloc[-1]:
+                        print('Bullish candle ==== CANCEL Close Order !!!')
+
+                        data['profit_5']['profit'] = data['profit_4']['profit']
+                        data['profit_5']['time'] = data['profit_4']['time']
+
+                        data['profit_4']['profit'] = data['profit_3']['profit']
+                        data['profit_4']['time'] = data['profit_3']['time']
+
+                        data['profit_3']['profit'] = data['profit_2']['profit']
+                        data['profit_3']['time'] = data['profit_2']['time']
+
+                        data['profit_2']['profit'] = data['profit_1']['profit']
+                        data['profit_2']['time'] = data['profit_1']['time']
+
+                        data['profit_1']['profit'] = current_profit
+                        data['profit_1']['time'] = current_millis
+
+                        with open(file_name, 'w') as outfile:
+                            json.dump(data, outfile)
+                        return
+                elif position_type == 1:  # SELL
+                    if df['open'].iloc[-1] > df['close'].iloc[-1]:
+                        print('Bearish candle ==== CANCEL Close Order !!!')
+
+                        data['profit_5']['profit'] = data['profit_4']['profit']
+                        data['profit_5']['time'] = data['profit_4']['time']
+
+                        data['profit_4']['profit'] = data['profit_3']['profit']
+                        data['profit_4']['time'] = data['profit_3']['time']
+
+                        data['profit_3']['profit'] = data['profit_2']['profit']
+                        data['profit_3']['time'] = data['profit_2']['time']
+
+                        data['profit_2']['profit'] = data['profit_1']['profit']
+                        data['profit_2']['time'] = data['profit_1']['time']
+
+                        data['profit_1']['profit'] = current_profit
+                        data['profit_1']['time'] = current_millis
+
+                        with open(file_name, 'w') as outfile:
+                            json.dump(data, outfile)
+                        return
+                # close the trade
+                close_position(symbol, ticket=position.ticket)
+                data = {
+                    'symbol': symbol,
+                    'magic': None,
+                    'profit_1': {
+                        'profit': None,
+                        'time': 0
+                    },
+                    'profit_2': {
+                        'profit': None,
+                        'time': 0
+                    },
+                    'profit_3': {
+                        'profit': None,
+                        'time': 0
+                    },
+                    'profit_4': {
+                        'profit': None,
+                        'time': 0
+                    },
+                    'profit_5': {
+                        'profit': None,
+                        'time': 0
+                    }
+                }
+                with open(file_name, 'w') as outfile:
+                    json.dump(data, outfile)
+
+            else:
+                # else write the data file
+                with open(file_name, 'w') as outfile:
+                    json.dump(data, outfile)
+        else:
+            # else write the data file
+            with open(file_name, 'w') as outfile:
+                json.dump(data, outfile)
