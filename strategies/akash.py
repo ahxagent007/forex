@@ -1062,9 +1062,9 @@ def moving_average_crossover_15_100(symbol):
 def get_avg_candle_size(symbol, df, tp_multi, sl_multi):
 
     avg_high = (df['high'].iloc[-7] + df['high'].iloc[-2] + df['high'].iloc[-3] + df['high'].iloc[-4] + df['high'].iloc[
-        -5] + df['high'].iloc[-6]) / 6
+        -5] + df['high'].iloc[-6]) / 8
     avg_low = (df['low'].iloc[-7] + df['low'].iloc[-2] + df['low'].iloc[-3] + df['low'].iloc[-4] + df['low'].iloc[-5] +
-               df['low'].iloc[-6]) / 6
+               df['low'].iloc[-6]) / 8
 
     # print(df['close'].iloc[-2], df['close'].iloc[-3],df['close'].iloc[-4],df['close'].iloc[
     #     -5],df['close'].iloc[-6], df['close'].iloc[-7])

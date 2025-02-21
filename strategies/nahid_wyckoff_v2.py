@@ -5,7 +5,7 @@ from xian import get_prev_sl
 from akash import get_avg_candle_size
 from common_functions import skip_trade_time, write_json
 from mt5_utils import get_live_data, get_all_positions, trade_order_wo_tp_sl, close_position, trade_order_wo_tp, \
-    print_time, trade_order_wo_tp_price
+    print_time, trade_order_wo_tp_price, trade_order_magic
 
 
 def detect_phase_a(data, rolling_window=20, volume_multiplier=2, debug=False):
@@ -123,7 +123,7 @@ def Ma(prices):
 
 
 def Ema(prices):
-    a = prices['close'].ewm(span=1, adjust=False).mean()
+    a = prices['close'].ewm(span=20, adjust=False).mean()
     return a
 
 
@@ -276,7 +276,7 @@ def detect_accumulation_and_markup(
 def wyckoff_bot_v2(symbol, lot):
     # Actions: 0 = Hold, 1 = Buy, 2 = Sell
     positions = get_all_positions(symbol)
-    time_frame = 'M5'
+    time_frame = 'M30'
     ticks_frame1 = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=300)
 
     phase_a_data = detect_accumulation_and_markup(ticks_frame1)
@@ -297,16 +297,18 @@ def wyckoff_bot_v2(symbol, lot):
             write_json(json_dict=orders_json, json_file_name=json_file_name)
 
         i = -1
-        #avg_candle_size, sl, tp = get_avg_candle_size(symbol, ticks_frame1, 10, 2)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, ticks_frame1, 3, 2)
         if (lst[-1] == True and d[-1] == 'buy'):
             print(symbol, 'buy')
             sl = get_prev_sl(ticks_frame1, 'buy')
-            trade_order_wo_tp_price(symbol, sl, lot, 'buy', magic=False)
+            #trade_order_wo_tp_price(symbol, sl, lot, 'buy', magic=False)
+            trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action='buy', magic=True, code=106049, MAGIC_NUMBER=0)
 
         elif (lst[-1] == True and d[-1] == 'sell'):
             print(symbol, 'sell')
             sl = get_prev_sl(ticks_frame1, 'sell')
-            trade_order_wo_tp_price(symbol, sl, lot, 'sell', magic=False)
+            #trade_order_wo_tp_price(symbol, sl, lot, 'sell', magic=False)
+            trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action='sell', magic=True, code=106049, MAGIC_NUMBER=0)
 
         else:
             print_time()

@@ -866,12 +866,15 @@ def take_the_profit_shot(symbol, candle_size=60000):
 def cumulative_lot():
     file_name = 'cumulative_lot.json'
     balance = get_balance()
+    increase_threshold = 200
+    lot_increase = 0.01
+
     try:
         with open(file_name) as json_file:
             data = json.load(json_file)
 
-        if data['balance'] + 100 < balance:
-            data['lot'] += 0.01
+        if data['balance'] + increase_threshold < balance:
+            data['lot'] += lot_increase
             data['balance'] = balance
 
             with open(file_name, 'w') as outfile:
@@ -1359,3 +1362,89 @@ def tp_manual(symbol):
             # else write the data file
             with open(file_name, 'w') as outfile:
                 json.dump(data, outfile)
+
+
+def take_the_profit_v2(symbol_list):
+    for symbol in symbol_list:
+        positions = get_all_positions(symbol)
+
+        for position in positions:
+            profit = position.profit
+            lot = position.volume
+            lot_value = 100
+
+            if profit > lot * lot_value:
+                close_position(symbol, position.ticket)
+                new_lot = round(lot/2, 2)
+                MAGIC_NUMBER = get_magic_number()
+                time_frame = 'M5'
+                df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
+
+                avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 12, 4)
+                action = position.comment
+                trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=3696,
+                                  MAGIC_NUMBER=MAGIC_NUMBER)
+
+            if profit < -(lot * lot_value)/3:
+                close_position(symbol, position.ticket)
+
+
+def boil_rsi(symbol, window=14, num_std=2):
+    accepted_symbol_list = ['AUDUSD', 'DXY', 'EURUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY',
+           'AUDCAD',  'AUDCHF', 'AUDJPY',  'AUDNZD',  'CADCHF',  'CADJPY',  'CHFJPY',  'EURAUD',  'EURCAD',  'EURCHF',
+           'EURGBP',  'EURJPY', 'EURNZD',  'GBPAUD', 'GBPCAD',  'GBPCHF',  'GBPJPY',  'HKDJPY', 'NZDCAD', 'NZDCHF',
+            'XAUUSD',  'USOIL', 'XAGUSD',
+            #'AMZN', 'BABA', 'EBAY', 'JD', 'TSLA', 'AAPL', 'NVDA', 'INTC', 'GOOGL',
+            'BTCUSD', 'BTCAUD', 'ETHUSD', 'BTCXAU']
+    json_file_name = 'boil_rsi'
+    skip_min = 5
+    time_frame = 'M5'
+
+    # if not symbol in accepted_symbol_list:
+    #     # print('Symbol Not supported', symbol)
+    #     return None
+
+    running_trade_status_time, orders_json, is_time = check_duplicate_orders_is_time(symbol=symbol, skip_min=skip_min,
+                                                                         json_file_name=json_file_name)
+    running_trade_status_magic = check_duplicate_orders_magic(symbol=symbol, code=777)
+    if running_trade_status_time or running_trade_status_magic:
+        return None
+
+    df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
+
+
+    # Function to calculate Bollinger Bands
+    df['middle_band'] = df['close'].rolling(window=window).mean()
+    df['std_dev'] = df['close'].rolling(window=window).std()
+    df['upper_band'] = df['middle_band'] + (num_std * df['std_dev'])
+    df['lower_band'] = df['middle_band'] - (num_std * df['std_dev'])
+
+
+    i = -1
+    df['RSI'] = calculate_rsi(df)
+
+    if df['RSI'].iloc[i] > 75 and df['close'].iloc[i] < df['lower_band'].iloc[i]:
+        #write_json(json_dict=orders_json, json_file_name=json_file_name)
+        action = 'buy'
+    elif df['RSI'].iloc[i] < 30 and df['close'].iloc[i] > df['upper_band'].iloc[i]:
+        #write_json(json_dict=orders_json, json_file_name=json_file_name)
+        action = 'sell'
+    else:
+        action = None
+
+
+    if action:
+        print(symbol, 'RSI_BOIL')
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 2, 0.5)
+
+        lot = cumulative_lot()
+
+        MAGIC_NUMBER = get_magic_number()
+        #trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=2, MAGIC_NUMBER=MAGIC_NUMBER)
+        trade_order_wo_tp_sl(symbol=symbol, lot=lot, action=action, magic=True)
+        write_json(json_dict=orders_json, json_file_name=json_file_name)
+
+        data = ""
+        data_lst = [symbol, time_frame,  MAGIC_NUMBER, avg_candle_size, action, tp, sl, 'RSI_BOIL', data]
+        add_csv(data_lst)
+

@@ -71,4 +71,4 @@ def detect_accumulation_and_markup(
             'dynamic_markup_threshold', 'returns', 'accumulation', 'markup'
         ]])
 
-    return data['accumulation'][-1]
+    return data['accumulation'].iloc[-1]

@@ -1,3 +1,4 @@
+from mt5_utils import trade_order_wo_tp_sl
 from xian import take_the_profit, cumulative_lot
 from mt5_utils import get_live_data, trade_order
 from common_functions import check_duplicate_orders, write_json, check_duplicate_orders_time, \
@@ -5,6 +6,7 @@ from common_functions import check_duplicate_orders, write_json, check_duplicate
 from mt5_utils import get_live_data, get_magic_number, trade_order_magic
 from common_functions import check_duplicate_orders, write_json, add_csv
 from akash import get_avg_candle_size
+from only_wyckoff import detect_accumulation_and_markup
 
 ## DOUBEL DOJI BREAK
 # Function to identify Doji candles
@@ -227,11 +229,22 @@ def volman_strategies(symbol):
 
 
     accepted_symbol_list = ['EURUSD', 'XAUUSD']
-    if not symbol in accepted_symbol_list:
-        # print('Symbol Not supported', symbol)
-        return None
+    # if not symbol in accepted_symbol_list:
+    #     # print('Symbol Not supported', symbol)
+    #     return None
 
     tick_df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=70)
+
+    wyckoff_status = False
+    try:
+        wyckoff_status = detect_accumulation_and_markup(data=tick_df, debug=False)
+        # print(wyckoff_status)
+    except Exception as e:
+        print('error', str(e))
+    #print('wyckoff_status', wyckoff_status)
+
+    if not wyckoff_status:
+        return
 
     action = bob_volman_signal(tick_df)
 
@@ -256,12 +269,14 @@ def volman_strategies(symbol):
 
     if action:
         print(symbol, 'volman_strategies')
-        avg_candle_size, sl, tp = get_avg_candle_size(symbol, tick_df, 12, 2)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, tick_df, 4, 2)
 
         lot = cumulative_lot()
 
         MAGIC_NUMBER = get_magic_number()
-        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=77, MAGIC_NUMBER=MAGIC_NUMBER)
+        #trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=77, MAGIC_NUMBER=MAGIC_NUMBER)
+        trade_order_wo_tp_sl(symbol=symbol, lot=lot, action=action, magic=True)
+
         write_json(json_dict=orders_json, json_file_name=json_file_name)
 
         data = ""

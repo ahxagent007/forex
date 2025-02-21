@@ -85,6 +85,8 @@ def get_live_data(symbol, time_frame, prev_n_candles):
         TIME_FRAME = mt5.TIMEFRAME_M30
     elif time_frame == 'H1':
         TIME_FRAME = mt5.TIMEFRAME_H1
+    elif time_frame == 'H2':
+        TIME_FRAME = mt5.TIMEFRAME_H2
     elif time_frame == 'H4':
         TIME_FRAME = mt5.TIMEFRAME_H4
     elif time_frame == 'D1':
@@ -161,18 +163,6 @@ def trade_order(symbol, tp_point, sl_point, lot, action, magic=False):
             sl = price + sl_point * point
         else:
             sl = price + sl_point * point
-
-    print(symbol, 'Spread pip: ', spread)
-
-    spread_dict = {
-        'EURUSD': 15,
-        'XAUUSD': 150,
-        'BTCUSD': 1900
-    }
-
-    if spread > spread_dict[symbol]:
-        print('High Spread')
-        return None
 
     deviation = 20
     MAGIC_NUMBER = get_magic_number()
@@ -615,18 +605,18 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
 
     print(symbol, 'Spread pip: ', spread)
 
-    spread_dict = {
-        'EURUSD': 15,
-        'XAUUSD': 150,
-        'BTCUSD': 2000,
-        'USDJPY': 15,
-        'GBPUSD': 15,
-        'EURJPY': 20
-    }
-
-    if spread > spread_dict[symbol]:
-        print('High Spread')
-        return None
+    # spread_dict = {
+    #     'EURUSD': 15,
+    #     'XAUUSD': 150,
+    #     'BTCUSD': 2000,
+    #     'USDJPY': 15,
+    #     'GBPUSD': 15,
+    #     'EURJPY': 20
+    # }
+    #
+    # if spread > spread_dict[symbol]:
+    #     print('High Spread')
+    #     return None
     # if tp_point <= spread or sl_point <= spread:
     #     print('LOW TP/SL')
     #     return None
@@ -637,14 +627,14 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
-            "volume": lot,
+            "volume": float(lot),
             "type": type,
             "price": price,
             "tp": tp,
             "sl": sl,
             "deviation": deviation,
             "magic": MAGIC_NUMBER,
-            "comment": "python script open",
+            "comment": action,
             #"type_time": mt5.ORDER_TIME_GTC,
             #"type_filling": mt5.ORDER_FILLING_IOC,
         }
@@ -652,13 +642,13 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
         request = {
             "action": mt5.TRADE_ACTION_DEAL,
             "symbol": symbol,
-            "volume": lot,
+            "volume": float(lot),
             "type": type,
             "price": price,
             "sl": sl,
             "deviation": deviation,
             "magic": MAGIC_NUMBER,
-            "comment": "python script open",
+            "comment": action,
             # "type_time": mt5.ORDER_TIME_GTC,
             # "type_filling": mt5.ORDER_FILLING_IOC,
         }
@@ -906,3 +896,7 @@ def get_current_price(symbol):
 def get_balance():
     balance = mt5.account_info().balance
     return balance
+
+def convert_price_diff_to_pips(symbol, price_diff):
+    point = mt5.symbol_info(symbol).point
+    return price_diff / point

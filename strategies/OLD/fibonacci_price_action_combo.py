@@ -2,6 +2,11 @@ from mt5_utils import get_live_data, get_magic_number, trade_order_magic
 from common_functions import check_duplicate_orders, write_json, add_csv, check_duplicate_orders_time, \
     check_duplicate_orders_magic
 from akash import get_avg_candle_size
+from only_wyckoff import detect_accumulation_and_markup
+
+from mt5_utils import trade_order_wo_tp_sl
+from xian import cumulative_lot
+
 
 def fibonacci_price_action(symbol, lookback=20):
     accepted_symbol_list = ['EURUSD', 'AUDUSD', 'GBPUSD', 'USDCAD', 'USDJPY', 'EURGPB', 'XAUUSD']
@@ -9,9 +14,9 @@ def fibonacci_price_action(symbol, lookback=20):
     skip_min = 2
     time_frame = 'M1'
 
-    if not symbol in accepted_symbol_list:
-        # print('Symbol Not supported', symbol)
-        return None
+    # if not symbol in accepted_symbol_list:
+    #     # print('Symbol Not supported', symbol)
+    #     return None
 
     running_trade_status_time, orders_json = check_duplicate_orders_time(symbol=symbol, skip_min=skip_min,
                                                                          json_file_name=json_file_name)
@@ -20,6 +25,18 @@ def fibonacci_price_action(symbol, lookback=20):
         return None
 
     df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
+
+    wyckoff_status = False
+    try:
+        wyckoff_status = detect_accumulation_and_markup(data = df, debug=False)
+        #print(wyckoff_status)
+    except Exception as e:
+        print('error', str(e))
+    #print('wyckoff_status', wyckoff_status)
+
+    if not wyckoff_status:
+        return
+
 
     #  calculate Fibonacci retracement levels
 
@@ -77,13 +94,13 @@ def fibonacci_price_action(symbol, lookback=20):
         action = None
 
     if action:
-        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df)
+        avg_candle_size, sl, tp = get_avg_candle_size(symbol, df, 4, 2)
 
-        lot = 0.1
+        lot = cumulative_lot()
 
         MAGIC_NUMBER = get_magic_number()
-        trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=4,
-                          MAGIC_NUMBER=MAGIC_NUMBER)
+        #trade_order_magic(symbol=symbol, tp_point=tp, sl_point=sl, lot=lot, action=action, magic=True, code=4, MAGIC_NUMBER=MAGIC_NUMBER)
+        trade_order_wo_tp_sl(symbol=symbol, lot=lot, action=action, magic=True)
         write_json(json_dict=orders_json, json_file_name=json_file_name)
 
         data = ""
