@@ -101,125 +101,125 @@ def detect_strong_engulfing_candle(open_prev, close_prev, high_prev, low_prev, o
         return "Bearish_Engulfing"
     else:
         return "None"
-
-initialize_mt5()
-
-while True:
-
-    #symbol_list = ['XAUUSD', 'EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY', 'GBPJPY']
-    symbol_list = ['NZDCAD', 'AUDUSD', 'NZDUSD', 'EURGBP', 'USDCAD', 'USDJPY', 'EURUSD', 'GBPAUD', 'GBPCAD', 'AUDCAD', 'EURJPY',
-                   'CADJPY', 'GBPJPY', 'CHFJPY', 'GBPUSD', 'EURNZD', 'GBPCHF', 'EURAUD', 'AUDJPY', 'GBPNZD', 'EURCAD', 'USDCHF', 'XAUUSD']
-
-    for symbol in symbol_list:
-        time.sleep(2)
-        skip_min = 50
-        json_file_name = 'fx_alex'
-        running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
-                                                                   json_file_name=json_file_name)
-        if running_trade_status:
-            #print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>')
-            continue
-
-        df_h2 = get_live_data(symbol=symbol, time_frame='H2', prev_n_candles=50)
-        df_h4 = get_live_data(symbol=symbol, time_frame='H4', prev_n_candles=50)
-        df_d1 = get_live_data(symbol=symbol, time_frame='D1', prev_n_candles=50)
-        df_w1 = get_live_data(symbol=symbol, time_frame='W1', prev_n_candles=50)
-
-        df_h2['time'] = pd.to_datetime(df_h2['time'], unit='s')  # Convert time to datetime
-        df_h4['time'] = pd.to_datetime(df_h4['time'], unit='s')  # Convert time to datetime
-        df_d1['time'] = pd.to_datetime(df_d1['time'], unit='s')  # Convert time to datetime
-        df_w1['time'] = pd.to_datetime(df_w1['time'], unit='s')  # Convert time to datetime
-
-        # Identify HH and HL
-        df_h2 = identify_trend_points(df_h2)
-        df_h4 = identify_trend_points(df_h4)
-        df_d1 = identify_trend_points(df_d1)
-        df_w1 = identify_trend_points(df_w1)
-
-        # Display the results
-        #print(df[df['Structure'].notnull()])  # Print only rows with HH or HL
-
-        # Determine market trend
-        market_trend_h4 = determine_market_trend(df_h4)
-        market_trend_d1 = determine_market_trend(df_d1)
-        market_trend_w1 = determine_market_trend(df_w1)
-
-        # print('------------------------------------')
-        # print(symbol)
-        # print(f"H4 The market trend is: {market_trend_h4}")
-        # print(f"D1 The market trend is: {market_trend_d1}")
-        # print(f"W1 The market trend is: {market_trend_w1}")
-        # print('------------------------------------')
-
-        market_signal = None
-        if (market_trend_w1 == market_trend_d1 == market_trend_h4 == 'Bullish') or (market_trend_w1 == 'Bullish'
-                                                                                    and market_trend_d1 == 'Bullish' and market_trend_h4 == 'Bearish'):
-            market_signal = 'buy'
-        elif (market_trend_w1 == market_trend_d1 == market_trend_h4 == 'Bearish') or (market_trend_w1 == 'Bearish'
-                                                                                      and market_trend_d1 == 'Bearish' and market_trend_h4 == 'Bullish'):
-            market_signal = 'sell'
-
-
-
-
-        ## Check for Engulfing at 2hr
-        engulf_pattern = detect_strong_engulfing_candle(
-            open_prev = df_h2['open'].iloc[-3],
-            close_prev = df_h2['close'].iloc[-3],
-            high_prev = df_h2['high'].iloc[-3],
-            low_prev = df_h2['low'].iloc[-3],
-            open_curr = df_h2['open'].iloc[-2],
-            close_curr = df_h2['close'].iloc[-2],
-            high_curr = df_h2['high'].iloc[-2],
-            low_curr = df_h2['low'].iloc[-2]
-        )
-        action = None
-        if engulf_pattern == 'Bullish_Engulfing':
-            action = 'buy'
-
-        elif engulf_pattern == 'Bearish_Engulfing':
-            action = 'sell'
-
-        if action and market_signal:
-            if action == market_signal:
-                sl = 0
-                if action == 'buy':
-
-                    ## get the SL
-                    sl_open = min(df_h2['open'].iloc[-1], df_h2['open'].iloc[-2], df_h2['open'].iloc[-3],
-                                  df_h2['open'].iloc[-4], df_h2['open'].iloc[-5])
-                    sl_close = min(df_h2['close'].iloc[-1], df_h2['close'].iloc[-2], df_h2['close'].iloc[-3],
-                                   df_h2['close'].iloc[-4], df_h2['close'].iloc[-5])
-
-                    print(sl_open, sl_close)
-                    if sl_open < sl_close:
-                        sl = abs(sl_open - df_h2['close'].iloc[-1])
-                    else:
-                        sl = abs(sl_close - df_h2['close'].iloc[-1])
-
-                elif action == 'sell':
-                    ## get the SL
-                    sl_open = max(df_h2['open'].iloc[-1], df_h2['open'].iloc[-2], df_h2['open'].iloc[-3],
-                                  df_h2['open'].iloc[-4], df_h2['open'].iloc[-5])
-                    sl_close = max(df_h2['close'].iloc[-1], df_h2['close'].iloc[-2], df_h2['close'].iloc[-3],
-                                   df_h2['close'].iloc[-4], df_h2['close'].iloc[-5])
-
-                    print(sl_open, sl_close)
-
-                    if sl_open > sl_close:
-                        sl = abs(sl_open - df_h2['close'].iloc[-1])
-                    else:
-                        sl = abs(sl_close - df_h2['close'].iloc[-1])
-
-
-                sl_pips = convert_price_diff_to_pips(symbol, sl)
-                tp_pips = sl_pips * 1.1
-                print('SL:TP -->', sl_pips, tp_pips)
-                lot = cumulative_lot()
-
-                ## TRADE
-                trade_order(symbol=symbol, tp_point=tp_pips, sl_point=sl_pips, lot=lot, action=action, magic=True)
-                write_json(json_dict=orders_json, json_file_name=json_file_name)
+#
+# initialize_mt5()
+#
+# while True:
+#
+#     #symbol_list = ['XAUUSD', 'EURUSD', 'AUDUSD', 'GBPUSD', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDJPY', 'EURGBP', 'EURJPY', 'GBPJPY']
+#     symbol_list = ['NZDCAD', 'AUDUSD', 'NZDUSD', 'EURGBP', 'USDCAD', 'USDJPY', 'EURUSD', 'GBPAUD', 'GBPCAD', 'AUDCAD', 'EURJPY',
+#                    'CADJPY', 'GBPJPY', 'CHFJPY', 'GBPUSD', 'EURNZD', 'GBPCHF', 'EURAUD', 'AUDJPY', 'GBPNZD', 'EURCAD', 'USDCHF', 'XAUUSD']
+#
+#     for symbol in symbol_list:
+#         time.sleep(2)
+#         skip_min = 50
+#         json_file_name = 'fx_alex'
+#         running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
+#                                                                    json_file_name=json_file_name)
+#         if running_trade_status:
+#             #print(symbol, 'MULTIPLE TRADE SKIPPED by TIME >>>>')
+#             continue
+#
+#         df_h2 = get_live_data(symbol=symbol, time_frame='H2', prev_n_candles=50)
+#         df_h4 = get_live_data(symbol=symbol, time_frame='H4', prev_n_candles=50)
+#         df_d1 = get_live_data(symbol=symbol, time_frame='D1', prev_n_candles=50)
+#         df_w1 = get_live_data(symbol=symbol, time_frame='W1', prev_n_candles=50)
+#
+#         df_h2['time'] = pd.to_datetime(df_h2['time'], unit='s')  # Convert time to datetime
+#         df_h4['time'] = pd.to_datetime(df_h4['time'], unit='s')  # Convert time to datetime
+#         df_d1['time'] = pd.to_datetime(df_d1['time'], unit='s')  # Convert time to datetime
+#         df_w1['time'] = pd.to_datetime(df_w1['time'], unit='s')  # Convert time to datetime
+#
+#         # Identify HH and HL
+#         df_h2 = identify_trend_points(df_h2)
+#         df_h4 = identify_trend_points(df_h4)
+#         df_d1 = identify_trend_points(df_d1)
+#         df_w1 = identify_trend_points(df_w1)
+#
+#         # Display the results
+#         #print(df[df['Structure'].notnull()])  # Print only rows with HH or HL
+#
+#         # Determine market trend
+#         market_trend_h4 = determine_market_trend(df_h4)
+#         market_trend_d1 = determine_market_trend(df_d1)
+#         market_trend_w1 = determine_market_trend(df_w1)
+#
+#         # print('------------------------------------')
+#         # print(symbol)
+#         # print(f"H4 The market trend is: {market_trend_h4}")
+#         # print(f"D1 The market trend is: {market_trend_d1}")
+#         # print(f"W1 The market trend is: {market_trend_w1}")
+#         # print('------------------------------------')
+#
+#         market_signal = None
+#         if (market_trend_w1 == market_trend_d1 == market_trend_h4 == 'Bullish') or (market_trend_w1 == 'Bullish'
+#                                                                                     and market_trend_d1 == 'Bullish' and market_trend_h4 == 'Bearish'):
+#             market_signal = 'buy'
+#         elif (market_trend_w1 == market_trend_d1 == market_trend_h4 == 'Bearish') or (market_trend_w1 == 'Bearish'
+#                                                                                       and market_trend_d1 == 'Bearish' and market_trend_h4 == 'Bullish'):
+#             market_signal = 'sell'
+#
+#
+#
+#
+#         ## Check for Engulfing at 2hr
+#         engulf_pattern = detect_strong_engulfing_candle(
+#             open_prev = df_h2['open'].iloc[-3],
+#             close_prev = df_h2['close'].iloc[-3],
+#             high_prev = df_h2['high'].iloc[-3],
+#             low_prev = df_h2['low'].iloc[-3],
+#             open_curr = df_h2['open'].iloc[-2],
+#             close_curr = df_h2['close'].iloc[-2],
+#             high_curr = df_h2['high'].iloc[-2],
+#             low_curr = df_h2['low'].iloc[-2]
+#         )
+#         action = None
+#         if engulf_pattern == 'Bullish_Engulfing':
+#             action = 'buy'
+#
+#         elif engulf_pattern == 'Bearish_Engulfing':
+#             action = 'sell'
+#
+#         if action and market_signal:
+#             if action == market_signal:
+#                 sl = 0
+#                 if action == 'buy':
+#
+#                     ## get the SL
+#                     sl_open = min(df_h2['open'].iloc[-1], df_h2['open'].iloc[-2], df_h2['open'].iloc[-3],
+#                                   df_h2['open'].iloc[-4], df_h2['open'].iloc[-5])
+#                     sl_close = min(df_h2['close'].iloc[-1], df_h2['close'].iloc[-2], df_h2['close'].iloc[-3],
+#                                    df_h2['close'].iloc[-4], df_h2['close'].iloc[-5])
+#
+#                     print(sl_open, sl_close)
+#                     if sl_open < sl_close:
+#                         sl = abs(sl_open - df_h2['close'].iloc[-1])
+#                     else:
+#                         sl = abs(sl_close - df_h2['close'].iloc[-1])
+#
+#                 elif action == 'sell':
+#                     ## get the SL
+#                     sl_open = max(df_h2['open'].iloc[-1], df_h2['open'].iloc[-2], df_h2['open'].iloc[-3],
+#                                   df_h2['open'].iloc[-4], df_h2['open'].iloc[-5])
+#                     sl_close = max(df_h2['close'].iloc[-1], df_h2['close'].iloc[-2], df_h2['close'].iloc[-3],
+#                                    df_h2['close'].iloc[-4], df_h2['close'].iloc[-5])
+#
+#                     print(sl_open, sl_close)
+#
+#                     if sl_open > sl_close:
+#                         sl = abs(sl_open - df_h2['close'].iloc[-1])
+#                     else:
+#                         sl = abs(sl_close - df_h2['close'].iloc[-1])
+#
+#
+#                 sl_pips = convert_price_diff_to_pips(symbol, sl)
+#                 tp_pips = sl_pips * 1.1
+#                 print('SL:TP -->', sl_pips, tp_pips)
+#                 lot = cumulative_lot()
+#
+#                 ## TRADE
+#                 trade_order(symbol=symbol, tp_point=tp_pips, sl_point=sl_pips, lot=lot, action=action, magic=True)
+#                 write_json(json_dict=orders_json, json_file_name=json_file_name)
 
 
 

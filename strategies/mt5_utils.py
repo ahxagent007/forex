@@ -33,7 +33,7 @@ def get_magic_number():
 def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
-    # # NEW ACC LIVE
+    # # NEW ACC LIVE 178.39
     # login = 181244000
     # password = 'ABCabc123!@#'
     # server = 'Exness-MT5Trial6'
@@ -42,6 +42,25 @@ def initialize_mt5():
     login = 182331894
     password = 'ABCabc123!@#'
     server = 'Exness-MT5Trial6'
+
+    timeout = 10000
+    portable = False
+    if mt5.initialize(path=path, login=login, password=password, server=server, timeout=timeout, portable=portable):
+        print("Initialization successful")
+    else:
+        print('Initialize failed')
+def initialize_mt5_4000():
+    path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
+
+    # # NEW ACC LIVE
+    login = 181244000
+    password = 'ABCabc123!@#'
+    server = 'Exness-MT5Trial6'
+    #
+    # # ## PRO NEW
+    # login = 182331894
+    # password = 'ABCabc123!@#'
+    # server = 'Exness-MT5Trial6'
 
     timeout = 10000
     portable = False
@@ -177,7 +196,7 @@ def trade_order(symbol, tp_point, sl_point, lot, action, magic=False):
             "tp": tp,
             "deviation": deviation,
             "magic": MAGIC_NUMBER,
-            "comment": "python script open",
+            "comment": action,
             #"type_time": mt5.ORDER_TIME_GTC,
             #"type_filling": mt5.ORDER_FILLING_IOC,
         }
@@ -900,3 +919,9 @@ def get_balance():
 def convert_price_diff_to_pips(symbol, price_diff):
     point = mt5.symbol_info(symbol).point
     return price_diff / point
+
+def get_open_positions():
+    # Get position objects
+    positions = mt5.positions_get()
+    # Return position objects
+    return positions

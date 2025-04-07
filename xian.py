@@ -7,6 +7,9 @@ import plotly.graph_objects as go
 import time
 import datetime as dt
 
+from Nahid.strategies.akash import get_avg_candle_size
+from Nahid.strategies.mt5_utils import get_all_positions, close_position, get_magic_number, trade_order_magic, \
+    get_live_data
 
 
 def MT5_error_code(code):
@@ -486,122 +489,122 @@ def sell_order(symbol, tp_point, sl_point, lot):
     except Exception as e:
         print('Result SELL >> ', str(e))
 
-def check_duplicate_orders(symbol):
-
-    orders = mt5.positions_get(symbol=symbol)
-    print(symbol, ' RUNNING ORDERS >> ', len(orders))
-
-    orders_json = read_json()
-
-
-    try:
-
-        last_trade_time = orders_json[symbol]
-
-        start_hour = last_trade_time['h']
-        start_min = last_trade_time['m']
-        end_hour = last_trade_time['h']
-        end_min = last_trade_time['m']+skip_min
-
-        if end_min > 60:
-            end_hour += 1
-            if end_hour > 24:
-                end_hour = 0
-
-        if len(orders) == 0:
-            orders_json[symbol] = {
-                'h': dt.datetime.now().hour,
-                'm': dt.datetime.now().minute,
-            }
-            return False, orders_json
-
-        if isNowInTimePeriod(dt.time(start_hour, start_min), dt.time(end_hour, end_min), dt.datetime.now().time()):
-            print(symbol, 'TRADE SKIPPED for MULTIPLE')
-            return True, orders_json
-        else:
-            orders_json[symbol] = {
-                'h': dt.datetime.now().hour,
-                'm': dt.datetime.now().minute,
-            }
-    except Exception as e:
-        orders_json[symbol] = {
-            'h': dt.datetime.now().hour,
-            'm': dt.datetime.now().minute,
-        }
-
-    return False, orders_json
-
-
-def start_trading(symbol):
-    print('------------------------------------------------------------------------')
-    print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
-
-
-    rates = mt5.copy_rates_range(symbol, TIME_FRAME, datetime.now() - timedelta(minutes=PREV_MIN_CHART),
-                                 datetime.now())
-    ticks_frame = pd.DataFrame(rates)
-
-    last_4_candles = ticks_frame.tail(4)
-
-    try:
-        data = trade_logic(last_4_candles)
-    except:
-        return None
-
-    # Stochastic Crossover
-    dec_stock_list = stochastic_crossover_strategy(ticks_frame, k_period=14, d_period=3)
-    print('Stochastic', dec_stock_list)
-    # print(dec_stock_list)
-    if dec_stock_list[-1] == 'buy' or dec_stock_list[-2] == 'buy':
-        dec_stock = 'buy'
-    elif dec_stock_list[-1] == 'sell' or dec_stock_list[-2] == 'sell':
-        dec_stock = 'sell'
-    else:
-        dec_stock = None
-
-    # Support and Resistance
-    support_resistance_result = support_resistance_strategy(ticks_frame)
-    if support_resistance_result[-1] == 'buy' or support_resistance_result[-2] == 'buy':
-        support_res_dec = 'buy'
-    elif support_resistance_result[-1] == 'sell' or support_resistance_result[-2] == 'sell':
-        support_res_dec = 'sell'
-    else:
-        support_res_dec = None
-    print('Support', support_resistance_result)
-
-
-    ## Check orders count
-    multi_trade, orders_json = check_duplicate_orders(symbol)
-
-    if multi_trade:
-        return None
-
-
-    # Buy Sell Order
-    if data['three_white_solders'] or data['three_black_crows']:
-
-        if data['action'] == 'buy' and dec_stock == 'buy' and support_res_dec == 'buy':
-            buy_order(symbol, tp_point, sl_point, lot)
-
-            write_json(orders_json)
-        elif data['action'] == 'sell' and dec_stock == 'sell' and support_res_dec == 'sell':
-            sell_order(symbol, tp_point, sl_point, lot)
-
-            write_json(orders_json)
-
-    # elif not support_resistance_result[-1] == 'None' and not dec_stock_list[-1] == 'None':
-    #     print('Possible Stochastic + Support Resistance')
-    #
-    #     if support_resistance_result[-1] == 'buy' and dec_stock_list[-1] == 'buy':
-    #         buy_order(symbol, tp_point, sl_point, lot)
-    #
-    #         write_json(orders_json)
-    #     elif support_resistance_result[-1] == 'sell' and dec_stock_list[-1] == 'sell':
-    #         sell_order(symbol, tp_point, sl_point, lot)
-    #
-    #         write_json(orders_json)
-
-    print('------------------------------------------------------------------------')
+# def check_duplicate_orders(symbol):
+#
+#     orders = mt5.positions_get(symbol=symbol)
+#     print(symbol, ' RUNNING ORDERS >> ', len(orders))
+#
+#     orders_json = read_json()
+#
+#
+#     try:
+#
+#         last_trade_time = orders_json[symbol]
+#
+#         start_hour = last_trade_time['h']
+#         start_min = last_trade_time['m']
+#         end_hour = last_trade_time['h']
+#         end_min = last_trade_time['m']+skip_min
+#
+#         if end_min > 60:
+#             end_hour += 1
+#             if end_hour > 24:
+#                 end_hour = 0
+#
+#         if len(orders) == 0:
+#             orders_json[symbol] = {
+#                 'h': dt.datetime.now().hour,
+#                 'm': dt.datetime.now().minute,
+#             }
+#             return False, orders_json
+#
+#         if isNowInTimePeriod(dt.time(start_hour, start_min), dt.time(end_hour, end_min), dt.datetime.now().time()):
+#             print(symbol, 'TRADE SKIPPED for MULTIPLE')
+#             return True, orders_json
+#         else:
+#             orders_json[symbol] = {
+#                 'h': dt.datetime.now().hour,
+#                 'm': dt.datetime.now().minute,
+#             }
+#     except Exception as e:
+#         orders_json[symbol] = {
+#             'h': dt.datetime.now().hour,
+#             'm': dt.datetime.now().minute,
+#         }
+#
+#     return False, orders_json
+#
+#
+# def start_trading(symbol):
+#     print('------------------------------------------------------------------------')
+#     print(dt.datetime.now().time(), ' => Searching Trade >>> >>> ', symbol)
+#
+#
+#     rates = mt5.copy_rates_range(symbol, TIME_FRAME, datetime.now() - timedelta(minutes=PREV_MIN_CHART),
+#                                  datetime.now())
+#     ticks_frame = pd.DataFrame(rates)
+#
+#     last_4_candles = ticks_frame.tail(4)
+#
+#     try:
+#         data = trade_logic(last_4_candles)
+#     except:
+#         return None
+#
+#     # Stochastic Crossover
+#     dec_stock_list = stochastic_crossover_strategy(ticks_frame, k_period=14, d_period=3)
+#     print('Stochastic', dec_stock_list)
+#     # print(dec_stock_list)
+#     if dec_stock_list[-1] == 'buy' or dec_stock_list[-2] == 'buy':
+#         dec_stock = 'buy'
+#     elif dec_stock_list[-1] == 'sell' or dec_stock_list[-2] == 'sell':
+#         dec_stock = 'sell'
+#     else:
+#         dec_stock = None
+#
+#     # Support and Resistance
+#     support_resistance_result = support_resistance_strategy(ticks_frame)
+#     if support_resistance_result[-1] == 'buy' or support_resistance_result[-2] == 'buy':
+#         support_res_dec = 'buy'
+#     elif support_resistance_result[-1] == 'sell' or support_resistance_result[-2] == 'sell':
+#         support_res_dec = 'sell'
+#     else:
+#         support_res_dec = None
+#     print('Support', support_resistance_result)
+#
+#
+#     ## Check orders count
+#     multi_trade, orders_json = check_duplicate_orders(symbol)
+#
+#     if multi_trade:
+#         return None
+#
+#
+#     # Buy Sell Order
+#     if data['three_white_solders'] or data['three_black_crows']:
+#
+#         if data['action'] == 'buy' and dec_stock == 'buy' and support_res_dec == 'buy':
+#             buy_order(symbol, tp_point, sl_point, lot)
+#
+#             write_json(orders_json)
+#         elif data['action'] == 'sell' and dec_stock == 'sell' and support_res_dec == 'sell':
+#             sell_order(symbol, tp_point, sl_point, lot)
+#
+#             write_json(orders_json)
+#
+#     # elif not support_resistance_result[-1] == 'None' and not dec_stock_list[-1] == 'None':
+#     #     print('Possible Stochastic + Support Resistance')
+#     #
+#     #     if support_resistance_result[-1] == 'buy' and dec_stock_list[-1] == 'buy':
+#     #         buy_order(symbol, tp_point, sl_point, lot)
+#     #
+#     #         write_json(orders_json)
+#     #     elif support_resistance_result[-1] == 'sell' and dec_stock_list[-1] == 'sell':
+#     #         sell_order(symbol, tp_point, sl_point, lot)
+#     #
+#     #         write_json(orders_json)
+#
+#     print('------------------------------------------------------------------------')
 
 
 def isNowInTimePeriod(startTime, endTime, nowTime):
@@ -612,193 +615,192 @@ def isNowInTimePeriod(startTime, endTime, nowTime):
         return nowTime >= startTime or nowTime <= endTime
 
 
-initialize_mt5()
-
-# Global Settings
-skip_min = 1
-
-TIME_FRAME = mt5.TIMEFRAME_M1
-PREV_MIN_CHART = 70
-
-lot = 0.06
-tp_point = 10
-sl_point = 20
-
-#Loop Settings
-loop_delay_sec = 60 * 1
-delay_sec = 5
-server_start = 3
-server_end = 15
-xian_start = 10
-xian_end = 21
-
-while True:
-    start_trading('EURUSDm')
-    time.sleep(delay_sec)
-    start_trading('USDJPYm')
-    time.sleep(delay_sec)
-    start_trading('EURJPYm')
-    time.sleep(delay_sec)
-    start_trading('AUDCHFm')
-    time.sleep(delay_sec)
-    start_trading('AUDUSDm')
-    time.sleep(delay_sec)
-    start_trading('EURGBPm')
-    time.sleep(delay_sec)
-    start_trading('CADCHFm')
-    time.sleep(delay_sec)
-    start_trading('USDCHFm')
-    time.sleep(delay_sec)
-    start_trading('GBPUSDm')
-    time.sleep(delay_sec)
-
-    # if isNowInTimePeriod(dt.time(10, 00), dt.time(21, 00), dt.datetime.now().time()):
-    #     loop_delay_sec = 1
-    #
-    #     #  Forex
-    #
-    #
-    #     # #Crypto pair
-    #     # start_trading('BTCAUDm')
-    #     # time.sleep(delay_sec)
-    #     # start_trading('BTCJPYm')
-    #
-    # else:
-    #     print(dt.datetime.now().time(),' >> out time >> Crypto')
-    #     loop_delay_sec = 60 * 5
-    # time.sleep(loop_delay_sec)
-
-
-    # start_trading('BTCAUDm')
-    # time.sleep(delay_sec)
-    # start_trading('BTCCNHm')
-    # time.sleep(delay_sec)
-    # start_trading('BTCJPYm')
-    # time.sleep(delay_sec)
-    # start_trading('BTCTHBm')
-    # time.sleep(delay_sec)
-    # start_trading('BTCUSDm')
-    # time.sleep(delay_sec)
-    # start_trading('BTCXAGm')
-    # time.sleep(delay_sec)
-    # start_trading('BTCXAUm')
-    # time.sleep(delay_sec)
-    # start_trading('BTCZARm')
-    # time.sleep(delay_sec)
-    # start_trading('ETHUSDm')
-    # time.sleep(delay_sec)
-    # start_trading('LTCUSDm')
-    # time.sleep(delay_sec)
-
-
-    # Stock
-    # start_trading('AMZNm')
-    # time.sleep(delay_sec)
-    # start_trading('EBAYm')
-    # time.sleep(delay_sec)
-    # start_trading('IQm')
-    # time.sleep(delay_sec)
-    # start_trading('JDm')
-    # time.sleep(delay_sec)
-    # start_trading('LIm')
-    # time.sleep(delay_sec)
-    # start_trading('NIOm')
-    # time.sleep(delay_sec)
-    # start_trading('SBUXm')
-    # time.sleep(delay_sec)
-    # start_trading('TMEm')
-    # time.sleep(delay_sec)
-    # start_trading('VIPSm')
-    # time.sleep(delay_sec)
-    # start_trading('XPEVm')
-    # time.sleep(delay_sec)
-    # start_trading('YUMCm')
-    # time.sleep(delay_sec)
-    # start_trading('BEKEm')
-    # time.sleep(delay_sec)
-    # start_trading('AAPLm')
-    # time.sleep(delay_sec)
-    # start_trading('BBm')
-    # time.sleep(delay_sec)
-    # start_trading('BILIm')
-    # time.sleep(delay_sec)
-    # start_trading('FTNTm')
-    # time.sleep(delay_sec)
-    # start_trading('TSMm')
-    # time.sleep(delay_sec)
-    # start_trading('CMCSAm')
-    # time.sleep(delay_sec)
-    # start_trading('CSCOm')
-    # time.sleep(delay_sec)
-
-
-    # GBPUSD high spread
-    # start_trading('GBPUSDm')
-    # time.sleep(delay_sec)
-    # start_trading('NZDUSDm')
-    # time.sleep(delay_sec)
-    # start_trading('USDCADm')
-    # time.sleep(delay_sec)
-    # start_trading('USDCHFm')
-    # time.sleep(delay_sec)
-
-    # Commodity
-    # start_trading('XAUUSDm')
-    # time.sleep(delay_sec)
-    #
-    # # Currency Pair
-    # start_trading('EURJPYm')
-    # time.sleep(delay_sec)
-    # start_trading('NZDJPYm')
-    # time.sleep(delay_sec)
-    # start_trading('CADJPYm')
-    # time.sleep(delay_sec)
-    # start_trading('GBPCADm')
-    # time.sleep(delay_sec)
-    # start_trading('EURAUDm')
-    # time.sleep(delay_sec)
-    # start_trading('EURCADm')
-    # time.sleep(delay_sec)
-    # start_trading('EURGBPm')
-    # time.sleep(delay_sec)
-    #
-    # #not interested
-    # start_trading('AUDUSDm')
-    # time.sleep(5)
-    # start_trading('AUDCADm')
-    # time.sleep(5)
-    # start_trading('AUDCHFm')
-    # time.sleep(5)
-    # start_trading('AUDJPYm')
-    # time.sleep(5)
-    # start_trading('AUDNZDm')
-    # time.sleep(5)
-    # start_trading('CADCHFm')
-    # time.sleep(5)
-    # start_trading('CHFJPYm')
-    # time.sleep(5)
-    # start_trading('EURCHFm')
-    # time.sleep(5)
-    # start_trading('EURNZDm')
-    # time.sleep(5)
-    # start_trading('GBPAUDm')
-    # time.sleep(5)
-    # start_trading('GBPCHFm')
-    # time.sleep(5)
-    # start_trading('GBPJPYm')
-    # time.sleep(5)
-    # start_trading('GBPNZDm')
-    # time.sleep(5)
-    # start_trading('HKDJPYm')
-    # time.sleep(5)
-    # start_trading('NZDCADm')
-    # time.sleep(5)
-    # start_trading('NZDCHFm')
-    # time.sleep(5)
-    # start_trading('USDCNHm')
-    # time.sleep(5)
-    # start_trading('USDHKDm')
-    # time.sleep(5)
-    # start_trading('USDTHBm')
-    # time.sleep(5)
-
+# initialize_mt5()
+#
+# # Global Settings
+# skip_min = 1
+#
+# TIME_FRAME = mt5.TIMEFRAME_M1
+# PREV_MIN_CHART = 70
+#
+# lot = 0.06
+# tp_point = 10
+# sl_point = 20
+#
+# #Loop Settings
+# loop_delay_sec = 60 * 1
+# delay_sec = 5
+# server_start = 3
+# server_end = 15
+# xian_start = 10
+# xian_end = 21
+#
+# while True:
+#     start_trading('EURUSDm')
+#     time.sleep(delay_sec)
+#     start_trading('USDJPYm')
+#     time.sleep(delay_sec)
+#     start_trading('EURJPYm')
+#     time.sleep(delay_sec)
+#     start_trading('AUDCHFm')
+#     time.sleep(delay_sec)
+#     start_trading('AUDUSDm')
+#     time.sleep(delay_sec)
+#     start_trading('EURGBPm')
+#     time.sleep(delay_sec)
+#     start_trading('CADCHFm')
+#     time.sleep(delay_sec)
+#     start_trading('USDCHFm')
+#     time.sleep(delay_sec)
+#     start_trading('GBPUSDm')
+#     time.sleep(delay_sec)
+#
+#     # if isNowInTimePeriod(dt.time(10, 00), dt.time(21, 00), dt.datetime.now().time()):
+#     #     loop_delay_sec = 1
+#     #
+#     #     #  Forex
+#     #
+#     #
+#     #     # #Crypto pair
+#     #     # start_trading('BTCAUDm')
+#     #     # time.sleep(delay_sec)
+#     #     # start_trading('BTCJPYm')
+#     #
+#     # else:
+#     #     print(dt.datetime.now().time(),' >> out time >> Crypto')
+#     #     loop_delay_sec = 60 * 5
+#     # time.sleep(loop_delay_sec)
+#
+#
+#     # start_trading('BTCAUDm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BTCCNHm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BTCJPYm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BTCTHBm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BTCUSDm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BTCXAGm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BTCXAUm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BTCZARm')
+#     # time.sleep(delay_sec)
+#     # start_trading('ETHUSDm')
+#     # time.sleep(delay_sec)
+#     # start_trading('LTCUSDm')
+#     # time.sleep(delay_sec)
+#
+#
+#     # Stock
+#     # start_trading('AMZNm')
+#     # time.sleep(delay_sec)
+#     # start_trading('EBAYm')
+#     # time.sleep(delay_sec)
+#     # start_trading('IQm')
+#     # time.sleep(delay_sec)
+#     # start_trading('JDm')
+#     # time.sleep(delay_sec)
+#     # start_trading('LIm')
+#     # time.sleep(delay_sec)
+#     # start_trading('NIOm')
+#     # time.sleep(delay_sec)
+#     # start_trading('SBUXm')
+#     # time.sleep(delay_sec)
+#     # start_trading('TMEm')
+#     # time.sleep(delay_sec)
+#     # start_trading('VIPSm')
+#     # time.sleep(delay_sec)
+#     # start_trading('XPEVm')
+#     # time.sleep(delay_sec)
+#     # start_trading('YUMCm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BEKEm')
+#     # time.sleep(delay_sec)
+#     # start_trading('AAPLm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BBm')
+#     # time.sleep(delay_sec)
+#     # start_trading('BILIm')
+#     # time.sleep(delay_sec)
+#     # start_trading('FTNTm')
+#     # time.sleep(delay_sec)
+#     # start_trading('TSMm')
+#     # time.sleep(delay_sec)
+#     # start_trading('CMCSAm')
+#     # time.sleep(delay_sec)
+#     # start_trading('CSCOm')
+#     # time.sleep(delay_sec)
+#
+#
+#     # GBPUSD high spread
+#     # start_trading('GBPUSDm')
+#     # time.sleep(delay_sec)
+#     # start_trading('NZDUSDm')
+#     # time.sleep(delay_sec)
+#     # start_trading('USDCADm')
+#     # time.sleep(delay_sec)
+#     # start_trading('USDCHFm')
+#     # time.sleep(delay_sec)
+#
+#     # Commodity
+#     # start_trading('XAUUSDm')
+#     # time.sleep(delay_sec)
+#     #
+#     # # Currency Pair
+#     # start_trading('EURJPYm')
+#     # time.sleep(delay_sec)
+#     # start_trading('NZDJPYm')
+#     # time.sleep(delay_sec)
+#     # start_trading('CADJPYm')
+#     # time.sleep(delay_sec)
+#     # start_trading('GBPCADm')
+#     # time.sleep(delay_sec)
+#     # start_trading('EURAUDm')
+#     # time.sleep(delay_sec)
+#     # start_trading('EURCADm')
+#     # time.sleep(delay_sec)
+#     # start_trading('EURGBPm')
+#     # time.sleep(delay_sec)
+#     #
+#     # #not interested
+#     # start_trading('AUDUSDm')
+#     # time.sleep(5)
+#     # start_trading('AUDCADm')
+#     # time.sleep(5)
+#     # start_trading('AUDCHFm')
+#     # time.sleep(5)
+#     # start_trading('AUDJPYm')
+#     # time.sleep(5)
+#     # start_trading('AUDNZDm')
+#     # time.sleep(5)
+#     # start_trading('CADCHFm')
+#     # time.sleep(5)
+#     # start_trading('CHFJPYm')
+#     # time.sleep(5)
+#     # start_trading('EURCHFm')
+#     # time.sleep(5)
+#     # start_trading('EURNZDm')
+#     # time.sleep(5)
+#     # start_trading('GBPAUDm')
+#     # time.sleep(5)
+#     # start_trading('GBPCHFm')
+#     # time.sleep(5)
+#     # start_trading('GBPJPYm')
+#     # time.sleep(5)
+#     # start_trading('GBPNZDm')
+#     # time.sleep(5)
+#     # start_trading('HKDJPYm')
+#     # time.sleep(5)
+#     # start_trading('NZDCADm')
+#     # time.sleep(5)
+#     # start_trading('NZDCHFm')
+#     # time.sleep(5)
+#     # start_trading('USDCNHm')
+#     # time.sleep(5)
+#     # start_trading('USDHKDm')
+#     # time.sleep(5)
+#     # start_trading('USDTHBm')
+#     # time.sleep(5)
