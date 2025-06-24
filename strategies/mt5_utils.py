@@ -33,15 +33,9 @@ def get_magic_number():
 def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
-    # # NEW ACC LIVE 178.39
-    # login = 181244000
-    # password = 'ABCabc123!@#'
-    # server = 'Exness-MT5Trial6'
-
-    # ## PRO NEW
-    login = 182331894
-    password = 'ABCabc123!@#'
-    server = 'Exness-MT5Trial6'
+    login = 273524617
+    password = "abcdABCD123!@#"
+    server = "Exness-MT5Trial6"
 
     timeout = 10000
     portable = False
@@ -624,21 +618,37 @@ def trade_order_magic(symbol, tp_point, sl_point, lot, action, magic=False, code
 
     print(symbol, 'Spread pip: ', spread)
 
-    # spread_dict = {
-    #     'EURUSD': 15,
-    #     'XAUUSD': 150,
-    #     'BTCUSD': 2000,
-    #     'USDJPY': 15,
-    #     'GBPUSD': 15,
-    #     'EURJPY': 20
-    # }
-    #
-    # if spread > spread_dict[symbol]:
-    #     print('High Spread')
-    #     return None
-    # if tp_point <= spread or sl_point <= spread:
-    #     print('LOW TP/SL')
-    #     return None
+    spread_dict = {
+        'BTCUSD': 2020,
+        'EURUSD': 10,
+        'AUDUSD': 10,
+        'GBPUSD': 10,
+        'NZDUSD': 15,
+        'EURCHF': 20,
+        'GBPCHF': 20,
+        'AUDCHF': 20,
+        'USDCHF': 15,
+        'AUDCAD': 20,
+        'NZDCAD': 20,
+        'USDCAD': 15,
+        'EURCAD': 30,
+        'GBPCAD': 35,
+        'EURNZD': 40,
+        'EURGBP': 15,
+        'EURAUD': 30,
+        'GBPNZD': 45,
+        'CADJPY': 30,
+        'USDJPY': 10,
+        'EURJPY': 20,
+        'GBPJPY': 20,
+        'CHFJPY': 30,
+        'AUDJPY': 20,
+        'XAUUSD': 120
+    }
+
+    if spread > spread_dict[symbol]:
+        print('High Spread')
+        return None
 
     deviation = 20
     # MAGIC_NUMBER = get_magic_number()
@@ -781,6 +791,60 @@ def trade_order_magic_value(symbol, tp_point, sl_value, lot, action, magic=False
     except Exception as e:
         print('Result '+action+' >> ', str(e))
 
+def trade_order_price(symbol, tp_price, sl_price, lot, action, magic=False, code=0, MAGIC_NUMBER=0):
+
+
+    if action == 'buy':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).ask
+        bid_price = mt5.symbol_info_tick(symbol).bid
+        type = mt5.ORDER_TYPE_BUY
+
+        spread = abs(price - bid_price) / point
+
+
+
+    elif action == 'sell':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).bid
+        ask_price = mt5.symbol_info_tick(symbol).ask
+        type = mt5.ORDER_TYPE_SELL
+
+        spread = abs(price - ask_price) / point
+
+
+    deviation = 20
+    # MAGIC_NUMBER = get_magic_number()
+    request = {
+        "action": mt5.TRADE_ACTION_DEAL,
+        "symbol": symbol,
+        "volume": lot,
+        "type": type,
+        "price": price,
+        "tp": tp_price,
+        "sl": sl_price,
+        "deviation": deviation,
+        "magic": MAGIC_NUMBER,
+        "comment": "python script open",
+        # "type_time": mt5.ORDER_TIME_GTC,
+        # "type_filling": mt5.ORDER_FILLING_IOC,
+    }
+    print(request)
+    # send a trading request
+    result = mt5.order_send(request)
+    print(result)
+
+    try:
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            print(symbol, ' ', action+' not done', result.retcode, MT5_error_code(result.retcode))
+
+        else:
+            print('>>>>>>>>>>>> ## ## ## '+action+' done with bot ', symbol)## update magic number
+            if magic:
+                update_magic_number(symbol+str(code), MAGIC_NUMBER)
+    except Exception as e:
+        print('Result '+action+' >> ', str(e))
+
 def trade_order_wo_sl_magic(symbol, tp_point, lot, action, magic=False, code=0):
 
 
@@ -877,6 +941,10 @@ def get_all_positions(symbol):
 def close_position(symbol, ticket):
     mt5.Close(symbol, ticket=ticket)
 
+def close_all_positions(symbol):
+    positions = get_all_positions(symbol)
+    for pos in positions:
+        close_position(symbol, pos.ticket)
 def update_magic_number(symbol, MAGIC_NUMBER):
     #print('updating',symbol,MAGIC_NUMBER)
     file_name = 'time_counts/trade_number.json'
@@ -925,3 +993,119 @@ def get_open_positions():
     positions = mt5.positions_get()
     # Return position objects
     return positions
+
+def trade_with_price(action, symbol, lot, tp_price, sl_price):
+    print(action, symbol, lot, tp_price, sl_price)
+    symbol_info = mt5.symbol_info(symbol)
+    if not symbol_info.visible:
+        mt5.symbol_select(symbol, True)
+
+    if action == 'buy':
+        # Get current ask price
+        tick = mt5.symbol_info_tick(symbol)
+        ask_price = tick.ask
+
+        # Build order request
+        order = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": mt5.ORDER_TYPE_BUY,
+            "price": ask_price,
+            "sl": sl_price,
+            "tp": tp_price,
+            "deviation": 20,
+            "magic": 69,
+            "comment": "Buy with ORB"
+        }
+    elif action == 'sell':
+        # Get current ask price
+        tick = mt5.symbol_info_tick(symbol)
+        ask_price = tick.bid
+
+        # Build order request
+        order = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": lot,
+            "type": mt5.ORDER_TYPE_SELL,
+            "price": ask_price,
+            "sl": sl_price,
+            "tp": tp_price,
+            "deviation": 20,
+            "magic": 69,
+            "comment": "SELL with ORB"
+        }
+
+    # Send the order
+    result = mt5.order_send(order)
+    #print('RESULT >>>>>>>>>>>>>> ',result)
+    if result is None:
+        print("❌ order_send() failed:", mt5.last_error())
+        return
+
+    try:
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            print(symbol, ' ', action+' not done', result.retcode, MT5_error_code(result.retcode))
+
+        else:
+            print("✅ order placed successfully")
+            print("Order ticket:", result.order)
+    except Exception as e:
+        print('Result '+action+' >> ', str(e))
+        print("❌ Order failed:", result.retcode)
+
+    # # Check the result
+    # if result.retcode == mt5.TRADE_RETCODE_DONE:
+    #     print("✅ Buy order placed successfully")
+    #     print("Order ticket:", result.order)
+    # else:
+    #     print("❌ Order failed:", result.retcode)
+
+
+def trade_limit_with_price(action, symbol, lot, entry_price, tp_price, sl_price):
+    print(action, symbol, lot, entry_price, tp_price, sl_price)
+    if action == 'buy':
+        # === Send BUY LIMIT Order ===
+        order = {
+            "action": mt5.TRADE_ACTION_PENDING,
+            "symbol": symbol,
+            "volume": lot,
+            "type": mt5.ORDER_TYPE_BUY_LIMIT,
+            "price": entry_price,
+            "sl": sl_price,
+            "tp": tp_price,
+            "deviation": 20,
+            "magic": 28072023,
+            "comment": "ORB BUY LIMIT",
+            "type_time": mt5.ORDER_TIME_GTC,  # Good Till Canceled
+            "type_filling": mt5.ORDER_FILLING_RETURN  # Required for pending orders
+        }
+    elif action == 'sell':
+        # === Send BUY LIMIT Order ===
+        order = {
+            "action": mt5.TRADE_ACTION_PENDING,
+            "symbol": symbol,
+            "volume": lot,
+            "type": mt5.ORDER_TYPE_SELL_LIMIT,
+            "price": entry_price,
+            "sl": sl_price,
+            "tp": tp_price,
+            "deviation": 20,
+            "magic": 28072023,
+            "comment": "ORB SELL LIMIT",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_RETURN
+        }
+
+    # Send order
+    result = mt5.order_send(order)
+    #print('RESULT >>>>>>>>>>>>>> ', result)
+    if result is None:
+        print("❌ order_send() failed:", mt5.last_error())
+        return
+    # === Result ===
+    if result.retcode == mt5.TRADE_RETCODE_DONE:
+        print("✅ LIMIT order placed successfully")
+    else:
+        print(f"❌ Failed to place order. Error code: {result.retcode}")
