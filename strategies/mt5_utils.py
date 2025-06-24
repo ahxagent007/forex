@@ -1109,3 +1109,39 @@ def trade_limit_with_price(action, symbol, lot, entry_price, tp_price, sl_price)
         print("✅ LIMIT order placed successfully")
     else:
         print(f"❌ Failed to place order. Error code: {result.retcode}")
+
+def cancel_all_pending_orders():
+    # Get all pending orders
+    pending_orders = mt5.orders_get()
+
+    if pending_orders is None:
+        print("❌ Failed to retrieve orders:", mt5.last_error())
+        return
+
+    print(f"📦 Found {len(pending_orders)} total orders")
+
+    # Loop and cancel only pending orders
+    for order in pending_orders:
+        if order.type in [
+            mt5.ORDER_TYPE_BUY_LIMIT,
+            mt5.ORDER_TYPE_SELL_LIMIT,
+            mt5.ORDER_TYPE_BUY_STOP,
+            mt5.ORDER_TYPE_SELL_STOP,
+            mt5.ORDER_TYPE_BUY_STOP_LIMIT,
+            mt5.ORDER_TYPE_SELL_STOP_LIMIT
+        ]:
+            cancel = {
+                "action": mt5.TRADE_ACTION_REMOVE,
+                "order": order.ticket,
+                "symbol": order.symbol,
+                "magic": order.magic,
+                "comment": "Canceled by Python"
+            }
+
+            result = mt5.order_send(cancel)
+            if result is None:
+                print(f"❌ Failed to cancel order {order.ticket}: {mt5.last_error()}")
+            elif result.retcode == mt5.TRADE_RETCODE_DONE:
+                print(f"✅ Order {order.ticket} canceled successfully")
+            else:
+                print(f"⚠️ Could not cancel order {order.ticket}. Retcode: {result.retcode}")
