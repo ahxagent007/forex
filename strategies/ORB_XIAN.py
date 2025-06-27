@@ -16,28 +16,28 @@ ORB_START_MIN = 45 #45
 ORB_END_HOUR = 22 #22
 ORB_END_MIN = 00 #00
 
-TOKYO_ORB_START_HOUR = 6 #19
+TOKYO_ORB_START_HOUR = 0 #6
 TOKYO_ORB_START_MIN = 15 #45
-TOKYO_ORB_END_HOUR = 9 #22
+TOKYO_ORB_END_HOUR = 3 #9
 TOKYO_ORB_END_MIN = 00 #00
 
 
-LONDON_ORB_START_HOUR = 13 #19
+LONDON_ORB_START_HOUR = 7 #13
 LONDON_ORB_START_MIN = 15 #45
-LONDON_ORB_END_HOUR = 16 #22
+LONDON_ORB_END_HOUR = 10 #16
 LONDON_ORB_END_MIN = 00 #00
 
 
-NY_ORB_START_HOUR = 19 #19
+NY_ORB_START_HOUR = 13 #19
 NY_ORB_START_MIN = 45 #45
-NY_ORB_END_HOUR = 22 #22
+NY_ORB_END_HOUR = 16 #22
 NY_ORB_END_MIN = 00 #00
 
 TOKYO_PENDING = False
 LONDON_PENDING = False
 NY_PENDING = False
 
-SESSION = "_"
+SESSION = "NONE"
 def check_status(symbol):
     global TOKYO_ORB_START_HOUR, TOKYO_ORB_START_MIN, TOKYO_ORB_END_HOUR, TOKYO_ORB_END_MIN
 
@@ -49,7 +49,7 @@ def check_status(symbol):
 
     global SESSION
 
-    date = get_date()
+    
     #check if ORB complete with date and no trade
 
     ##TOKYO
@@ -61,6 +61,7 @@ def check_status(symbol):
             NY_PENDING = False
 
         SESSION = "TOKYO"
+        date = get_date()
         try:
             with open('time_counts/orb_xian.json') as json_file:
                 data = json.load(json_file)
@@ -93,15 +94,16 @@ def check_status(symbol):
                 except:
                     data[date] = {}
                     data[date][symbol] = symbol_data
-                print(data)
+                #print(data)
             with open('time_counts/orb_xian.json', 'w') as outfile:
                 json.dump(data, outfile)
 
             return True
 
     ## LONDON
-    if isNowInTimePeriod(dt.time(LONDON_ORB_START_HOUR, LONDON_ORB_START_MIN), dt.time(LONDON_ORB_END_HOUR, LONDON_ORB_END_MIN), dt.datetime.now().time()):
+    elif isNowInTimePeriod(dt.time(LONDON_ORB_START_HOUR, LONDON_ORB_START_MIN), dt.time(LONDON_ORB_END_HOUR, LONDON_ORB_END_MIN), dt.datetime.now().time()):
         SESSION = "LONDON"
+        date = get_date()
 
         LONDON_PENDING = True
         if TOKYO_PENDING:
@@ -140,15 +142,16 @@ def check_status(symbol):
                 except:
                     data[date] = {}
                     data[date][symbol] = symbol_data
-                print(data)
+                #print(data)
             with open('time_counts/orb_xian.json', 'w') as outfile:
                 json.dump(data, outfile)
 
             return True
 
     ## NEW YORK
-    if isNowInTimePeriod(dt.time(NY_ORB_START_HOUR, NY_ORB_START_MIN), dt.time(NY_ORB_END_HOUR, NY_ORB_END_MIN), dt.datetime.now().time()):
+    elif isNowInTimePeriod(dt.time(NY_ORB_START_HOUR, NY_ORB_START_MIN), dt.time(NY_ORB_END_HOUR, NY_ORB_END_MIN), dt.datetime.now().time()):
         SESSION = "NY"
+        date = get_date()
 
         NY_PENDING = True
         if LONDON_PENDING:
@@ -187,12 +190,15 @@ def check_status(symbol):
                 except:
                     data[date] = {}
                     data[date][symbol] = symbol_data
-                print(data)
+                #print(data)
             with open('time_counts/orb_xian.json', 'w') as outfile:
                 json.dump(data, outfile)
 
             return True
 
+    else:
+        cancel_all_pending_orders()
+        time.sleep(5*60)
 
 def get_date():
     global SESSION
@@ -272,16 +278,16 @@ while True:
                 # ORB Break BUY
                 ORB_Action = 'buy'
 
-                entry_price_2 = (orb_high + orb_low) / 2
+                entry_price_2 = (orb_high + orb_low) / 2 # PROBLEM
                 entry_price_3 = orb_low
 
-                sl_1 = orb_low
+                sl_1 = current_price - orb_diff
                 sl_2 = entry_price_2 - orb_diff
                 sl_3 = entry_price_3 - orb_diff
 
-                tp_1 = current_price + orb_diff*2
+                tp_1 = current_price + orb_diff*1.5
                 tp_2 = entry_price_2 + orb_diff*1.5
-                tp_3 = entry_price_3 + orb_diff*1.5
+                tp_3 = entry_price_3 + orb_diff*2.5
             elif data_df['close'].iloc[-2] < orb_low:
                 print(symbol+' PRICE BROKE  >>> DOWN')
                 # ORB Break SELL
@@ -291,20 +297,20 @@ while True:
                 entry_price_2 = (orb_high + orb_low) / 2
                 entry_price_3 = orb_high
 
-                sl_1 = orb_high
+                sl_1 = current_price + orb_diff
                 sl_2 = entry_price_2 + orb_diff
                 sl_3 = entry_price_3 + orb_diff
 
-                tp_1 = current_price - orb_diff*2
+                tp_1 = current_price - orb_diff*1.5
                 tp_2 = entry_price_2 - orb_diff*1.5
-                tp_3 = entry_price_3 - orb_diff*1.5
+                tp_3 = entry_price_3 - orb_diff*2.5
             else:
                 print(symbol+' PRICE NOT BROKEN ORB')
 
             if ORB_Action:
                 # Trade 1 ORB Top
                 trade_with_price(action=ORB_Action, symbol=symbol,
-                                 lot=1.0, tp_price=tp_1, sl_price=sl_1)
+                                 lot=0.5, tp_price=tp_1, sl_price=sl_1)
 
                 # Trade 2 ORB Middle (Pullback)
                 trade_limit_with_price(action=ORB_Action, symbol=symbol,
