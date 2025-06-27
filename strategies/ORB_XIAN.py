@@ -228,17 +228,20 @@ def get_orb_high_low(symbol):
             return None, None
 
 
-def update_trade_log(symbol):
+def update_trade_log(symbol, entries):
     #Update Json file
     date = get_date()
     with open('time_counts/orb_xian.json') as json_file:
         data = json.load(json_file)
         data[date][symbol]['TRADED'] = True
+        data[date][symbol]['ENTRIES'] = entries
 
     with open('time_counts/orb_xian.json', 'w') as outfile:
         json.dump(data, outfile)
 
     print('TRADE LOG UPDATED')
+
+
 initialize_mt5()
 
 SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD']
@@ -253,6 +256,7 @@ while True:
             data_df = get_live_data(symbol=symbol, time_frame='M5', prev_n_candles=20)
 
             orb_high, orb_low = get_orb_high_low(symbol)
+            current_price = 0
 
             if not orb_high:
                 print('ORB NOT CREATED')
@@ -313,4 +317,21 @@ while True:
                                        tp_price=tp_3, sl_price=sl_3)
 
                 # Update trade log
-                update_trade_log(symbol)
+                entries = {
+                    'entry_1': {
+                        'price': current_price,
+                        'sl':sl_1,
+                        'tp': tp_1
+                    },
+                    'entry_2': {
+                        'price': entry_price_2,
+                        'sl': sl_2,
+                        'tp': tp_2
+                    },
+                    'entry_3': {
+                        'price': entry_price_3,
+                        'sl': sl_3,
+                        'tp': tp_3
+                    }
+                }
+                update_trade_log(symbol, entries)
