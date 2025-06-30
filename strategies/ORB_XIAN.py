@@ -3,7 +3,12 @@ from datetime import datetime
 import datetime as dt
 import time
 
+<<<<<<< HEAD
 from mt5_utils import get_live_data, trade_with_price, trade_limit_with_price, initialize_mt5, cancel_all_pending_orders, get_balance
+=======
+from mt5_utils import get_live_data, trade_with_price, trade_limit_with_price, initialize_mt5, \
+    cancel_all_pending_orders, get_balance
+>>>>>>> 5bb0dae62f6be589542c24c6be3a32c730efd81e
 from common_functions import isNowInTimePeriod
 
 ## TOKYO 6:00 - 9:00
@@ -248,7 +253,9 @@ def update_trade_log(symbol, entries):
     print('TRADE LOG UPDATED')
 
 def calculate_lot_size(symbol, sl_diff):
+
     risk = 2
+
     balance = get_balance()
 
     pip_multiplier = {
@@ -294,6 +301,7 @@ while True:
             data_df = get_live_data(symbol=symbol, time_frame='M5', prev_n_candles=20)
 
             orb_high, orb_low = get_orb_high_low(symbol)
+            current_price = 0
 
             if not orb_high:
                 print('ORB NOT CREATED')
@@ -339,11 +347,11 @@ while True:
             #    print(symbol+' PRICE NOT BROKEN ORB')
 
             if ORB_Action:
-                
+
                 lot_1 = calculate_lot_size(symbol=symbol, sl_diff=abs(current_price-sl_1))
                 lot_2 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_2-sl_2))
                 lot_3 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_3-sl_3))
-                
+
                 # Trade 1 ORB Top
                 trade_with_price(action=ORB_Action, symbol=symbol,
                                  lot=lot_1, tp_price=tp_1, sl_price=sl_1)
