@@ -4,7 +4,7 @@ import datetime as dt
 import time
 
 from mt5_utils import get_live_data, trade_with_price, trade_limit_with_price, initialize_mt5, \
-    cancel_all_pending_orders, get_balance
+    cancel_all_pending_orders, get_balance, close_all_positions
 from common_functions import isNowInTimePeriod
 
 ## TOKYO 6:00 - 9:00
@@ -34,6 +34,8 @@ NY_ORB_START_MIN = 45 #45
 NY_ORB_END_HOUR = 16 #22
 NY_ORB_END_MIN = 00 #00
 
+ALL_TRADE_CLOSE_HOUR = 23
+
 TOKYO_PENDING = False
 LONDON_PENDING = False
 NY_PENDING = False
@@ -58,7 +60,8 @@ def check_status(symbol):
                          dt.datetime.now().time()):
         TOKYO_PENDING = True
         if NY_PENDING:
-            cancel_all_pending_orders()
+            #close all running orders
+            close_all_positions(symbol)
             NY_PENDING = False
 
         SESSION = "TOKYO"
@@ -76,9 +79,7 @@ def check_status(symbol):
             print('EXCEPTION >>>' + str(e))
             print('CREATING ORB')
             # ORB Created
-            data_df = get_live_data(symbol=symbol, time_frame='M15', prev_n_candles=20)
-            orb_high = data_df['high'].iloc[-2]
-            orb_low = data_df['low'].iloc[-2]
+            orb_high, orb_low = get_high_low(symbol=symbol, hour=TOKYO_ORB_START_HOUR, min=TOKYO_ORB_START_MIN)
 
             symbol_data = {
                 "ORB_HIGH": orb_high,
@@ -108,7 +109,8 @@ def check_status(symbol):
 
         LONDON_PENDING = True
         if TOKYO_PENDING:
-            cancel_all_pending_orders()
+            #close all running orders
+            close_all_positions(symbol)
             TOKYO_PENDING = False
 
         try:
@@ -116,7 +118,7 @@ def check_status(symbol):
                 data = json.load(json_file)
                 symbol_data = data[date][symbol]
 
-                print(symbol, 'ORB STATUS CHECK >> TRADED >> '+str(symbol_data['TRADED']))
+                #print(symbol, 'ORB STATUS CHECK >> TRADED >> '+str(symbol_data['TRADED']))
 
                 return not symbol_data['TRADED']
 
@@ -124,9 +126,8 @@ def check_status(symbol):
             print('EXCEPTION >>>'+str(e))
             print('CREATING ORB')
             # ORB Created
-            data_df = get_live_data(symbol=symbol, time_frame='M15', prev_n_candles=20)
-            orb_high = data_df['high'].iloc[-2]
-            orb_low = data_df['low'].iloc[-2]
+
+            orb_high, orb_low = get_high_low(symbol=symbol, hour=LONDON_ORB_START_HOUR, min=LONDON_ORB_START_MIN)
 
             symbol_data = {
                 "ORB_HIGH": orb_high,
@@ -156,7 +157,9 @@ def check_status(symbol):
 
         NY_PENDING = True
         if LONDON_PENDING:
-            cancel_all_pending_orders()
+            #close all running orders
+            close_all_positions(symbol)
+
             LONDON_PENDING = False
 
         try:
@@ -172,9 +175,8 @@ def check_status(symbol):
             print('EXCEPTION >>>'+str(e))
             print('CREATING ORB')
             # ORB Created
-            data_df = get_live_data(symbol=symbol, time_frame='M15', prev_n_candles=20)
-            orb_high = data_df['high'].iloc[-2]
-            orb_low = data_df['low'].iloc[-2]
+
+            orb_high, orb_low = get_high_low(symbol=symbol, hour=NY_ORB_START_HOUR, min=NY_ORB_START_MIN)
 
             symbol_data = {
                 "ORB_HIGH": orb_high,
@@ -197,6 +199,10 @@ def check_status(symbol):
 
             return True
 
+    elif isNowInTimePeriod(dt.time(ALL_TRADE_CLOSE_HOUR, 0), dt.time(ALL_TRADE_CLOSE_HOUR, 10),
+                           dt.datetime.now().time()):
+        print('ALL RUNNING POSITIONS CLOSED!!')
+        close_all_positions(symbol)
     else:
         cancel_all_pending_orders()
         time.sleep(5*60)
@@ -210,6 +216,18 @@ def get_date():
     current_date = now.date()
 
     return SESSION+"_"+current_date.strftime("%d-%m-%Y")
+
+def get_year_month_day():
+    # Current date and time
+    now = datetime.now()
+
+    # Extract year, month, and day
+    year = now.year
+    month = now.month
+    day = now.day
+
+    return year, month, day
+
 
 def get_orb_high_low(symbol):
 
@@ -234,6 +252,54 @@ def get_orb_high_low(symbol):
         except:
             return None, None
 
+    # timeframe = mt5.TIMEFRAME_M15
+    # year, day, month = get_year_month_day()
+    #
+    #
+    # date_time = datetime(year, day, month, hour, min)  # June 13, 2025, at 15:30
+    #
+    # # Get 1 candle at this datetime
+    # rates = mt5.copy_rates_from(symbol, timeframe, date_time, 1)
+    #
+    # if rates is None or len(rates) == 0:
+    #     print("❌ Candle not found or error:", mt5.last_error())
+    #     return None, None
+    # else:
+    #     candle = rates[0]
+    #     print("✅ Candle at", date_time)
+    #     print(f"Time: {datetime.fromtimestamp(candle['time'])}")
+    #     print(
+    #         f"Open: {candle['open']}, High: {candle['high']}, Low: {candle['low']}, Close: {candle['close']}, Volume: {candle['tick_volume']}")
+    #
+    #     return candle['high'], candle['low']
+
+def get_high_low(symbol, hour, min):
+    global mt5
+
+    timeframe = mt5.TIMEFRAME_M15
+    year, day, month = get_year_month_day()
+
+    min = min - 15
+    if min < 0:
+        min = min + 60
+        hour = hour - 1
+
+    date_time = datetime(year, day, month, hour, min)  # June 13, 2025, at 15:30
+
+    # Get 1 candle at this datetime
+    rates = mt5.copy_rates_from(symbol, timeframe, date_time, 1)
+
+    if rates is None or len(rates) == 0:
+        print("❌ Candle not found or error:", mt5.last_error())
+        return None, None
+    else:
+        candle = rates[0]
+        print("✅ Candle at", date_time)
+        print(f"Time: {datetime.fromtimestamp(candle['time'])}")
+        print(
+            f"Open: {candle['open']}, High: {candle['high']}, Low: {candle['low']}, Close: {candle['close']}, Volume: {candle['tick_volume']}")
+
+        return candle['high'], candle['low']
 
 def update_trade_log(symbol, entries):
     #Update Json file
@@ -280,7 +346,7 @@ def calculate_lot_size(symbol, sl_diff):
 
     return lot_size
 
-initialize_mt5()
+mt5 = initialize_mt5()
 
 SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD']
 
@@ -310,14 +376,17 @@ while True:
                 # ORB Break BUY
                 ORB_Action = 'buy'
 
+                entry_price_1 = orb_high
                 entry_price_2 = (orb_high + orb_low) / 2 # PROBLEM
                 entry_price_3 = orb_low
 
-                sl_1 = current_price - orb_diff
+                sl_1 = entry_price_1 - orb_diff
+                #sl_1 = current_price - orb_diff
                 sl_2 = entry_price_2 - orb_diff
                 sl_3 = entry_price_3 - orb_diff
 
-                tp_1 = current_price + orb_diff*1.5
+                tp_1 = entry_price_1 + orb_diff*1.5
+                #tp_1 = current_price + orb_diff*1.5
                 tp_2 = entry_price_2 + orb_diff*1.5
                 tp_3 = entry_price_3 + orb_diff*2.5
             elif data_df['close'].iloc[-2] < orb_low:
@@ -326,27 +395,37 @@ while True:
                 current_price = data_df['close'].iloc[-1]
                 ORB_Action = 'sell'
 
+                #entry_price_1 = orb_low
                 entry_price_2 = (orb_high + orb_low) / 2
                 entry_price_3 = orb_high
 
                 sl_1 = current_price + orb_diff
+                #sl_1 = entry_price_1 + orb_diff
                 sl_2 = entry_price_2 + orb_diff
                 sl_3 = entry_price_3 + orb_diff
 
                 tp_1 = current_price - orb_diff*1.5
+                #tp_1 = entry_price_1 - orb_diff*1.5
                 tp_2 = entry_price_2 - orb_diff*1.5
                 tp_3 = entry_price_3 - orb_diff*2.5
-            else:
-                print(symbol+' PRICE NOT BROKEN ORB')
+            # else:
+            #     print(symbol+' PRICE NOT BROKEN ORB')
 
             if ORB_Action:
 
                 lot_1 = calculate_lot_size(symbol=symbol, sl_diff=abs(current_price-sl_1))
+                #lot_1 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_1-sl_1))
                 lot_2 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_2-sl_2))
                 lot_3 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_3-sl_3))
+
                 # Trade 1 ORB Top
                 trade_with_price(action=ORB_Action, symbol=symbol,
                                  lot=lot_1, tp_price=tp_1, sl_price=sl_1)
+
+                # # Trade 1 ORB Middle (Pullback)
+                # trade_limit_with_price(action=ORB_Action, symbol=symbol,
+                #                        lot=lot_1, entry_price=entry_price_1,
+                #                        tp_price=tp_1, sl_price=sl_1)
 
                 # Trade 2 ORB Middle (Pullback)
                 trade_limit_with_price(action=ORB_Action, symbol=symbol,
@@ -360,6 +439,7 @@ while True:
 
                 # Update trade log
                 entries = {
+                    'action': ORB_Action,
                     'entry_1': {
                         'price': current_price,
                         'sl':sl_1,

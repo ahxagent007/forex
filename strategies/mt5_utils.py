@@ -43,6 +43,9 @@ def initialize_mt5():
         print("Initialization successful")
     else:
         print('Initialize failed')
+
+    return mt5
+
 def initialize_mt5_4000():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
 
