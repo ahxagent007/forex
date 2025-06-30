@@ -3,7 +3,7 @@ from datetime import datetime
 import datetime as dt
 import time
 
-from mt5_utils import get_live_data, trade_with_price, trade_limit_with_price, initialize_mt5, cancel_all_pending_orders
+from mt5_utils import get_live_data, trade_with_price, trade_limit_with_price, initialize_mt5, cancel_all_pending_orders, get_balance
 from common_functions import isNowInTimePeriod
 
 ## TOKYO 6:00 - 9:00
@@ -67,7 +67,7 @@ def check_status(symbol):
                 data = json.load(json_file)
                 symbol_data = data[date][symbol]
 
-                print(symbol, 'ORB STATUS CHECK >> TRADED >> ' + str(symbol_data['TRADED']))
+                #print(symbol, 'ORB STATUS CHECK >> TRADED >> ' + str(symbol_data['TRADED']))
 
                 return not symbol_data['TRADED']
 
@@ -115,7 +115,7 @@ def check_status(symbol):
                 data = json.load(json_file)
                 symbol_data = data[date][symbol]
 
-                print(symbol, 'ORB STATUS CHECK >> TRADED >> '+str(symbol_data['TRADED']))
+                #print(symbol, 'ORB STATUS CHECK >> TRADED >> '+str(symbol_data['TRADED']))
 
                 return not symbol_data['TRADED']
 
@@ -246,6 +246,39 @@ def update_trade_log(symbol, entries):
         json.dump(data, outfile)
 
     print('TRADE LOG UPDATED')
+
+def calculate_lot_size(symbol, sl_diff):
+    risk = 2
+    balance = get_balance()
+
+    pip_multiplier = {
+        'GBPUSD': 10000,
+        'USDCHF': 10000,
+        'USDJPY': 100,
+        'US30': 1,
+        'EURGBP': 10000,
+        'AUDUSD': 10000,
+        'XAUUSD': 100,
+        'EURUSD': 10000
+    }
+
+    sl_pip = round(sl_diff * pip_multiplier[symbol])
+
+    pip_value = {
+        'GBPUSD': 10,
+        'USDCHF': 10.97,
+        'USDJPY': 6.48,
+        'US30': 1,
+        'EURGBP': 12.48,
+        'AUDUSD': 10,
+        'XAUUSD': 1,
+        'EURUSD': 10
+    }
+
+    lot_size = round(balance * (risk / 100) / (pip_value[symbol] * sl_pip), 2)
+
+    return lot_size
+
 initialize_mt5()
 
 SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD']
@@ -254,6 +287,7 @@ while True:
 
     for symbol in SYMBOL_LIST:
         time.sleep(1)
+        
         ready_trade = check_status(symbol)
 
         if ready_trade:
@@ -301,22 +335,27 @@ while True:
                 tp_1 = current_price - orb_diff*1.5
                 tp_2 = entry_price_2 - orb_diff*1.5
                 tp_3 = entry_price_3 - orb_diff*2.5
-            else:
-                print(symbol+' PRICE NOT BROKEN ORB')
+            #else:
+            #    print(symbol+' PRICE NOT BROKEN ORB')
 
             if ORB_Action:
+                
+                lot_1 = calculate_lot_size(symbol=symbol, sl_diff=abs(current_price-sl_1))
+                lot_2 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_2-sl_2))
+                lot_3 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_3-sl_3))
+                
                 # Trade 1 ORB Top
                 trade_with_price(action=ORB_Action, symbol=symbol,
-                                 lot=0.5, tp_price=tp_1, sl_price=sl_1)
+                                 lot=lot_1, tp_price=tp_1, sl_price=sl_1)
 
                 # Trade 2 ORB Middle (Pullback)
                 trade_limit_with_price(action=ORB_Action, symbol=symbol,
-                                       lot=1.0, entry_price=entry_price_2,
+                                       lot=lot_2, entry_price=entry_price_2,
                                        tp_price=tp_2, sl_price=sl_2)
 
                 # Trade 3 ORB Bottom (Pullback)
                 trade_limit_with_price(action=ORB_Action, symbol=symbol,
-                                       lot=1.0, entry_price=entry_price_3,
+                                       lot=lot_3, entry_price=entry_price_3,
                                        tp_price=tp_3, sl_price=sl_3)
 
                 # Update trade log
@@ -324,17 +363,20 @@ while True:
                     'entry_1': {
                         'price': current_price,
                         'sl':sl_1,
-                        'tp': tp_1
+                        'tp': tp_1,
+                        'lot': lot_1
                     },
                     'entry_2': {
                         'price': entry_price_2,
                         'sl': sl_2,
-                        'tp': tp_2
+                        'tp': tp_2,
+                        'lot': lot_2
                     },
                     'entry_3': {
                         'price': entry_price_3,
                         'sl': sl_3,
-                        'tp': tp_3
+                        'tp': tp_3,
+                        'lot': lot_3
                     }
                 }
                 update_trade_log(symbol, entries)
