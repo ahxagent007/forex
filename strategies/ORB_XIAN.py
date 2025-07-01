@@ -17,13 +17,13 @@ ORB_END_HOUR = 22 #22
 ORB_END_MIN = 00 #00
 
 TOKYO_ORB_START_HOUR = 0 #6
-TOKYO_ORB_START_MIN = 15 #45
+TOKYO_ORB_START_MIN = 15 #15
 TOKYO_ORB_END_HOUR = 3 #9
 TOKYO_ORB_END_MIN = 00 #00
 
 
 LONDON_ORB_START_HOUR = 7 #13
-LONDON_ORB_START_MIN = 15 #45
+LONDON_ORB_START_MIN = 15 #15
 LONDON_ORB_END_HOUR = 10 #16
 LONDON_ORB_END_MIN = 00 #00
 
@@ -78,13 +78,15 @@ def check_status(symbol):
             print('EXCEPTION >>>' + str(e))
             print('CREATING ORB')
             # ORB Created
-            orb_high, orb_low = get_high_low(symbol=symbol, hour=TOKYO_ORB_START_HOUR, min=TOKYO_ORB_START_MIN)
-
+            orb_high, orb_low, candle_at = get_high_low(symbol=symbol, hour=TOKYO_ORB_START_HOUR, min=TOKYO_ORB_START_MIN)
+            if orb_high is None:
+               return
             symbol_data = {
                 "ORB_HIGH": orb_high,
                 "ORB_LOW": orb_low,
                 "CREATED": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-                "TRADED": False
+                "TRADED": False, 
+                "candle_at": candle_at.strftime("%d-%m-%Y %H:%M:%S")
             }
 
             with open('time_counts/orb_xian.json') as json_file:
@@ -126,13 +128,15 @@ def check_status(symbol):
             print('CREATING ORB')
             # ORB Created
 
-            orb_high, orb_low = get_high_low(symbol=symbol, hour=LONDON_ORB_START_HOUR, min=LONDON_ORB_START_MIN)
-
+            orb_high, orb_low, candle_at = get_high_low(symbol=symbol, hour=LONDON_ORB_START_HOUR, min=LONDON_ORB_START_MIN)
+            if orb_high is None:
+               return
             symbol_data = {
                 "ORB_HIGH": orb_high,
                 "ORB_LOW": orb_low,
                 "CREATED": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-                "TRADED": False
+                "TRADED": False, 
+                "candle_at": candle_at.strftime("%d-%m-%Y %H:%M:%S")
             }
 
             with open('time_counts/orb_xian.json') as json_file:
@@ -175,13 +179,15 @@ def check_status(symbol):
             print('CREATING ORB')
             # ORB Created
 
-            orb_high, orb_low = get_high_low(symbol=symbol, hour=NY_ORB_START_HOUR, min=NY_ORB_START_MIN)
-
+            orb_high, orb_low, candle_at = get_high_low(symbol=symbol, hour=NY_ORB_START_HOUR, min=NY_ORB_START_MIN)
+            if orb_high is None:
+               return
             symbol_data = {
                 "ORB_HIGH": orb_high,
                 "ORB_LOW": orb_low,
                 "CREATED": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-                "TRADED": False
+                "TRADED": False, 
+                "candle_at": candle_at.strftime("%d-%m-%Y %H:%M:%S")
             }
 
             with open('time_counts/orb_xian.json') as json_file:
@@ -290,15 +296,20 @@ def get_high_low(symbol, hour, min):
 
     if rates is None or len(rates) == 0:
         print("❌ Candle not found or error:", mt5.last_error())
-        return None, None
+        return None, None, None
     else:
         candle = rates[0]
         print("✅ Candle at", date_time)
         print(f"Time: {datetime.fromtimestamp(candle['time'])}")
-        print(
-            f"Open: {candle['open']}, High: {candle['high']}, Low: {candle['low']}, Close: {candle['close']}, Volume: {candle['tick_volume']}")
+        if date_time == datetime.fromtimestamp(candle['time']):
+            
+            print(
+                f"Open: {candle['open']}, High: {candle['high']}, Low: {candle['low']}, Close: {candle['close']}, Volume: {candle['tick_volume']}, Spread: {candle['spread']}")
 
-        return candle['high'], candle['low']
+            return candle['high'], candle['low'], datetime.fromtimestamp(candle['time'])
+        else:
+            print('Canlde data not generated correctly')
+            return None, None, None
 
 def update_trade_log(symbol, entries):
     #Update Json file
@@ -355,6 +366,8 @@ while True:
 
     for symbol in SYMBOL_LIST:
         time.sleep(1)
+        #print(symbol)
+        #get_high_low(symbol=symbol, hour=0, min=15)
         
         ready_trade = check_status(symbol)
 
