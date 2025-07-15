@@ -37,6 +37,11 @@ def initialize_mt5():
     password = "abcdABCD123!@#"
     server = "Exness-MT5Trial6"
 
+    ## REAL
+    # login = 104541427
+    # password = "abcdABCD123!@#"
+    # server = "Exness-MT5Real15"
+
     timeout = 10000
     portable = False
     if mt5.initialize(path=path, login=login, password=password, server=server, timeout=timeout, portable=portable):
@@ -1094,6 +1099,71 @@ def trade_limit_with_price(action, symbol, lot, entry_price, tp_price, sl_price)
             "price": entry_price,
             "sl": sl_price,
             "tp": tp_price,
+            "deviation": 20,
+            "magic": 28072023,
+            "comment": "ORB SELL LIMIT",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_RETURN
+        }
+
+    # Send order
+    result = mt5.order_send(order)
+    #print('RESULT >>>>>>>>>>>>>> ', result)
+    if result is None:
+        print("❌ order_send() failed:", mt5.last_error())
+        return
+    # === Result ===
+    if result.retcode == mt5.TRADE_RETCODE_DONE:
+        print("✅ LIMIT order placed successfully")
+    else:
+        print(f"❌ Failed to place order. Error code: {result.retcode}")
+def trade_limit_with_point(action, symbol, lot, entry_price, tp_point, sl_point):
+    print(action, symbol, lot, entry_price, tp_point, sl_point)
+    if action == 'buy':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).ask
+        bid_price = mt5.symbol_info_tick(symbol).bid
+
+        spread = abs(price - bid_price) / point
+
+        if tp_point:
+            tp = price + tp_point * point
+            sl = price - sl_point * point
+        # === Send BUY LIMIT Order ===
+        order = {
+            "action": mt5.TRADE_ACTION_PENDING,
+            "symbol": symbol,
+            "volume": lot,
+            "type": mt5.ORDER_TYPE_BUY_LIMIT,
+            "price": entry_price,
+            "sl": sl,
+            "tp": tp,
+            "deviation": 20,
+            "magic": 28072023,
+            "comment": "ORB BUY LIMIT",
+            "type_time": mt5.ORDER_TIME_GTC,  # Good Till Canceled
+            "type_filling": mt5.ORDER_FILLING_RETURN  # Required for pending orders
+        }
+    elif action == 'sell':
+        point = mt5.symbol_info(symbol).point
+        price = mt5.symbol_info_tick(symbol).bid
+        ask_price = mt5.symbol_info_tick(symbol).ask
+        type = mt5.ORDER_TYPE_SELL
+
+        spread = abs(price - ask_price) / point
+
+        if tp_point:
+            tp = price - tp_point * point
+            sl = price + sl_point * point
+        # === Send BUY LIMIT Order ===
+        order = {
+            "action": mt5.TRADE_ACTION_PENDING,
+            "symbol": symbol,
+            "volume": lot,
+            "type": mt5.ORDER_TYPE_SELL_LIMIT,
+            "price": entry_price,
+            "sl": sl,
+            "tp": tp,
             "deviation": 20,
             "magic": 28072023,
             "comment": "ORB SELL LIMIT",
