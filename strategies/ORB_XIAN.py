@@ -19,7 +19,7 @@ from common_functions import isNowInTimePeriod
 
 TOKYO_ORB_START_HOUR = 0 #6
 TOKYO_ORB_START_MIN = 15 #15
-TOKYO_ORB_END_HOUR = 3 #9
+TOKYO_ORB_END_HOUR = 2 #9
 TOKYO_ORB_END_MIN = 00 #00
 
 LONDON_ORB_START_HOUR = 7 #13
@@ -456,7 +456,7 @@ def support_resistance_ema(df):
     support_zones = group_zones(supports_raw, threshold=2.0)
     resistance_zones = group_zones(resistances_raw, threshold=2.0)
 
-    ema = df['close'].ewm(span=200).mean()
+    df['EMA'] = df['close'].ewm(span=200).mean()
 
     closest_support_percent = 99999
     closest_resistance_percent = 99999
@@ -497,7 +497,7 @@ while True:
         ready_trade = check_status(symbol)
 
         if ready_trade:
-            data_df = get_live_data(symbol=symbol, time_frame='M5', prev_n_candles=20)
+            data_df = get_live_data(symbol=symbol, time_frame='M5', prev_n_candles=300)
 
             orb_high, orb_low = get_orb_high_low(symbol)
             current_price = 0
