@@ -383,39 +383,39 @@ def get_fixed_sl_tp_point(symbol, RR):
     fixed_sl_tp = {
         'XAUUSD' : {
             'tp':8000,
-            'sl': 4000
+            'sl': 3000
         },
         'US30' : {
             'tp': 1000,
-            'sl': 500
+            'sl': 300
         },
         'EURUSD' : {
             'tp': 100,
-            'sl': 50
+            'sl': 30
         },
         'USDJPY' : {
             'tp': 100,
-            'sl': 50
+            'sl': 30
         },
         'GBPUSD' : {
-            'tp': 200,
-            'sl': 100
+            'tp': 100,
+            'sl': 30
         },
         'USDCHF' : {
             'tp': 100,
-            'sl': 50
+            'sl': 30
         },
         'EURGBP' : {
-            'tp': 200,
-            'sl': 100
+            'tp': 100,
+            'sl': 30
         },
         'AUDUSD' : {
             'tp': 100,
-            'sl': 50
+            'sl': 30
         },
         'USDCAD' : {
             'tp': 100,
-            'sl': 50
+            'sl': 30
         }
     }
     return fixed_sl_tp[symbol]['sl'] * RR, fixed_sl_tp[symbol]['sl']
@@ -452,6 +452,7 @@ def group_zones(levels, threshold=2.0):
     return zones
 
 def support_resistance_ema(df):
+
     supports_raw, resistances_raw = find_swing_levels(df)
     support_zones = group_zones(supports_raw, threshold=2.0)
     resistance_zones = group_zones(resistances_raw, threshold=2.0)

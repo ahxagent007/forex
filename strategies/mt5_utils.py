@@ -1127,8 +1127,8 @@ def trade_limit_with_point(action, symbol, lot, entry_price, tp_point, sl_point)
         spread = abs(price - bid_price) / point
 
         if tp_point:
-            tp = price + tp_point * point
-            sl = price - sl_point * point
+            tp = entry_price + tp_point * point
+            sl = entry_price - sl_point * point
         # === Send BUY LIMIT Order ===
         order = {
             "action": mt5.TRADE_ACTION_PENDING,
@@ -1153,8 +1153,8 @@ def trade_limit_with_point(action, symbol, lot, entry_price, tp_point, sl_point)
         spread = abs(price - ask_price) / point
 
         if tp_point:
-            tp = price - tp_point * point
-            sl = price + sl_point * point
+            tp = entry_price - tp_point * point
+            sl = entry_price + sl_point * point
         # === Send BUY LIMIT Order ===
         order = {
             "action": mt5.TRADE_ACTION_PENDING,
