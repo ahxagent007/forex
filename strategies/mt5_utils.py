@@ -282,23 +282,6 @@ def trade_order_wo_sl(symbol, tp_point, lot, action, magic=False):
 
     print(symbol, 'Spread pip: ', spread)
 
-    spread_dict = {
-        'EURUSD': 15,
-        'EURJPY': 15,
-        'USDJPY': 15,
-        'XAUUSD': 150,
-        'BTCUSD': 2300,
-        'GBPUSD': 15,
-        'AUDUSD': 20,
-        'NZDUSD': 20,
-        'USDCHF': 20,
-        'EURGBP': 20,
-        'USDCAD': 20,
-    }
-
-    if spread > spread_dict[symbol]:
-        print('High Spread')
-        return None
 
     deviation = 20
     MAGIC_NUMBER = get_magic_number()
@@ -1218,3 +1201,61 @@ def cancel_all_pending_orders():
                 print(f"✅ Order {order.ticket} canceled successfully")
             else:
                 print(f"⚠️ Could not cancel order {order.ticket}. Retcode: {result.retcode}")
+                
+def calculate_lot_size(symbol, sl_diff):
+
+    risk = 2
+
+    balance = get_balance()
+
+    pip_multiplier = {
+        'GBPUSD': 10000,
+        'USDCHF': 10000,
+        'USDJPY': 100,
+        'US30': 1,
+        'EURGBP': 10000,
+        'AUDUSD': 10000,
+        'XAUUSD': 100,
+        'EURUSD': 10000,
+        'BTCUSD': 1
+    }
+
+    sl_pip = round(sl_diff * pip_multiplier[symbol])
+
+    pip_value = {
+        'GBPUSD': 10,
+        'USDCHF': 10.97,
+        'USDJPY': 6.48,
+        'US30': 1,
+        'EURGBP': 12.48,
+        'AUDUSD': 10,
+        'XAUUSD': 1,
+        'EURUSD': 10,
+        'BTCUSD': 1
+    }
+
+    lot_size = round(balance * (risk / 100) / (pip_value[symbol] * sl_pip), 2)
+
+    return lot_size
+
+def calculate_lot_size_point(symbol, sl_point):
+
+    risk = 2
+
+    balance = get_balance()
+
+    pip_value = {
+        'GBPUSD': 10,
+        'USDCHF': 10.97,
+        'USDJPY': 6.48,
+        'US30': 1,
+        'EURGBP': 12.48,
+        'AUDUSD': 10,
+        'XAUUSD': 1,
+        'EURUSD': 10,
+        'BTCUSD': 0.1
+    }
+    # Lot Size = (Account Balance × Risk %) / (Stop Loss (in pips) × Pip Value per lot)
+    lot_size = round(balance * (risk / 100) / (pip_value[symbol] * sl_point), 2)
+
+    return round(lot_size * 10, 2)
