@@ -37,10 +37,11 @@ def initialize_mt5():
     password = "abcdABCD123!@#"
     server = "Exness-MT5Trial6"
 
-    ## REAL
-    # login = 104541427
+
+    # PRO NEWS
+    # login = 271953637
     # password = "abcdABCD123!@#"
-    # server = "Exness-MT5Real15"
+    # server = "Exness-MT5Trial14"
 
     timeout = 10000
     portable = False
@@ -370,9 +371,7 @@ def trade_order_wo_tp(symbol, sl_point, lot, action, magic=False):
         'USDCAD': 15,
     }
 
-    if spread > spread_dict[symbol]:
-        print('High Spread')
-        return None
+
 
     deviation = 20
     MAGIC_NUMBER = get_magic_number()
@@ -524,27 +523,6 @@ def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
         type = mt5.ORDER_TYPE_SELL
 
         spread = abs(price - ask_price) / point
-
-
-    print(symbol, 'Spread pip: ', spread)
-
-    spread_dict = {
-        'EURUSD': 15,
-        'EURJPY': 15,
-        'USDJPY': 15,
-        'XAUUSD': 150,
-        'BTCUSD': 2300,
-        'GBPUSD': 15,
-        'AUDUSD': 20,
-        'NZDUSD': 20,
-        'USDCHF': 20,
-        'EURGBP': 20,
-        'USDCAD': 20,
-    }
-
-    if spread > spread_dict[symbol]:
-        print('High Spread')
-        return None
 
     deviation = 20
 
@@ -1201,7 +1179,7 @@ def cancel_all_pending_orders():
                 print(f"✅ Order {order.ticket} canceled successfully")
             else:
                 print(f"⚠️ Could not cancel order {order.ticket}. Retcode: {result.retcode}")
-                
+
 def calculate_lot_size(symbol, sl_diff):
 
     risk = 2

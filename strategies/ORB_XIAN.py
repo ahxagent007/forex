@@ -484,252 +484,252 @@ def support_resistance_ema(df):
 
 
 
-mt5 = initialize_mt5()
-
-SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD']
-
-while True:
-
-    for symbol in SYMBOL_LIST:
-        time.sleep(1)
-        #print(symbol)
-        #get_high_low(symbol=symbol, hour=0, min=15)
-        
-        ready_trade = check_status(symbol)
-
-        if ready_trade:
-            data_df = get_live_data(symbol=symbol, time_frame='M5', prev_n_candles=300)
-
-            orb_high, orb_low = get_orb_high_low(symbol)
-            current_price = 0
-
-            if not orb_high:
-                print('ORB NOT CREATED')
-                continue
-
-            orb_diff = orb_high - orb_low
-
-            # Check if price closed ORB
-            ORB_Action = None
-            if data_df['close'].iloc[-2] > orb_high:
-                print(symbol+' PRICE BROKE >>>> UP')
-                current_price = data_df['close'].iloc[-1]
-                # ORB Break BUY
-                ORB_Action = 'buy'
-
-                entry_price_1 = orb_high
-                entry_price_2 = (orb_high + orb_low) / 2 # PROBLEM
-                entry_price_3 = orb_low
-
-
-                sl_1 = entry_price_1 - orb_diff
-                #sl_1 = current_price - orb_diff
-                sl_2 = entry_price_2 - orb_diff
-                sl_3 = entry_price_3 - orb_diff
-
-                tp_1 = entry_price_1 + orb_diff*1.5
-                #tp_1 = current_price + orb_diff*1.5
-                tp_2 = entry_price_2 + orb_diff*1.5
-                tp_3 = entry_price_3 + orb_diff*2.5
-
-
-            elif data_df['close'].iloc[-2] < orb_low:
-                print(symbol+' PRICE BROKE  >>> DOWN')
-                # ORB Break SELL
-                current_price = data_df['close'].iloc[-1]
-                ORB_Action = 'sell'
-
-                entry_price_1 = orb_low
-                entry_price_2 = (orb_high + orb_low) / 2
-                entry_price_3 = orb_high
-
-                sl_1 = current_price + orb_diff
-                #sl_1 = entry_price_1 + orb_diff
-                sl_2 = entry_price_2 + orb_diff
-                sl_3 = entry_price_3 + orb_diff
-
-                tp_1 = current_price - orb_diff*1.5
-                #tp_1 = entry_price_1 - orb_diff*1.5
-                tp_2 = entry_price_2 - orb_diff*1.5
-                tp_3 = entry_price_3 - orb_diff*2.5
-
-
-
-            if ORB_Action:
-
-                # lot_1 = calculate_lot_size(symbol=symbol, sl_diff=abs(current_price-sl_1))
-                # #lot_1 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_1-sl_1))
-                # lot_2 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_2-sl_2))
-                # lot_3 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_3-sl_3))
-
-
-
-                # # Trade 1 ORB Top
-                # trade_with_price(action=ORB_Action, symbol=symbol,
-                #                  lot=lot_1, tp_price=tp_1, sl_price=sl_1)
-                #
-                # # # Trade 1 ORB Middle (Pullback)
-                # # trade_limit_with_price(action=ORB_Action, symbol=symbol,
-                # #                        lot=lot_1, entry_price=entry_price_1,
-                # #                        tp_price=tp_1, sl_price=sl_1)
-                #
-                # # Trade 2 ORB Middle (Pullback)
-                # # trade_limit_with_price(action=ORB_Action, symbol=symbol,
-                # #                        lot=lot_2, entry_price=entry_price_2,
-                # #                        tp_price=tp_2, sl_price=sl_2)
-                #
-                # # Trade 3 ORB Bottom (Pullback)
-                # trade_limit_with_price(action=ORB_Action, symbol=symbol,
-                #                        lot=lot_3, entry_price=entry_price_3,
-                #                        tp_price=tp_3, sl_price=sl_3)
-
-
-                ## FIXED TP SL
-                # tp_point, sl_point = get_fixed_sl_tp_point(symbol)
-                #
-                # lot = calculate_lot_size_point(symbol, sl_point)
-                # trade_order(symbol, tp_point, sl_point, lot, ORB_Action, magic=False)
-
-                # Update trade log
-                # entries = {
-                #     'action': ORB_Action,
-                #     'entry_1': {
-                #         'price': current_price,
-                #         'sl':sl_1,
-                #         'tp': tp_1,
-                #         'lot': lot_1
-                #     },
-                #     'entry_2': {
-                #         'price': entry_price_2,
-                #         'sl': sl_2,
-                #         'tp': tp_2,
-                #         'lot': lot_2
-                #     },
-                #     'entry_3': {
-                #         'price': entry_price_3,
-                #         'sl': sl_3,
-                #         'tp': tp_3,
-                #         'lot': lot_3
-                #     },
-                #     'fixed_entry': {
-                #         'price': current_price,
-                #         'sl':sl_point,
-                #         'tp': tp_point,
-                #         'lot': lot
-                #     }
-                # }
-                trade_type = None
-                closest_support_percent, closest_resistance_percent, ema_diff_percent = support_resistance_ema(data_df)
-                print(F"Closest Support {closest_support_percent}, closest Resistance {closest_resistance_percent} and 200 EMA {ema_diff_percent}")
-
-                ## Trade Logic
-                if ORB_Action == 'buy':
-
-                    if abs(closest_support_percent) < 15:
-                        if abs(ema_diff_percent) < 5:
-                            trade_type = 'now'
-                        elif -5 > ema_diff_percent < -25:
-                            trade_type = 'now'
-                        elif -25 > ema_diff_percent < -50:
-                            trade_type = 'middle'
-                        elif ema_diff_percent > -50:
-                            trade_type = 'bottom'
-
-                    elif -15 > closest_support_percent < -40:
-
-                        if abs(ema_diff_percent) < 5:
-                            trade_type = 'top'
-                        elif -5 > ema_diff_percent < -25:
-                            trade_type = 'middle'
-                        elif -25 > ema_diff_percent < -50:
-                            trade_type = 'bottom'
-                        elif ema_diff_percent > -50:
-                            trade_type = None
-
-                    elif -40 > closest_support_percent < -60:
-
-                        if abs(ema_diff_percent) < 5:
-                            if closest_resistance_percent > 30:
-                                trade_type = 'top'
-                        elif -5 > ema_diff_percent < -25:
-                            trade_type = 'bottom'
-                        elif -25 > ema_diff_percent < -50:
-                            trade_type = None
-                        elif ema_diff_percent > -50:
-                            trade_type = None
-                elif ORB_Action == 'sell':
-
-                    if abs(closest_resistance_percent) < 15:
-
-                        if abs(ema_diff_percent) < 5:
-                            trade_type = 'now'
-                        elif 5 > ema_diff_percent < 25:
-                            trade_type = 'now'
-                        elif 25 > ema_diff_percent < 50:
-                            trade_type = 'middle'
-                        elif ema_diff_percent > 50:
-                            trade_type = 'bottom'
-
-                    elif 15 > closest_resistance_percent < 40:
-
-                        if abs(ema_diff_percent) < 5:
-                            trade_type = 'top'
-                        elif 5 > ema_diff_percent < 25:
-                            trade_type = 'middle'
-                        elif 25 > ema_diff_percent < 50:
-                            trade_type = 'bottom'
-                        elif ema_diff_percent > 50:
-                            trade_type = None
-
-                    elif 40 > closest_resistance_percent < 60:
-
-                        if abs(ema_diff_percent) < 5:
-                            if closest_support_percent > 30:
-                                trade_type = 'top'
-                        elif 5 > ema_diff_percent < 25:
-                            trade_type = 'bottom'
-                        elif 25 > ema_diff_percent < 50:
-                            trade_type = None
-                        elif ema_diff_percent > 50:
-                            trade_type = None
-
-
-                if trade_type:
-
-                    # FIXED TP SL
-                    tp_point, sl_point = get_fixed_sl_tp_point(symbol=symbol, RR=2)
-
-                    lot = calculate_lot_size_point(symbol, sl_point)
-
-                    if trade_type == 'now':
-                        entry_price = current_price
-                        #Trade now
-                        trade_order(symbol=symbol, tp_point=tp_point, sl_point=sl_point, lot=lot, action=ORB_Action, magic=False)
-                    elif trade_type == 'top':
-                        entry_price = entry_price_1
-                        # Range Top
-                        trade_limit_with_point(action=ORB_Action, symbol=symbol, lot=lot, entry_price=entry_price_1, tp_point=tp_point, sl_point=sl_point)
-                    elif trade_type == 'middle':
-                        entry_price = entry_price_2
-                        # Range Middle
-                        trade_limit_with_point(action=ORB_Action, symbol=symbol, lot=lot, entry_price=entry_price_2, tp_point=tp_point, sl_point=sl_point)
-                    elif trade_type == 'bottom':
-                        entry_price = entry_price_3
-                        # Range bottom
-                        trade_limit_with_point(action=ORB_Action, symbol=symbol, lot=lot, entry_price=entry_price_3, tp_point=tp_point, sl_point=sl_point)
-
-                    entries = {
-                        'action': ORB_Action,
-                        'trade_type': trade_type,
-                        'entry': {
-                            'price': entry_price,
-                            'sl': sl_point,
-                            'tp': tp_point
-                        },
-                        'data':{
-                            'support': closest_support_percent,
-                            'resistance': closest_resistance_percent,
-                            'ema': ema_diff_percent
-                        }
-                    }
-                    update_trade_log(symbol, entries)
+# mt5 = initialize_mt5()
+#
+# SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD']
+#
+# while True:
+#
+#     for symbol in SYMBOL_LIST:
+#         time.sleep(1)
+#         #print(symbol)
+#         #get_high_low(symbol=symbol, hour=0, min=15)
+#
+#         ready_trade = check_status(symbol)
+#
+#         if ready_trade:
+#             data_df = get_live_data(symbol=symbol, time_frame='M5', prev_n_candles=300)
+#
+#             orb_high, orb_low = get_orb_high_low(symbol)
+#             current_price = 0
+#
+#             if not orb_high:
+#                 print('ORB NOT CREATED')
+#                 continue
+#
+#             orb_diff = orb_high - orb_low
+#
+#             # Check if price closed ORB
+#             ORB_Action = None
+#             if data_df['close'].iloc[-2] > orb_high:
+#                 print(symbol+' PRICE BROKE >>>> UP')
+#                 current_price = data_df['close'].iloc[-1]
+#                 # ORB Break BUY
+#                 ORB_Action = 'buy'
+#
+#                 entry_price_1 = orb_high
+#                 entry_price_2 = (orb_high + orb_low) / 2 # PROBLEM
+#                 entry_price_3 = orb_low
+#
+#
+#                 sl_1 = entry_price_1 - orb_diff
+#                 #sl_1 = current_price - orb_diff
+#                 sl_2 = entry_price_2 - orb_diff
+#                 sl_3 = entry_price_3 - orb_diff
+#
+#                 tp_1 = entry_price_1 + orb_diff*1.5
+#                 #tp_1 = current_price + orb_diff*1.5
+#                 tp_2 = entry_price_2 + orb_diff*1.5
+#                 tp_3 = entry_price_3 + orb_diff*2.5
+#
+#
+#             elif data_df['close'].iloc[-2] < orb_low:
+#                 print(symbol+' PRICE BROKE  >>> DOWN')
+#                 # ORB Break SELL
+#                 current_price = data_df['close'].iloc[-1]
+#                 ORB_Action = 'sell'
+#
+#                 entry_price_1 = orb_low
+#                 entry_price_2 = (orb_high + orb_low) / 2
+#                 entry_price_3 = orb_high
+#
+#                 sl_1 = current_price + orb_diff
+#                 #sl_1 = entry_price_1 + orb_diff
+#                 sl_2 = entry_price_2 + orb_diff
+#                 sl_3 = entry_price_3 + orb_diff
+#
+#                 tp_1 = current_price - orb_diff*1.5
+#                 #tp_1 = entry_price_1 - orb_diff*1.5
+#                 tp_2 = entry_price_2 - orb_diff*1.5
+#                 tp_3 = entry_price_3 - orb_diff*2.5
+#
+#
+#
+#             if ORB_Action:
+#
+#                 # lot_1 = calculate_lot_size(symbol=symbol, sl_diff=abs(current_price-sl_1))
+#                 # #lot_1 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_1-sl_1))
+#                 # lot_2 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_2-sl_2))
+#                 # lot_3 = calculate_lot_size(symbol=symbol, sl_diff=abs(entry_price_3-sl_3))
+#
+#
+#
+#                 # # Trade 1 ORB Top
+#                 # trade_with_price(action=ORB_Action, symbol=symbol,
+#                 #                  lot=lot_1, tp_price=tp_1, sl_price=sl_1)
+#                 #
+#                 # # # Trade 1 ORB Middle (Pullback)
+#                 # # trade_limit_with_price(action=ORB_Action, symbol=symbol,
+#                 # #                        lot=lot_1, entry_price=entry_price_1,
+#                 # #                        tp_price=tp_1, sl_price=sl_1)
+#                 #
+#                 # # Trade 2 ORB Middle (Pullback)
+#                 # # trade_limit_with_price(action=ORB_Action, symbol=symbol,
+#                 # #                        lot=lot_2, entry_price=entry_price_2,
+#                 # #                        tp_price=tp_2, sl_price=sl_2)
+#                 #
+#                 # # Trade 3 ORB Bottom (Pullback)
+#                 # trade_limit_with_price(action=ORB_Action, symbol=symbol,
+#                 #                        lot=lot_3, entry_price=entry_price_3,
+#                 #                        tp_price=tp_3, sl_price=sl_3)
+#
+#
+#                 ## FIXED TP SL
+#                 # tp_point, sl_point = get_fixed_sl_tp_point(symbol)
+#                 #
+#                 # lot = calculate_lot_size_point(symbol, sl_point)
+#                 # trade_order(symbol, tp_point, sl_point, lot, ORB_Action, magic=False)
+#
+#                 # Update trade log
+#                 # entries = {
+#                 #     'action': ORB_Action,
+#                 #     'entry_1': {
+#                 #         'price': current_price,
+#                 #         'sl':sl_1,
+#                 #         'tp': tp_1,
+#                 #         'lot': lot_1
+#                 #     },
+#                 #     'entry_2': {
+#                 #         'price': entry_price_2,
+#                 #         'sl': sl_2,
+#                 #         'tp': tp_2,
+#                 #         'lot': lot_2
+#                 #     },
+#                 #     'entry_3': {
+#                 #         'price': entry_price_3,
+#                 #         'sl': sl_3,
+#                 #         'tp': tp_3,
+#                 #         'lot': lot_3
+#                 #     },
+#                 #     'fixed_entry': {
+#                 #         'price': current_price,
+#                 #         'sl':sl_point,
+#                 #         'tp': tp_point,
+#                 #         'lot': lot
+#                 #     }
+#                 # }
+#                 trade_type = None
+#                 closest_support_percent, closest_resistance_percent, ema_diff_percent = support_resistance_ema(data_df)
+#                 print(F"Closest Support {closest_support_percent}, closest Resistance {closest_resistance_percent} and 200 EMA {ema_diff_percent}")
+#
+#                 ## Trade Logic
+#                 if ORB_Action == 'buy':
+#
+#                     if abs(closest_support_percent) < 15:
+#                         if abs(ema_diff_percent) < 5:
+#                             trade_type = 'now'
+#                         elif -5 > ema_diff_percent < -25:
+#                             trade_type = 'now'
+#                         elif -25 > ema_diff_percent < -50:
+#                             trade_type = 'middle'
+#                         elif ema_diff_percent > -50:
+#                             trade_type = 'bottom'
+#
+#                     elif -15 > closest_support_percent < -40:
+#
+#                         if abs(ema_diff_percent) < 5:
+#                             trade_type = 'top'
+#                         elif -5 > ema_diff_percent < -25:
+#                             trade_type = 'middle'
+#                         elif -25 > ema_diff_percent < -50:
+#                             trade_type = 'bottom'
+#                         elif ema_diff_percent > -50:
+#                             trade_type = None
+#
+#                     elif -40 > closest_support_percent < -60:
+#
+#                         if abs(ema_diff_percent) < 5:
+#                             if closest_resistance_percent > 30:
+#                                 trade_type = 'top'
+#                         elif -5 > ema_diff_percent < -25:
+#                             trade_type = 'bottom'
+#                         elif -25 > ema_diff_percent < -50:
+#                             trade_type = None
+#                         elif ema_diff_percent > -50:
+#                             trade_type = None
+#                 elif ORB_Action == 'sell':
+#
+#                     if abs(closest_resistance_percent) < 15:
+#
+#                         if abs(ema_diff_percent) < 5:
+#                             trade_type = 'now'
+#                         elif 5 > ema_diff_percent < 25:
+#                             trade_type = 'now'
+#                         elif 25 > ema_diff_percent < 50:
+#                             trade_type = 'middle'
+#                         elif ema_diff_percent > 50:
+#                             trade_type = 'bottom'
+#
+#                     elif 15 > closest_resistance_percent < 40:
+#
+#                         if abs(ema_diff_percent) < 5:
+#                             trade_type = 'top'
+#                         elif 5 > ema_diff_percent < 25:
+#                             trade_type = 'middle'
+#                         elif 25 > ema_diff_percent < 50:
+#                             trade_type = 'bottom'
+#                         elif ema_diff_percent > 50:
+#                             trade_type = None
+#
+#                     elif 40 > closest_resistance_percent < 60:
+#
+#                         if abs(ema_diff_percent) < 5:
+#                             if closest_support_percent > 30:
+#                                 trade_type = 'top'
+#                         elif 5 > ema_diff_percent < 25:
+#                             trade_type = 'bottom'
+#                         elif 25 > ema_diff_percent < 50:
+#                             trade_type = None
+#                         elif ema_diff_percent > 50:
+#                             trade_type = None
+#
+#
+#                 if trade_type:
+#
+#                     # FIXED TP SL
+#                     tp_point, sl_point = get_fixed_sl_tp_point(symbol=symbol, RR=2)
+#
+#                     lot = calculate_lot_size_point(symbol, sl_point)
+#
+#                     if trade_type == 'now':
+#                         entry_price = current_price
+#                         #Trade now
+#                         trade_order(symbol=symbol, tp_point=tp_point, sl_point=sl_point, lot=lot, action=ORB_Action, magic=False)
+#                     elif trade_type == 'top':
+#                         entry_price = entry_price_1
+#                         # Range Top
+#                         trade_limit_with_point(action=ORB_Action, symbol=symbol, lot=lot, entry_price=entry_price_1, tp_point=tp_point, sl_point=sl_point)
+#                     elif trade_type == 'middle':
+#                         entry_price = entry_price_2
+#                         # Range Middle
+#                         trade_limit_with_point(action=ORB_Action, symbol=symbol, lot=lot, entry_price=entry_price_2, tp_point=tp_point, sl_point=sl_point)
+#                     elif trade_type == 'bottom':
+#                         entry_price = entry_price_3
+#                         # Range bottom
+#                         trade_limit_with_point(action=ORB_Action, symbol=symbol, lot=lot, entry_price=entry_price_3, tp_point=tp_point, sl_point=sl_point)
+#
+#                     entries = {
+#                         'action': ORB_Action,
+#                         'trade_type': trade_type,
+#                         'entry': {
+#                             'price': entry_price,
+#                             'sl': sl_point,
+#                             'tp': tp_point
+#                         },
+#                         'data':{
+#                             'support': closest_support_percent,
+#                             'resistance': closest_resistance_percent,
+#                             'ema': ema_diff_percent
+#                         }
+#                     }
+#                     update_trade_log(symbol, entries)

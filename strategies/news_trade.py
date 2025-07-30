@@ -152,7 +152,9 @@ while True:
             print(f"[{prev_price_dict[symbol]}, {current_price}] price movement percent for {symbol} is {movement_percent}%")
 
             # Negative buy, positive sell
+
             if abs(movement_percent) > 0.1:
+
                 if movement_percent < 0:
                     # Buy
                     action = 'buy'
