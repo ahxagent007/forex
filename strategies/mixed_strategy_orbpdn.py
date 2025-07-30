@@ -121,8 +121,6 @@ thread.start()
 while True:
     for symbol in SYMBOL_LIST:
         time.sleep(1)
-        #print(symbol)
-        #get_high_low(symbol=symbol, hour=0, min=15)
 
         ready_trade = check_status(symbol)
 
@@ -201,7 +199,7 @@ while True:
                         elif -25 > ema_diff_percent < -50:
                             trade_type = 'middle'
                         elif ema_diff_percent > -50:
-                            trade_type = 'bottom'
+                            trade_type = 'reverse'
 
                     elif -15 > closest_support_percent < -40:
 
@@ -212,7 +210,7 @@ while True:
                         elif -25 > ema_diff_percent < -50:
                             trade_type = 'bottom'
                         elif ema_diff_percent > -50:
-                            trade_type = None
+                            trade_type = 'reverse'
 
                     elif -40 > closest_support_percent < -60:
 
@@ -224,7 +222,7 @@ while True:
                         elif -25 > ema_diff_percent < -50:
                             trade_type = None
                         elif ema_diff_percent > -50:
-                            trade_type = None
+                            trade_type = 'reverse'
                 elif ORB_Action == 'sell':
 
                     if abs(closest_resistance_percent) < 15:
@@ -236,7 +234,7 @@ while True:
                         elif 25 > ema_diff_percent < 50:
                             trade_type = 'middle'
                         elif ema_diff_percent > 50:
-                            trade_type = 'bottom'
+                            trade_type = 'reverse'
 
                     elif 15 > closest_resistance_percent < 40:
 
@@ -247,7 +245,7 @@ while True:
                         elif 25 > ema_diff_percent < 50:
                             trade_type = 'bottom'
                         elif ema_diff_percent > 50:
-                            trade_type = None
+                            trade_type = 'reverse'
 
                     elif 40 > closest_resistance_percent < 60:
 
@@ -259,7 +257,7 @@ while True:
                         elif 25 > ema_diff_percent < 50:
                             trade_type = None
                         elif ema_diff_percent > 50:
-                            trade_type = None
+                            trade_type = 'reverse'
 
 
                 if trade_type:
@@ -269,6 +267,19 @@ while True:
                     if trade_type == 'now':
                         #Trade now
                         trade_order_price(symbol=symbol, tp_price=tp_1, sl_price=sl_1, lot=lot, action=ORB_Action, magic=False, code=0, MAGIC_NUMBER=0)
+                    elif trade_type == 'reverse':
+                        # reverse trade
+                        if ORB_Action == 'buy':
+                            ORB_Action = 'sell'
+                            tp_1 = current_price - orb_diff
+                            sl_1 = current_price + orb_diff
+                        elif ORB_Action == 'sell':
+                            ORB_Action = 'buy'
+                            tp_1 = current_price + orb_diff
+                            sl_1 = current_price - orb_diff
+
+                        trade_order_price(symbol=symbol, tp_price=tp_1, sl_price=sl_1, lot=lot, action=ORB_Action,
+                                          magic=False, code=0, MAGIC_NUMBER=0)
 
 
                     entries = {
