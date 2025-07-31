@@ -39,7 +39,7 @@ LONDON_PENDING = False
 NY_PENDING = False
 
 SESSION = "NONE"
-def check_status(symbol):
+def check_status(symbol, mt5):
     global TOKYO_ORB_START_HOUR, TOKYO_ORB_START_MIN, TOKYO_ORB_END_HOUR, TOKYO_ORB_END_MIN
 
     global LONDON_ORB_START_HOUR, LONDON_ORB_START_MIN, LONDON_ORB_END_HOUR, LONDON_ORB_END_MIN
@@ -77,7 +77,7 @@ def check_status(symbol):
             print('EXCEPTION >>>' + str(e))
             print('CREATING ORB')
             # ORB Created
-            orb_high, orb_low, candle_at = get_high_low(symbol=symbol, hour=TOKYO_ORB_START_HOUR, min=TOKYO_ORB_START_MIN)
+            orb_high, orb_low, candle_at = get_high_low(symbol=symbol, hour=TOKYO_ORB_START_HOUR, min=TOKYO_ORB_START_MIN, mt5=mt5)
             if orb_high is None:
                return
             symbol_data = {
@@ -127,7 +127,7 @@ def check_status(symbol):
             print('CREATING ORB')
             # ORB Created
 
-            orb_high, orb_low, candle_at = get_high_low(symbol=symbol, hour=LONDON_ORB_START_HOUR, min=LONDON_ORB_START_MIN)
+            orb_high, orb_low, candle_at = get_high_low(symbol=symbol, hour=LONDON_ORB_START_HOUR, min=LONDON_ORB_START_MIN, mt5=mt5)
             if orb_high is None:
                return
             symbol_data = {
@@ -178,7 +178,7 @@ def check_status(symbol):
             print('CREATING ORB')
             # ORB Created
 
-            orb_high, orb_low, candle_at = get_high_low(symbol=symbol, hour=NY_ORB_START_HOUR, min=NY_ORB_START_MIN)
+            orb_high, orb_low, candle_at = get_high_low(symbol=symbol, hour=NY_ORB_START_HOUR, min=NY_ORB_START_MIN, mt5=mt5)
             if orb_high is None:
                return
             symbol_data = {
@@ -277,8 +277,8 @@ def get_orb_high_low(symbol):
     #
     #     return candle['high'], candle['low']
 
-def get_high_low(symbol, hour, min):
-    global mt5
+def get_high_low(symbol, hour, min, mt5):
+    #global mt5
 
     timeframe = mt5.TIMEFRAME_M15
     year, day, month = get_year_month_day()

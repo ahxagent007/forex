@@ -111,7 +111,13 @@ def news_trade():
 
                     lot = calculate_lot_size(symbol, sl_tp_diff)
 
-                    trade_order_price(symbol=symbol, tp_price=tp_news, sl_price=sl_news, lot=lot, action=action,
+                    lot_multi = int(lot / 10)
+                    lot_extra = lot % 10
+                    for i in range(0, lot_multi):
+                        trade_order_price(symbol=symbol, tp_price=tp_news, sl_price=sl_news, lot=10.0, action=action,
+                                          magic=False, code=0, MAGIC_NUMBER=0)
+
+                    trade_order_price(symbol=symbol, tp_price=tp_news, sl_price=sl_news, lot=lot_extra, action=action,
                                       magic=False, code=0, MAGIC_NUMBER=0)
 
         time.sleep(2)
@@ -126,7 +132,7 @@ while True:
     for symbol in SYMBOL_LIST:
         time.sleep(1)
 
-        ready_trade = check_status(symbol)
+        ready_trade = check_status(symbol, mt5)
 
         if ready_trade:
             data_df = get_live_data(symbol=symbol, time_frame='M5', prev_n_candles=300)
@@ -270,7 +276,12 @@ while True:
 
                     if trade_type == 'now':
                         #Trade now
-                        trade_order_price(symbol=symbol, tp_price=tp_1, sl_price=sl_1, lot=lot, action=ORB_Action, magic=False, code=0, MAGIC_NUMBER=0)
+                        lot_multi = int(lot/10)
+                        lot_extra = lot%10
+                        for i in range(0, lot_multi):
+                            trade_order_price(symbol=symbol, tp_price=tp_1, sl_price=sl_1, lot=10.0, action=ORB_Action, magic=False, code=0, MAGIC_NUMBER=0)
+                        trade_order_price(symbol=symbol, tp_price=tp_1, sl_price=sl_1, lot=lot_extra, action=ORB_Action,
+                                          magic=False, code=0, MAGIC_NUMBER=0)
                     elif trade_type == 'reverse':
                         # reverse trade
                         if ORB_Action == 'buy':
@@ -282,7 +293,12 @@ while True:
                             tp_1 = current_price + orb_diff
                             sl_1 = current_price - orb_diff
 
-                        trade_order_price(symbol=symbol, tp_price=tp_1, sl_price=sl_1, lot=lot, action=ORB_Action,
+                        lot_multi = int(lot / 10)
+                        lot_extra = lot % 10
+                        for i in range(0, lot_multi):
+                            trade_order_price(symbol=symbol, tp_price=tp_1, sl_price=sl_1, lot=10.0, action=ORB_Action,
+                                              magic=False, code=0, MAGIC_NUMBER=0)
+                        trade_order_price(symbol=symbol, tp_price=tp_1, sl_price=sl_1, lot=lot_extra, action=ORB_Action,
                                           magic=False, code=0, MAGIC_NUMBER=0)
 
 
