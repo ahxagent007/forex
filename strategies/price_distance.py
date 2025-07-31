@@ -12,10 +12,11 @@ def get_trade_max_percent(symbol):
         'USDCHF': 0.6,
         'USDJPY': 0.6,
         'US30': 0.5,
-        'EURGBP': 0.5,
+        'EURGBP': 0.7,
         'AUDUSD': 0.5,
         'XAUUSD': 1,
-        'EURUSD': 0.5,
+        'EURUSD': 0.7,
+
         'BTCUSD': 1
     }
 
@@ -51,7 +52,9 @@ while True:
             continue
 
         ema_distance_price = ema - current_price
+
         tp_distance = abs(ema_distance_price) / 5
+        
         sl_distance = tp_distance / 3
 
         lot = calculate_lot_size(symbol=symbol, sl_diff=sl_distance)

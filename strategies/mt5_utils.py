@@ -283,23 +283,6 @@ def trade_order_wo_sl(symbol, tp_point, lot, action, magic=False):
 
     print(symbol, 'Spread pip: ', spread)
 
-    spread_dict = {
-        'EURUSD': 15,
-        'EURJPY': 15,
-        'USDJPY': 15,
-        'XAUUSD': 150,
-        'BTCUSD': 2300,
-        'GBPUSD': 15,
-        'AUDUSD': 20,
-        'NZDUSD': 20,
-        'USDCHF': 20,
-        'EURGBP': 20,
-        'USDCAD': 20,
-    }
-
-    if spread > spread_dict[symbol]:
-        print('High Spread')
-        return None
 
     deviation = 20
     MAGIC_NUMBER = get_magic_number()

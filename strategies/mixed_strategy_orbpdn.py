@@ -1,7 +1,7 @@
 import threading
 import time
 
-from Nahid.strategies.ORB_XIAN import check_status, get_orb_high_low, support_resistance_ema, update_trade_log
+from ORB_XIAN import check_status, get_orb_high_low, support_resistance_ema, update_trade_log
 from mt5_utils import initialize_mt5, get_live_data, get_all_positions, close_position, trade_order_wo_tp, get_balance, \
     calculate_lot_size_point, trade_order, calculate_lot_size, trade_order_price
 
@@ -87,9 +87,7 @@ def news_trade():
 
                 movement_percent = round(((prev_price_dict[symbol] - current_price) / current_price) * 100, 2)
                 prev_price_dict[symbol] = current_price
-                print(
-                    f"[{prev_price_dict[symbol]}, {current_price}] price movement percent for {symbol} is {movement_percent}%")
-
+                
                 # Negative buy, positive sell
                 if abs(movement_percent) > 0.1:
                     sl_tp_diff = abs(df_m1.df_m1.iloc[-2].open - df_m1.df_m1.iloc[-2].close)
@@ -99,11 +97,17 @@ def news_trade():
                         action = 'buy'
                         tp_news = current_price + sl_tp_diff
                         sl_news = current_price - sl_tp_diff
+                        print(
+                    f"[{prev_price_dict[symbol]}, {current_price}] price movement percent for {symbol} is {movement_percent}%")
+
                     else:
                         # Sell
                         action = 'sell'
                         tp_news = current_price - sl_tp_diff
                         sl_news = current_price + sl_tp_diff
+                        print(
+                    f"[{prev_price_dict[symbol]}, {current_price}] price movement percent for {symbol} is {movement_percent}%")
+
 
                     lot = calculate_lot_size(symbol, sl_tp_diff)
 
