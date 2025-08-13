@@ -1180,9 +1180,9 @@ def cancel_all_pending_orders():
             else:
                 print(f"⚠️ Could not cancel order {order.ticket}. Retcode: {result.retcode}")
 
-def calculate_lot_size(symbol, sl_diff):
+def calculate_lot_size(symbol, sl_diff, risk=1):
 
-    risk = 2
+    #risk = 0.5
 
     balance = get_balance()
 

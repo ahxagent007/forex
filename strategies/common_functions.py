@@ -38,7 +38,7 @@ def check_dup_orders_count(symbol):
         return False
 
 def check_duplicate_orders(symbol, skip_min, json_file_name):
-    orders = get_order_positions_count(symbol)
+
     orders_json = read_json(json_file_name)
 
     order_count = get_order_positions_count(symbol)
@@ -111,7 +111,7 @@ def check_duplicate_orders_is_time(symbol, skip_min, json_file_name):
         #     return False, orders_json
 
         if isNowInTimePeriod(dt.time(start_hour, start_min), dt.time(end_hour, end_min), dt.datetime.now().time()):
-            print(symbol, 'TRADE SKIPPED for TIME [',orders,']', json_file_name)
+            #print(symbol, 'TRADE SKIPPED for TIME [',orders,']', json_file_name)
             return True, orders_json, True
         else:
 
@@ -121,7 +121,7 @@ def check_duplicate_orders_is_time(symbol, skip_min, json_file_name):
             }
 
             if order_count > 0:
-                print('Multiple ORDER COUNT -->>', symbol)
+                #print('Multiple ORDER COUNT -->>', symbol)
                 return True, orders_json, False
     except Exception as e:
         orders_json[symbol] = {

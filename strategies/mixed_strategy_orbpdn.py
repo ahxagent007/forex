@@ -273,6 +273,7 @@ while True:
                 if trade_type:
 
                     lot = calculate_lot_size(symbol, orb_diff)
+                    reverse_bool = False
 
                     if trade_type == 'now':
                         #Trade now
@@ -283,6 +284,7 @@ while True:
                         trade_order_price(symbol=symbol, tp_price=tp_1, sl_price=sl_1, lot=lot_extra, action=ORB_Action,
                                           magic=False, code=0, MAGIC_NUMBER=0)
                     elif trade_type == 'reverse':
+                        reverse_bool = True
                         # reverse trade
                         if ORB_Action == 'buy':
                             ORB_Action = 'sell'
@@ -313,7 +315,8 @@ while True:
                         'data':{
                             'support': closest_support_percent,
                             'resistance': closest_resistance_percent,
-                            'ema': ema_diff_percent
+                            'ema': ema_diff_percent,
+                            'reverse': reverse_bool
                         }
                     }
                     update_trade_log(symbol, entries)
