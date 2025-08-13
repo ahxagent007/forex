@@ -509,6 +509,7 @@ def trade_order_wo_tp_price(symbol, sl, lot, action, magic=False):
 def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
 
     print(action)
+    spread = 0
     if action == 'buy':
         point = mt5.symbol_info(symbol).point
         price = mt5.symbol_info_tick(symbol).ask
@@ -523,6 +524,24 @@ def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
         type = mt5.ORDER_TYPE_SELL
 
         spread = abs(price - ask_price) / point
+
+    spread_dict = {
+        'EURUSD': 15,
+        'EURJPY': 15,
+        'USDJPY': 15,
+        'XAUUSD': 130,
+        'BTCUSD': 2300,
+        'GBPUSD': 15,
+        'AUDUSD': 15,
+        'NZDUSD': 15,
+        'USDCHF': 15,
+        'EURGBP': 15,
+        'USDCAD': 15,
+        'US30': 20
+    }
+
+    if spread > spread_dict[symbol]:
+        print('!! HIGH spread ', spread)
 
     deviation = 20
 
