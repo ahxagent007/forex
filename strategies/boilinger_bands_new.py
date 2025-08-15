@@ -56,11 +56,11 @@ def boil_bands_data(symbol, window=14, num_std=2):
     tp = None
     sl = None
 
-    if df['close'].iloc[curr_idx] > df['upper_band'].iloc[curr_idx]:
+    if df['close'].iloc[curr_idx] >= df['upper_band'].iloc[curr_idx]:
         action = 'sell'
         tp = df['close'].iloc[curr_idx] - tp_sl_dif * 2
         sl = df['close'].iloc[curr_idx] + tp_sl_dif
-    elif df['close'].iloc[curr_idx] < df['lower_band'].iloc[curr_idx]:
+    elif df['close'].iloc[curr_idx] <= df['lower_band'].iloc[curr_idx]:
         action = 'buy'
         tp = df['close'].iloc[curr_idx] + tp_sl_dif * 2
         sl = df['close'].iloc[curr_idx] - tp_sl_dif
@@ -126,9 +126,11 @@ while True:
         json_file_name = boil_data['json_file_name']
 
         if trade_action:
-
+            #print(symbol, trade_action, PREVIOUS_TRADE[symbol])
             if PREVIOUS_TRADE[symbol] is None:
                 PREVIOUS_TRADE[symbol] = trade_action
+                # Close all trade
+                close_all_positions(symbol)
             elif not PREVIOUS_TRADE[symbol] == trade_action:
                 # Close all trade
                 close_all_positions(symbol)
@@ -149,11 +151,15 @@ while True:
                     PREVIOUS_TRADE[symbol] = None
                     trade_allowed = False
 
-                    time.sleep(1)
+                    #time.sleep(1)
 
             if trade_allowed:
 
-                lot = calculate_lot_size(symbol, tp_sl_dif, RISK_PERCENT[symbol])
+                try:
+                    lot = calculate_lot_size(symbol, tp_sl_dif, RISK_PERCENT[symbol])
+                except Exception as e :
+                    print('error', str(e), symbol, tp_sl_dif, RISK_PERCENT[symbol])
+                    lot = 1.0
 
                 fixed_lot = 20.0
                 lot_multi = int(lot / fixed_lot)
