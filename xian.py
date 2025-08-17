@@ -29,13 +29,9 @@ def MT5_error_code(code):
 
 def initialize_mt5():
     path = "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
-    #Old Testing
-    # login = 124207670
-    # password = "abcdABCD123!@#"
-    # server = "Exness-MT5Trial7"
 
     #new Testing account
-    login = 182331894
+    login = 273524617
     password = "abcdABCD123!@#"
     server = "Exness-MT5Trial6"
 

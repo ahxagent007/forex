@@ -1,9 +1,9 @@
 import time
 import datetime as dt
 from mt5_utils import get_live_data, trade_order_price, calculate_lot_size, initialize_mt5, trade_order_wo_tp_sl, \
-    close_all_positions
+    close_all_positions, get_open_positions, get_all_positions
 from common_functions import check_duplicate_orders_time, check_duplicate_orders_magic, check_duplicate_orders, \
-    write_json, check_duplicate_orders_is_time, isNowInTimePeriod
+    write_json, check_duplicate_orders_is_time, isNowInTimePeriod, price_distance_percent
 
 
 def boil_bands_data(symbol, window=14, num_std=2):
@@ -19,17 +19,18 @@ def boil_bands_data(symbol, window=14, num_std=2):
 
     if running_trade_status and is_time:
         return {
-        'upper_band': None,
-        'lower_band': None,
-        'high_band_diff': None,
-        'low_band_diff': None,
-        'band_diff': None,
-        'action': None,
-        'tp': None,
-        'sl': None,
-        'tp_sl_dif': None,
-        'orders_json': None,
-        'json_file_name': json_file_name
+            'upper_band': None,
+            'lower_band': None,
+            'high_band_diff': None,
+            'low_band_diff': None,
+            'band_diff': None,
+            'action': None,
+            'tp': None,
+            'sl': None,
+            'tp_sl_dif': None,
+            'orders_json': None,
+            'json_file_name': json_file_name,
+            'middle_band_trade_close_type': -1
     }
 
     df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
@@ -65,6 +66,21 @@ def boil_bands_data(symbol, window=14, num_std=2):
         tp = df['close'].iloc[curr_idx] + tp_sl_dif * 2
         sl = df['close'].iloc[curr_idx] - tp_sl_dif
 
+    upper_distance = price_distance_percent(df['upper_band'].iloc[curr_idx], df['close'].iloc[curr_idx])
+    lower_distance = price_distance_percent(df['lower_band'].iloc[curr_idx], df['close'].iloc[curr_idx])
+    #print(f'{symbol} ->\tupper: {upper_distance}%\t lower: {lower_distance}%')
+
+    middle_band_trade_close_type = -1
+
+    if df['close'].iloc[curr_idx] > df['middle_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] < df['middle_band'].iloc[curr_idx]:
+        # middle band crossing up
+        # buy close
+        middle_band_trade_close_type = 0
+    elif df['close'].iloc[curr_idx] < df['middle_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] > df['middle_band'].iloc[curr_idx]:
+        # Middle band crossing down
+        # less close
+        middle_band_trade_close_type = 1
+
     return {
         'upper_band': df['upper_band'].iloc[curr_idx],
         'lower_band': df['lower_band'].iloc[curr_idx],
@@ -76,7 +92,8 @@ def boil_bands_data(symbol, window=14, num_std=2):
         'sl': sl,
         'tp_sl_dif': tp_sl_dif,
         'orders_json': orders_json,
-        'json_file_name': json_file_name
+        'json_file_name': json_file_name,
+        'middle_band_trade_close_type': middle_band_trade_close_type
     }
 
 
@@ -84,6 +101,7 @@ def boil_bands_data(symbol, window=14, num_std=2):
 mt5 = initialize_mt5()
 
 SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD']
+#SYMBOL_LIST = ['BTCUSD']
 
 PREVIOUS_TRADE = {
     'GBPUSD': None,
@@ -93,20 +111,34 @@ PREVIOUS_TRADE = {
      'EURGBP': None,
      'AUDUSD': None,
      'XAUUSD': None,
-     'EURUSD': None
+     'EURUSD': None,
+    'BTCUSD': None
 }
 
-BASE_RISK = 0.05
-RISK_PERCENT = {
-    'GBPUSD': BASE_RISK,
-    'USDCHF': BASE_RISK,
-     'USDJPY': BASE_RISK,
-     'US30': BASE_RISK,
-     'EURGBP': BASE_RISK,
-     'AUDUSD': BASE_RISK,
-     'XAUUSD': BASE_RISK,
-     'EURUSD': BASE_RISK
+BASE_RISK = 1
+# RISK_PERCENT = {
+#     'GBPUSD': BASE_RISK,
+#     'USDCHF': BASE_RISK,
+#      'USDJPY': BASE_RISK,
+#      'US30': BASE_RISK,
+#      'EURGBP': BASE_RISK,
+#      'AUDUSD': BASE_RISK,
+#      'XAUUSD': BASE_RISK,
+#      'EURUSD': BASE_RISK,
+#     'BTCUSD': BASE_RISK
+# }
+LOTS = {
+    'GBPUSD': None,
+    'USDCHF': None,
+     'USDJPY': None,
+     'US30': None,
+     'EURGBP': None,
+     'AUDUSD': None,
+     'XAUUSD': None,
+     'EURUSD': None,
+    'BTCUSD': None    
 }
+fixed_lot = 20.0
 
 START_HOUR = 0
 START_MIN = 0
@@ -124,28 +156,50 @@ while True:
         trade_action = boil_data['action']
         orders_json = boil_data['orders_json']
         json_file_name = boil_data['json_file_name']
+        middle_band_trade_close_type = boil_data['middle_band_trade_close_type']
+
+        if middle_band_trade_close_type == 0 or middle_band_trade_close_type == 1:
+            try:
+                open_positions = get_all_positions(symbol)
+                position_type = open_positions[0].type
+                if middle_band_trade_close_type == position_type:
+                    print(symbol, 'MIDDLE BAND CROSSING -------- X --------- ')
+                    close_all_positions(symbol)
+
+            except:
+                continue
 
         if trade_action:
-            #print(symbol, trade_action, PREVIOUS_TRADE[symbol])
-            if PREVIOUS_TRADE[symbol] is None:
-                PREVIOUS_TRADE[symbol] = trade_action
+            open_positions = get_all_positions(symbol)
+            if PREVIOUS_TRADE[symbol] is None or LOTS[symbol] is None:
+                if len(open_positions) > 0:
+                    position_type = open_positions[0].type
+                    if position_type == 0:
+                        # BUY
+                        PREVIOUS_TRADE[symbol] = 'buy'
+                    elif position_type == 1:
+                        # SELL
+                        PREVIOUS_TRADE[symbol] = 'sell'
+                    LOTS[symbol] = open_positions[0].volume
+                else:
+                    PREVIOUS_TRADE[symbol] = trade_action
+                    LOTS[symbol] = calculate_lot_size(symbol, tp_sl_dif, BASE_RISK)
+            
+            if not PREVIOUS_TRADE[symbol] == trade_action:
                 # Close all trade
                 close_all_positions(symbol)
-            elif not PREVIOUS_TRADE[symbol] == trade_action:
-                # Close all trade
-                close_all_positions(symbol)
                 PREVIOUS_TRADE[symbol] = trade_action
-
-                RISK_PERCENT[symbol] = BASE_RISK
+                LOTS[symbol] = calculate_lot_size(symbol, tp_sl_dif, BASE_RISK)
+            else:
+                LOTS[symbol] = LOTS[symbol] * 2
 
             if isNowInTimePeriod(dt.time(START_HOUR, START_MIN),
                                  dt.time(END_HOUR, END_MIN),
                                  dt.datetime.now().time()):
                 trade_allowed = True
 
-                RISK_PERCENT[symbol] = RISK_PERCENT[symbol] * 2
             else:
-                if symbol == 'XAUUSD':
+                if symbol == 'XAUUSD' or symbol == 'BTCUSD':
                     trade_allowed = True
                 else:
                     PREVIOUS_TRADE[symbol] = None
@@ -154,14 +208,7 @@ while True:
                     #time.sleep(1)
 
             if trade_allowed:
-
-                try:
-                    lot = calculate_lot_size(symbol, tp_sl_dif, RISK_PERCENT[symbol])
-                except Exception as e :
-                    print('error', str(e), symbol, tp_sl_dif, RISK_PERCENT[symbol])
-                    lot = 1.0
-
-                fixed_lot = 20.0
+                lot = LOTS[symbol]
                 lot_multi = int(lot / fixed_lot)
                 lot_extra = lot % fixed_lot
 
