@@ -74,13 +74,13 @@ def boil_bands_data(symbol, window=14, num_std=2):
 
     band_trade_close_type = -1
 
-    if df['close'].iloc[curr_idx] > df['middle_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] < df['middle_band'].iloc[curr_idx]:
-        # middle band crossing up
+    if df['close'].iloc[curr_idx] > df['upper_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] < df['upper_band'].iloc[curr_idx]:
+        # band crossing up
         # buy close
         band_trade_close_type = 0
-    elif df['close'].iloc[curr_idx] < df['middle_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] > df['middle_band'].iloc[curr_idx]:
-        # Middle band crossing down
-        # less close
+    elif df['close'].iloc[curr_idx] < df['lower_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] > df['lower_band'].iloc[curr_idx]:
+        # band crossing down
+        # sell close
         band_trade_close_type = 1
 
     return {
