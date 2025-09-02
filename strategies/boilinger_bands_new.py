@@ -1,5 +1,7 @@
 import time
 import datetime as dt
+
+from news_trade import get_today_forexfactory_news
 from mt5_utils import get_live_data, trade_order_price, calculate_lot_size, initialize_mt5, trade_order_wo_tp_sl, \
     close_all_positions, get_open_positions, get_all_positions
 from common_functions import check_duplicate_orders_time, check_duplicate_orders_magic, check_duplicate_orders, \
@@ -70,16 +72,16 @@ def boil_bands_data(symbol, window=14, num_std=2):
     lower_distance = price_distance_percent(df['lower_band'].iloc[curr_idx], df['close'].iloc[curr_idx])
     #print(f'{symbol} ->\tupper: {upper_distance}%\t lower: {lower_distance}%')
 
-    middle_band_trade_close_type = -1
+    band_trade_close_type = -1
 
     if df['close'].iloc[curr_idx] > df['middle_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] < df['middle_band'].iloc[curr_idx]:
         # middle band crossing up
         # buy close
-        middle_band_trade_close_type = 0
+        band_trade_close_type = 0
     elif df['close'].iloc[curr_idx] < df['middle_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] > df['middle_band'].iloc[curr_idx]:
         # Middle band crossing down
         # less close
-        middle_band_trade_close_type = 1
+        band_trade_close_type = 1
 
     return {
         'upper_band': df['upper_band'].iloc[curr_idx],
@@ -93,7 +95,7 @@ def boil_bands_data(symbol, window=14, num_std=2):
         'tp_sl_dif': tp_sl_dif,
         'orders_json': orders_json,
         'json_file_name': json_file_name,
-        'middle_band_trade_close_type': middle_band_trade_close_type
+        'band_trade_close_type': band_trade_close_type
     }
 
 
@@ -145,6 +147,70 @@ START_MIN = 0
 END_HOUR = 16
 END_MIN = 0
 
+FOREX_NEWS_HOUR = 0
+NEWS_DF = None
+
+def check_news_session_time(symbol):
+    TOKYO_ORB_START_HOUR = 0  # 6
+    TOKYO_ORB_START_MIN = 0  # 15
+    TOKYO_ORB_END_HOUR = 0  # 9
+    TOKYO_ORB_END_MIN = 30  # 00
+
+    LONDON_ORB_START_HOUR = 7  # 13
+    LONDON_ORB_START_MIN = 0  # 15
+    LONDON_ORB_END_HOUR = 7  # 16
+    LONDON_ORB_END_MIN = 30  # 00
+
+    NY_ORB_START_HOUR = 13  # 19
+    NY_ORB_START_MIN = 0  # 45
+    NY_ORB_END_HOUR = 13  # 22
+    NY_ORB_END_MIN = 30  # 00
+
+    global FOREX_NEWS_HOUR
+    global NEWS_DF
+
+    if NEWS_DF is None or not FOREX_NEWS_HOUR == dt.datetime.now().time().hour:
+        NEWS_DF = get_today_forexfactory_news()
+
+    if isNowInTimePeriod(dt.time(TOKYO_ORB_START_HOUR, TOKYO_ORB_START_MIN),
+                         dt.time(TOKYO_ORB_END_HOUR, TOKYO_ORB_END_MIN),
+                         dt.datetime.now().time()) or \
+        isNowInTimePeriod(dt.time(LONDON_ORB_START_HOUR, LONDON_ORB_START_MIN),
+                          dt.time(LONDON_ORB_END_HOUR, LONDON_ORB_END_MIN),
+                          dt.datetime.now().time()) or \
+            isNowInTimePeriod(dt.time(NY_ORB_START_HOUR, NY_ORB_START_MIN), dt.time(NY_ORB_END_HOUR, NY_ORB_END_MIN), dt.datetime.now().time()):
+        return False
+    else:
+        symbol_news_df = NEWS_DF[NEWS_DF['currency'].contains(symbol[:3] + '|' + symbol[3:])]
+        time_list = []
+
+        for idx, row in symbol_news_df.iterrows():
+            start_h =  row['datetime'].time().hour
+            start_m = row['datetime'].time().min
+
+            end_h = start_h
+            end_m = start_m + 10
+
+            if end_m >= 60:
+                end_m = end_m % 60
+                end_h = end_h + 1
+                if end_h >= 24:
+                    end_h = 0
+            d = {
+                'start_h': start_h,
+                'start_m': start_m,
+                'end_h': end_h,
+                'end_m': end_m
+            }
+
+            time_list.append(d)
+
+            if isNowInTimePeriod(dt.time(start_h, start_m),dt.time(end_h, end_m), dt.datetime.now().time()):
+                return False
+
+    return True
+
+
 while True:
 
     for symbol in SYMBOL_LIST:
@@ -156,14 +222,14 @@ while True:
         trade_action = boil_data['action']
         orders_json = boil_data['orders_json']
         json_file_name = boil_data['json_file_name']
-        middle_band_trade_close_type = boil_data['middle_band_trade_close_type']
+        band_trade_close_type = boil_data['band_trade_close_type']
 
-        if middle_band_trade_close_type == 0 or middle_band_trade_close_type == 1:
+        if band_trade_close_type == 0 or band_trade_close_type == 1:
             try:
                 open_positions = get_all_positions(symbol)
                 position_type = open_positions[0].type
-                if middle_band_trade_close_type == position_type:
-                    print(symbol, 'MIDDLE BAND CROSSING -------- X --------- ')
+                if band_trade_close_type == position_type:
+                    print(symbol, 'BAND CROSSING -------- X --------- ')
                     close_all_positions(symbol)
 
             except:
@@ -191,7 +257,7 @@ while True:
                 PREVIOUS_TRADE[symbol] = trade_action
                 LOTS[symbol] = calculate_lot_size(symbol, tp_sl_dif, BASE_RISK)
             else:
-                LOTS[symbol] = LOTS[symbol] * 2
+                LOTS[symbol] = LOTS[symbol] * 1.5
 
             if isNowInTimePeriod(dt.time(START_HOUR, START_MIN),
                                  dt.time(END_HOUR, END_MIN),
@@ -206,6 +272,8 @@ while True:
                     trade_allowed = False
 
                     #time.sleep(1)
+            if trade_allowed:
+               trade_allowed = check_news_session_time(symbol)
 
             if trade_allowed:
                 lot = LOTS[symbol]
