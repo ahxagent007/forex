@@ -12,7 +12,7 @@ def boil_bands_data(symbol, window=14, num_std=2):
 
     json_file_name = 'boil_xian'
     time_frame = 'M1'
-    skip_min = 5
+    skip_min = 20
 
     # running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
     #                                                            json_file_name=json_file_name)
@@ -20,21 +20,24 @@ def boil_bands_data(symbol, window=14, num_std=2):
     running_trade_status, orders_json, is_time = check_duplicate_orders_is_time(symbol, skip_min, json_file_name)
 
     if running_trade_status and is_time:
-        print('time skip')
-        return {
-            'upper_band': None,
-            'lower_band': None,
-            'high_band_diff': None,
-            'low_band_diff': None,
-            'band_diff': None,
-            'action': None,
-            'tp': None,
-            'sl': None,
-            'tp_sl_dif': None,
-            'orders_json': None,
-            'json_file_name': json_file_name,
-            'middle_band_trade_close_type': -1
-    }
+        no_new_trade = True
+        #print('time skip')
+    #     return {
+    #         'upper_band': None,
+    #         'lower_band': None,
+    #         'high_band_diff': None,
+    #         'low_band_diff': None,
+    #         'band_diff': None,
+    #         'action': None,
+    #         'tp': None,
+    #         'sl': None,
+    #         'tp_sl_dif': None,
+    #         'orders_json': None,
+    #         'json_file_name': json_file_name,
+    #         'band_trade_close_type': -1
+    # }
+    else:
+        no_new_trade = False
 
     df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
 
@@ -71,39 +74,68 @@ def boil_bands_data(symbol, window=14, num_std=2):
 
     upper_distance = price_distance_percent(df['upper_band'].iloc[curr_idx], df['close'].iloc[curr_idx])
     lower_distance = price_distance_percent(df['lower_band'].iloc[curr_idx], df['close'].iloc[curr_idx])
-    #print(f'{symbol} ->\tupper: {upper_distance}%\t lower: {lower_distance}%')
+    print(f'{symbol} ->\tupper: {upper_distance}%\t lower: {lower_distance}%')
+
 
     band_trade_close_type = -1
 
-    if df['close'].iloc[curr_idx] > df['upper_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] < df['upper_band'].iloc[curr_idx]:
-        # band crossing up
-        # buy close
+    # if df['close'].iloc[curr_idx] > df['upper_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] < df['upper_band'].iloc[curr_idx]:
+    #     # band crossing up
+    #     # buy close
+    #     band_trade_close_type = 0
+    # elif df['close'].iloc[curr_idx] < df['lower_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] > df['lower_band'].iloc[curr_idx]:
+    #     # band crossing down
+    #     # sell close
+    #     band_trade_close_type = 1
+
+    if abs(upper_distance) <= 0.001:
+        # action = 'sell'
+        # tp = df['close'].iloc[curr_idx] - tp_sl_dif * 2
+        # sl = df['close'].iloc[curr_idx] + tp_sl_dif
         band_trade_close_type = 0
-    elif df['close'].iloc[curr_idx] < df['lower_band'].iloc[curr_idx] and df['open'].iloc[curr_idx] > df['lower_band'].iloc[curr_idx]:
-        # band crossing down
-        # sell close
+    elif abs(lower_distance) <= 0.001:
+        # action = 'buy'
+        # tp = df['close'].iloc[curr_idx] + tp_sl_dif * 2
+        # sl = df['close'].iloc[curr_idx] - tp_sl_dif
         band_trade_close_type = 1
 
-    return {
-        'upper_band': df['upper_band'].iloc[curr_idx],
-        'lower_band': df['lower_band'].iloc[curr_idx],
-        'high_band_diff': high_band_diff,
-        'low_band_diff': low_band_diff,
-        'band_diff': band_diff,
-        'action': action,
-        'tp': tp,
-        'sl': sl,
-        'tp_sl_dif': tp_sl_dif,
-        'orders_json': orders_json,
-        'json_file_name': json_file_name,
-        'band_trade_close_type': band_trade_close_type
-    }
+    if no_new_trade:
+        return {
+            'upper_band': df['upper_band'].iloc[curr_idx],
+            'lower_band': df['lower_band'].iloc[curr_idx],
+            'high_band_diff': high_band_diff,
+            'low_band_diff': low_band_diff,
+            'band_diff': band_diff,
+            'action': None,
+            'tp': tp,
+            'sl': sl,
+            'tp_sl_dif': tp_sl_dif,
+            'orders_json': orders_json,
+            'json_file_name': json_file_name,
+            'band_trade_close_type': band_trade_close_type
+        }
+
+    else:
+        return {
+            'upper_band': df['upper_band'].iloc[curr_idx],
+            'lower_band': df['lower_band'].iloc[curr_idx],
+            'high_band_diff': high_band_diff,
+            'low_band_diff': low_band_diff,
+            'band_diff': band_diff,
+            'action': action,
+            'tp': tp,
+            'sl': sl,
+            'tp_sl_dif': tp_sl_dif,
+            'orders_json': orders_json,
+            'json_file_name': json_file_name,
+            'band_trade_close_type': band_trade_close_type
+        }
 
 
 
 mt5 = initialize_mt5()
 
-SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD', 'BTCUSD']
+SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD']
 #SYMBOL_LIST = ['BTCUSD']
 
 PREVIOUS_TRADE = {
@@ -141,30 +173,30 @@ LOTS = {
      'EURUSD': None,
     'BTCUSD': None    
 }
-fixed_lot = 20.0
+fixed_lot = 5.0
 
-START_HOUR = 0
+START_HOUR = 6 #0
 START_MIN = 0
-END_HOUR = 16
+END_HOUR = 22 #16
 END_MIN = 0
 
 FOREX_NEWS_HOUR = 0
 NEWS_DF = None
 
 def check_news_session_time(symbol):
-    TOKYO_ORB_START_HOUR = 0  # 6
+    TOKYO_ORB_START_HOUR = 6 #0  # 6
     TOKYO_ORB_START_MIN = 0  # 15
-    TOKYO_ORB_END_HOUR = 0  # 9
+    TOKYO_ORB_END_HOUR = 6 #0  # 9
     TOKYO_ORB_END_MIN = 30  # 00
 
-    LONDON_ORB_START_HOUR = 7  # 13
+    LONDON_ORB_START_HOUR = 13 #7  # 13
     LONDON_ORB_START_MIN = 0  # 15
-    LONDON_ORB_END_HOUR = 7  # 16
+    LONDON_ORB_END_HOUR = 13 #7  # 16
     LONDON_ORB_END_MIN = 30  # 00
 
-    NY_ORB_START_HOUR = 13  # 19
+    NY_ORB_START_HOUR = 19 #13  # 19
     NY_ORB_START_MIN = 0  # 45
-    NY_ORB_END_HOUR = 13  # 22
+    NY_ORB_END_HOUR = 19  #13  # 22
     NY_ORB_END_MIN = 30  # 00
 
     global FOREX_NEWS_HOUR
@@ -189,7 +221,7 @@ def check_news_session_time(symbol):
         time_list = []
 
         for idx, row in symbol_news_df.iterrows():
-            start_h =  row['datetime'].time().hour
+            start_h = row['datetime'].time().hour
             start_m = row['datetime'].time().minute
 
             end_h = start_h
@@ -211,6 +243,7 @@ def check_news_session_time(symbol):
 
             if isNowInTimePeriod(dt.time(start_h, start_m),dt.time(end_h, end_m), dt.datetime.now().time()):
                 print('NEWS Skip')
+                print(symbol, '------------->>', row)
                 return False
 
     return True
@@ -221,6 +254,7 @@ while True:
     for symbol in SYMBOL_LIST:
 
         boil_data = boil_bands_data(symbol)
+
         tp_sl_dif = boil_data['tp_sl_dif']
         tp = boil_data['tp']
         sl = boil_data['sl']
@@ -228,6 +262,9 @@ while True:
         orders_json = boil_data['orders_json']
         json_file_name = boil_data['json_file_name']
         band_trade_close_type = boil_data['band_trade_close_type']
+
+        if trade_action:
+            print(symbol, trade_action)
 
         if band_trade_close_type == 0 or band_trade_close_type == 1:
             try:
@@ -237,8 +274,8 @@ while True:
                     print(symbol, 'BAND CROSSING -------- X --------- ')
                     close_all_positions(symbol)
 
-            except:
-                continue
+            except Exception as e:
+                None
 
         if trade_action:
             open_positions = get_all_positions(symbol)
@@ -268,6 +305,7 @@ while True:
                                  dt.time(END_HOUR, END_MIN),
                                  dt.datetime.now().time()):
                 trade_allowed = True
+                print('trade allowed by time ')
 
             else:
                 if symbol == 'XAUUSD' or symbol == 'BTCUSD':
@@ -275,15 +313,17 @@ while True:
                 else:
                     PREVIOUS_TRADE[symbol] = None
                     trade_allowed = False
+                    print('trade not allowed by time')
 
                     #time.sleep(1)
             if trade_allowed:
-               trade_allowed = check_news_session_time(symbol)
-
+                trade_allowed = check_news_session_time(symbol)
+                print('trade news check', trade_allowed)
+            print('allowed trade', trade_allowed)
             if trade_allowed:
                 lot = LOTS[symbol]
                 lot_multi = int(lot / fixed_lot)
-                lot_extra = lot % fixed_lot
+                lot_extra = round(lot % fixed_lot, 2)
 
                 for i in range(0, lot_multi):
                     trade_order_wo_tp_sl(symbol, fixed_lot, trade_action, magic=False)

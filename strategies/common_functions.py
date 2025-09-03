@@ -293,5 +293,5 @@ def add_csv(data_lst):
         writer.writerow(data_lst)
 
 def price_distance_percent(distance_price, current_price):
-    distance_percent = round(((distance_price - current_price) / current_price) * 100, 2)
+    distance_percent = round(((distance_price - current_price) / current_price) * 100, 4)
     return distance_percent

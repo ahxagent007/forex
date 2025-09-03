@@ -508,7 +508,7 @@ def trade_order_wo_tp_price(symbol, sl, lot, action, magic=False):
 
 def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
 
-    print(action)
+    #print(action)
     spread = 0
     if action == 'buy':
         point = mt5.symbol_info(symbol).point
@@ -557,17 +557,17 @@ def trade_order_wo_tp_sl(symbol, lot, action, magic=False):
             "magic": MAGIC_NUMBER,
             "comment": action
         }
-    print(request)
+    #print(request)
     # send a trading request
     result = mt5.order_send(request)
-    print(result)
+    #print(result)
 
     try:
         if result.retcode != mt5.TRADE_RETCODE_DONE:
             print(symbol, ' ', action+' not done', result.retcode, MT5_error_code(result.retcode))
 
         else:
-            print('>>>>>>>>>>>> ## ## ## '+action+' done with bot ', symbol)## update magic number
+            print('>>>>>>>>>>>> ## ## ## '+action+' done with bot ', symbol, ' LOT: ', lot)## update magic number
             if magic:
                 update_magic_number(symbol, MAGIC_NUMBER)
     except Exception as e:
@@ -1231,7 +1231,10 @@ def calculate_lot_size(symbol, sl_diff, risk=1):
         'BTCUSD': 1
     }
 
-    lot_size = round(balance * (risk / 100) / (pip_value[symbol] * sl_pip), 2)
+    try:
+        lot_size = round(balance * (risk / 100) / (pip_value[symbol] * sl_pip), 2)
+    except:
+        lot_size = 0.01
 
     return lot_size
 
