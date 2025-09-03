@@ -175,28 +175,28 @@ LOTS = {
 }
 fixed_lot = 5.0
 
-START_HOUR = 6 #0
+START_HOUR = 0
 START_MIN = 0
-END_HOUR = 22 #16
+END_HOUR = 16
 END_MIN = 0
 
 FOREX_NEWS_HOUR = 0
 NEWS_DF = None
 
 def check_news_session_time(symbol):
-    TOKYO_ORB_START_HOUR = 6 #0  # 6
+    TOKYO_ORB_START_HOUR = 0  # 6
     TOKYO_ORB_START_MIN = 0  # 15
-    TOKYO_ORB_END_HOUR = 6 #0  # 9
+    TOKYO_ORB_END_HOUR = 0  # 9
     TOKYO_ORB_END_MIN = 30  # 00
 
-    LONDON_ORB_START_HOUR = 13 #7  # 13
+    LONDON_ORB_START_HOUR = 7  # 13
     LONDON_ORB_START_MIN = 0  # 15
-    LONDON_ORB_END_HOUR = 13 #7  # 16
+    LONDON_ORB_END_HOUR = 7  # 16
     LONDON_ORB_END_MIN = 30  # 00
 
-    NY_ORB_START_HOUR = 19 #13  # 19
+    NY_ORB_START_HOUR = 13  # 19
     NY_ORB_START_MIN = 0  # 45
-    NY_ORB_END_HOUR = 19  #13  # 22
+    NY_ORB_END_HOUR = 13  # 22
     NY_ORB_END_MIN = 30  # 00
 
     global FOREX_NEWS_HOUR
