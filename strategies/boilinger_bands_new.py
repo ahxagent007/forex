@@ -11,8 +11,8 @@ from common_functions import check_duplicate_orders_time, check_duplicate_orders
 def boil_bands_data(symbol, window=14, num_std=2):
 
     json_file_name = 'boil_xian'
-    time_frame = 'M5'
-    skip_min = 20
+    time_frame = 'M1'
+    skip_min = 5
 
     # running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
     #                                                            json_file_name=json_file_name)
@@ -20,6 +20,7 @@ def boil_bands_data(symbol, window=14, num_std=2):
     running_trade_status, orders_json, is_time = check_duplicate_orders_is_time(symbol, skip_min, json_file_name)
 
     if running_trade_status and is_time:
+        print('time skip')
         return {
             'upper_band': None,
             'lower_band': None,
@@ -102,7 +103,7 @@ def boil_bands_data(symbol, window=14, num_std=2):
 
 mt5 = initialize_mt5()
 
-SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD']
+SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD', 'BTCUSD']
 #SYMBOL_LIST = ['BTCUSD']
 
 PREVIOUS_TRADE = {
@@ -171,6 +172,8 @@ def check_news_session_time(symbol):
 
     if NEWS_DF is None or not FOREX_NEWS_HOUR == dt.datetime.now().time().hour:
         NEWS_DF = get_today_forexfactory_news()
+        print('SERVER CALL')
+        FOREX_NEWS_HOUR = dt.datetime.now().time().hour + 1
 
     if isNowInTimePeriod(dt.time(TOKYO_ORB_START_HOUR, TOKYO_ORB_START_MIN),
                          dt.time(TOKYO_ORB_END_HOUR, TOKYO_ORB_END_MIN),
@@ -179,14 +182,15 @@ def check_news_session_time(symbol):
                           dt.time(LONDON_ORB_END_HOUR, LONDON_ORB_END_MIN),
                           dt.datetime.now().time()) or \
             isNowInTimePeriod(dt.time(NY_ORB_START_HOUR, NY_ORB_START_MIN), dt.time(NY_ORB_END_HOUR, NY_ORB_END_MIN), dt.datetime.now().time()):
+        print('SESSION Skip')
         return False
     else:
-        symbol_news_df = NEWS_DF[NEWS_DF['currency'].contains(symbol[:3] + '|' + symbol[3:])]
+        symbol_news_df = NEWS_DF[NEWS_DF['currency'].str.contains(symbol[:3] + '|' + symbol[3:])]
         time_list = []
 
         for idx, row in symbol_news_df.iterrows():
             start_h =  row['datetime'].time().hour
-            start_m = row['datetime'].time().min
+            start_m = row['datetime'].time().minute
 
             end_h = start_h
             end_m = start_m + 10
@@ -206,6 +210,7 @@ def check_news_session_time(symbol):
             time_list.append(d)
 
             if isNowInTimePeriod(dt.time(start_h, start_m),dt.time(end_h, end_m), dt.datetime.now().time()):
+                print('NEWS Skip')
                 return False
 
     return True
