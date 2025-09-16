@@ -1208,7 +1208,7 @@ def calculate_lot_size(symbol, sl_diff, risk=1):
     pip_multiplier = {
         'GBPUSD': 10000,
         'USDCHF': 10000,
-        'USDJPY': 100,
+        'USDJPY': 10000,
         'US30': 1,
         'EURGBP': 10000,
         'AUDUSD': 10000,

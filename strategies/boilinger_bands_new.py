@@ -3,16 +3,16 @@ import datetime as dt
 
 from news_trade import get_today_forexfactory_news
 from mt5_utils import get_live_data, trade_order_price, calculate_lot_size, initialize_mt5, trade_order_wo_tp_sl, \
-    close_all_positions, get_open_positions, get_all_positions
+    close_all_positions, get_open_positions, get_all_positions, get_order_positions_count
 from common_functions import check_duplicate_orders_time, check_duplicate_orders_magic, check_duplicate_orders, \
     write_json, check_duplicate_orders_is_time, isNowInTimePeriod, price_distance_percent
 
 
-def boil_bands_data(symbol, window=14, num_std=2):
+def boil_bands_data(symbol, window=20, num_std=2):
 
     json_file_name = 'boil_xian'
-    time_frame = 'M1'
-    skip_min = 20
+    time_frame = 'M15'
+    skip_min = 30
 
     # running_trade_status, orders_json = check_duplicate_orders(symbol=symbol, skip_min=skip_min,
     #                                                            json_file_name=json_file_name)
@@ -21,6 +21,7 @@ def boil_bands_data(symbol, window=14, num_std=2):
 
     if running_trade_status and is_time:
         no_new_trade = True
+            
         #print('time skip')
     #     return {
     #         'upper_band': None,
@@ -38,6 +39,9 @@ def boil_bands_data(symbol, window=14, num_std=2):
     # }
     else:
         no_new_trade = False
+        
+        if get_order_positions_count(symbol) > 1:
+            no_new_trade = True
 
     df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
 
@@ -57,7 +61,7 @@ def boil_bands_data(symbol, window=14, num_std=2):
     else:
         band_diff = low_band_diff
 
-    tp_sl_dif = band_diff/2
+    tp_sl_dif = band_diff * 2
 
     action = None
     tp = None
@@ -72,9 +76,12 @@ def boil_bands_data(symbol, window=14, num_std=2):
         tp = df['close'].iloc[curr_idx] + tp_sl_dif * 2
         sl = df['close'].iloc[curr_idx] - tp_sl_dif
 
-    upper_distance = price_distance_percent(df['upper_band'].iloc[curr_idx], df['close'].iloc[curr_idx])
-    lower_distance = price_distance_percent(df['lower_band'].iloc[curr_idx], df['close'].iloc[curr_idx])
-    print(f'{symbol} ->\tupper: {upper_distance}%\t lower: {lower_distance}%')
+    upper_distance = price_distance_percent(df['upper_band'].iloc[curr_idx-1], df['close'].iloc[curr_idx])
+    lower_distance = price_distance_percent(df['lower_band'].iloc[curr_idx-1], df['close'].iloc[curr_idx])
+    
+    uppp = df['upper_band'].iloc[curr_idx]
+    lowww = df['lower_band'].iloc[curr_idx]
+    print(f'{symbol} ->\tupper: [{uppp}] {upper_distance}%\t lower: [{lowww}] {lower_distance}%')
 
 
     band_trade_close_type = -1
@@ -88,15 +95,15 @@ def boil_bands_data(symbol, window=14, num_std=2):
     #     # sell close
     #     band_trade_close_type = 1
 
-    if abs(upper_distance) <= 0.001:
-        # action = 'sell'
-        # tp = df['close'].iloc[curr_idx] - tp_sl_dif * 2
-        # sl = df['close'].iloc[curr_idx] + tp_sl_dif
+    if upper_distance < 0:
+        action = 'sell'
+        tp = df['close'].iloc[curr_idx] - tp_sl_dif * 2
+        sl = df['close'].iloc[curr_idx] + tp_sl_dif
         band_trade_close_type = 0
-    elif abs(lower_distance) <= 0.001:
-        # action = 'buy'
-        # tp = df['close'].iloc[curr_idx] + tp_sl_dif * 2
-        # sl = df['close'].iloc[curr_idx] - tp_sl_dif
+    elif lower_distance > 0:
+        action = 'buy'
+        tp = df['close'].iloc[curr_idx] + tp_sl_dif * 2
+        sl = df['close'].iloc[curr_idx] - tp_sl_dif
         band_trade_close_type = 1
 
     if no_new_trade:
@@ -330,5 +337,5 @@ while True:
                 trade_order_wo_tp_sl(symbol, lot_extra, trade_action, magic=False)
 
                 write_json(json_dict=orders_json, json_file_name=json_file_name)
-    time.sleep(1)
+        time.sleep(1)
 
