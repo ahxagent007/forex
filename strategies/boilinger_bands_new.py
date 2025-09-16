@@ -106,6 +106,7 @@ def boil_bands_data(symbol, window=20, num_std=2):
         sl = df['close'].iloc[curr_idx] - tp_sl_dif
         band_trade_close_type = 1
 
+
     if no_new_trade:
         return {
             'upper_band': df['upper_band'].iloc[curr_idx],
@@ -123,26 +124,50 @@ def boil_bands_data(symbol, window=20, num_std=2):
         }
 
     else:
-        return {
-            'upper_band': df['upper_band'].iloc[curr_idx],
-            'lower_band': df['lower_band'].iloc[curr_idx],
-            'high_band_diff': high_band_diff,
-            'low_band_diff': low_band_diff,
-            'band_diff': band_diff,
-            'action': action,
-            'tp': tp,
-            'sl': sl,
-            'tp_sl_dif': tp_sl_dif,
-            'orders_json': orders_json,
-            'json_file_name': json_file_name,
-            'band_trade_close_type': band_trade_close_type
-        }
+        ema_action = ema_decision(df)
+        if ema_action == action:
+            return {
+                'upper_band': df['upper_band'].iloc[curr_idx],
+                'lower_band': df['lower_band'].iloc[curr_idx],
+                'high_band_diff': high_band_diff,
+                'low_band_diff': low_band_diff,
+                'band_diff': band_diff,
+                'action': action,
+                'tp': tp,
+                'sl': sl,
+                'tp_sl_dif': tp_sl_dif,
+                'orders_json': orders_json,
+                'json_file_name': json_file_name,
+                'band_trade_close_type': band_trade_close_type
+            }
+        else:
+            return {
+                'upper_band': df['upper_band'].iloc[curr_idx],
+                'lower_band': df['lower_band'].iloc[curr_idx],
+                'high_band_diff': high_band_diff,
+                'low_band_diff': low_band_diff,
+                'band_diff': band_diff,
+                'action': None,
+                'tp': tp,
+                'sl': sl,
+                'tp_sl_dif': tp_sl_dif,
+                'orders_json': orders_json,
+                'json_file_name': json_file_name,
+                'band_trade_close_type': band_trade_close_type
+            }
 
+
+def ema_decision(df):
+    df['EMA'] = df['close'].ewm(span=200).mean()
+    if df['close'].iloc[-1] > df['EMA'].iloc[-1]:
+        return 'buy'
+    else:
+        return 'sell'
 
 
 mt5 = initialize_mt5()
 
-SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD']
+SYMBOL_LIST = ['GBPUSD', 'USDCHF', 'USDJPY', 'US30', 'EURGBP', 'AUDUSD', 'XAUUSD', 'EURUSD', 'BTCUSD']
 #SYMBOL_LIST = ['BTCUSD']
 
 PREVIOUS_TRADE = {
@@ -157,7 +182,7 @@ PREVIOUS_TRADE = {
     'BTCUSD': None
 }
 
-BASE_RISK = 1
+BASE_RISK = 5
 # RISK_PERCENT = {
 #     'GBPUSD': BASE_RISK,
 #     'USDCHF': BASE_RISK,
