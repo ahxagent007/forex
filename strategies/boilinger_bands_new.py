@@ -215,6 +215,8 @@ END_MIN = 0
 FOREX_NEWS_HOUR = 0
 NEWS_DF = None
 
+TRADE_ALLOWED_TIME = False
+
 def check_news_session_time(symbol):
     TOKYO_ORB_START_HOUR = 0  # 6
     TOKYO_ORB_START_MIN = 0  # 15
@@ -233,6 +235,7 @@ def check_news_session_time(symbol):
 
     global FOREX_NEWS_HOUR
     global NEWS_DF
+    global TRADE_ALLOWED_TIME
 
     if NEWS_DF is None or not FOREX_NEWS_HOUR == dt.datetime.now().time().hour:
         NEWS_DF = get_today_forexfactory_news()
@@ -247,7 +250,8 @@ def check_news_session_time(symbol):
                           dt.datetime.now().time()) or \
             isNowInTimePeriod(dt.time(NY_ORB_START_HOUR, NY_ORB_START_MIN), dt.time(NY_ORB_END_HOUR, NY_ORB_END_MIN), dt.datetime.now().time()):
         print('SESSION Skip')
-        return False
+        TRADE_ALLOWED_TIME = False
+        close_all_positions(symbol)
     else:
         symbol_news_df = NEWS_DF[NEWS_DF['currency'].str.contains(symbol[:3] + '|' + symbol[3:])]
         time_list = []
@@ -276,9 +280,10 @@ def check_news_session_time(symbol):
             if isNowInTimePeriod(dt.time(start_h, start_m),dt.time(end_h, end_m), dt.datetime.now().time()):
                 print('NEWS Skip')
                 print(symbol, '------------->>', row)
-                return False
+                TRADE_ALLOWED_TIME = False
+                close_all_positions(symbol)
 
-    return True
+    TRADE_ALLOWED_TIME = True
 
 
 while True:
@@ -308,6 +313,8 @@ while True:
 
             except Exception as e:
                 None
+
+        check_news_session_time(symbol)
 
         if trade_action:
             open_positions = get_all_positions(symbol)
@@ -349,8 +356,9 @@ while True:
 
                     #time.sleep(1)
             if trade_allowed:
-                trade_allowed = check_news_session_time(symbol)
-                print('trade news check', trade_allowed)
+                #trade_allowed = check_news_session_time(symbol)
+                print('trade news check', TRADE_ALLOWED_TIME)
+                trade_allowed = TRADE_ALLOWED_TIME
             print('allowed trade', trade_allowed)
             if trade_allowed:
                 lot = LOTS[symbol]
