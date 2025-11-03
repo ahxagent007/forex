@@ -111,6 +111,7 @@ def boil_bands_data(symbol, window=20, num_std=2):
         return {
             'upper_band': df['upper_band'].iloc[curr_idx],
             'lower_band': df['lower_band'].iloc[curr_idx],
+            'middle_band': df['middle_band'].iloc[curr_idx],
             'high_band_diff': high_band_diff,
             'low_band_diff': low_band_diff,
             'band_diff': band_diff,
@@ -129,6 +130,7 @@ def boil_bands_data(symbol, window=20, num_std=2):
             return {
                 'upper_band': df['upper_band'].iloc[curr_idx],
                 'lower_band': df['lower_band'].iloc[curr_idx],
+                'middle_band': df['middle_band'].iloc[curr_idx],
                 'high_band_diff': high_band_diff,
                 'low_band_diff': low_band_diff,
                 'band_diff': band_diff,
@@ -144,6 +146,7 @@ def boil_bands_data(symbol, window=20, num_std=2):
             return {
                 'upper_band': df['upper_band'].iloc[curr_idx],
                 'lower_band': df['lower_band'].iloc[curr_idx],
+                'middle_band': df['middle_band'].iloc[curr_idx],
                 'high_band_diff': high_band_diff,
                 'low_band_diff': low_band_diff,
                 'band_diff': band_diff,

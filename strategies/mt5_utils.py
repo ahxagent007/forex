@@ -1259,3 +1259,20 @@ def calculate_lot_size_point(symbol, sl_point):
     lot_size = round(balance * (risk / 100) / (pip_value[symbol] * sl_point), 2)
 
     return round(lot_size * 10, 2)
+
+def get_spread_in_price(symbol):
+    price = mt5.symbol_info_tick(symbol).ask
+    bid_price = mt5.symbol_info_tick(symbol).bid
+
+    spread = abs(price - bid_price)
+
+    return spread
+
+def get_spread_in_point(symbol):
+    point = mt5.symbol_info(symbol).point
+    price = mt5.symbol_info_tick(symbol).ask
+    bid_price = mt5.symbol_info_tick(symbol).bid
+
+    spread = abs(price - bid_price) / point
+
+    return spread
