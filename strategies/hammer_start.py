@@ -2,7 +2,7 @@ from datetime import date, datetime
 import time
 from mt5_utils import get_live_data, trade_order_price, calculate_lot_size, initialize_mt5, get_spread_in_price, \
     get_balance
-from common_functions import check_duplicate_orders_time, write_json, read_json
+from common_functions import check_duplicate_orders_time, write_json, read_json, check_duplicate_orders_time_json
 
 
 def detect_hammer_patterns(df):
@@ -77,7 +77,8 @@ def check_update_target_profit():
             return True
         else:
             current_hour = datetime.now().hour
-            target_current_data['history'][str(current_hour)] = current_balance
+            current_minute = datetime.now().minute
+            target_current_data['history'][str(current_hour)+'_'+str(current_minute)] = current_balance
             write_json(balance_sheet, 'balance_sheet')
             return False
     except:
@@ -100,6 +101,8 @@ skip_min = 2
 tp_multi = 2
 spread_multi = 2
 
+ORDER_JSON = {}
+
 while True:
     # check if targeted profit
     check_sts = check_update_target_profit()
@@ -107,8 +110,7 @@ while True:
         time.sleep(60*5)
         continue
     for symbol in SYMBOL_LIST:
-        running_trade_status, orders_json = check_duplicate_orders_time(symbol, skip_min, json_file_name)
-
+        running_trade_status, orders_json = check_duplicate_orders_time_json(symbol, skip_min, ORDER_JSON)
 
         if running_trade_status:
             continue
@@ -134,21 +136,22 @@ while True:
             action = 'sell'
 
         if action:
+            print(ORDER_JSON)
             ## Calculate the spread
             if not hammer_tail_size > spread*spread_multi:
                 print(f'{symbol} SPREAD [{spread}] >> tail size [{hammer_tail_size}]')
-                write_json(json_dict=orders_json, json_file_name=json_file_name)
+                ORDER_JSON = orders_json
                 continue
 
             boil_data = boil_bands_data(df)
 
             if df['close'].iloc[-1] > boil_data['middle_band'] and action == 'buy':
                 print(symbol, 'price is > middle_band')
-                write_json(json_dict=orders_json, json_file_name=json_file_name)
+                ORDER_JSON = orders_json
                 continue
             elif df['close'].iloc[-1] < boil_data['middle_band'] and action == 'sell':
                 print(symbol, 'price is < middle_band')
-                write_json(json_dict=orders_json, json_file_name=json_file_name)
+                ORDER_JSON = orders_json
                 continue
 
             print(symbol, 'running_trade_status ->', running_trade_status)
@@ -157,7 +160,8 @@ while True:
             trade_order_price(symbol=symbol, tp_price=tp_price, sl_price=sl_price,
                               lot=lot, action=action)
 
-            write_json(json_dict=orders_json, json_file_name=json_file_name)
+            ORDER_JSON = orders_json
+            print(ORDER_JSON)
 
     time.sleep(sleep_time)
 
