@@ -62,7 +62,8 @@ def boil_bands_data(df, window=20, num_std=2):
     }
 
 def check_update_target_profit():
-    TARGET_PERCENT = 5
+    TARGET_PERCENT = 6
+    SL_PERCENT = 3
 
     current_balance = get_balance()
     current_date = date.today()
@@ -79,7 +80,7 @@ def check_update_target_profit():
         else:
             current_hour = datetime.now().hour
             current_minute = datetime.now().minute
-            if current_minute % 5 == 0:
+            if current_minute % SL_PERCENT == 0:
                 target_current_data['history'][str(current_hour)+'_'+str(current_minute)] = current_balance
             write_json(balance_sheet, 'balance_sheet')
             return False
