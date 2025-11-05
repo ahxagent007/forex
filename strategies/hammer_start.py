@@ -79,7 +79,8 @@ def check_update_target_profit():
         else:
             current_hour = datetime.now().hour
             current_minute = datetime.now().minute
-            target_current_data['history'][str(current_hour)+'_'+str(current_minute)] = current_balance
+            if current_minute % 5 == 0:
+                target_current_data['history'][str(current_hour)+'_'+str(current_minute)] = current_balance
             write_json(balance_sheet, 'balance_sheet')
             return False
     except:
