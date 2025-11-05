@@ -71,8 +71,9 @@ def check_update_target_profit():
     try:
         target_current_data = balance_sheet[str(current_date)]
         target_balance = target_current_data['target']
+        target_sl = target_current_data['sl']
 
-        if current_balance > target_balance:
+        if current_balance > target_balance and current_balance < target_sl:
             #SKIP THIS DAY
             return True
         else:
@@ -84,7 +85,8 @@ def check_update_target_profit():
     except:
 
         target_balance = current_balance + (current_balance * TARGET_PERCENT)/100
-        balance_sheet[str(current_date)] = {'target':target_balance, 'history':{}}
+        target_sl = current_balance - (current_balance * TARGET_PERCENT*2)/100
+        balance_sheet[str(current_date)] = {'target':target_balance, 'sl': target_sl, 'history':{}}
         write_json(balance_sheet, 'balance_sheet')
 
         return False
