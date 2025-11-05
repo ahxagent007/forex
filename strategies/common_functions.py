@@ -55,7 +55,7 @@ def check_duplicate_orders(symbol, skip_min, json_file_name):
         end_hour = last_trade_time['h']
         end_min = last_trade_time['m']+skip_min
 
-        if end_min > 60:
+        if end_min >= 60:
             end_hour += 1
             end_min -= 60
             if end_hour >= 24:
@@ -97,7 +97,7 @@ def check_duplicate_orders_is_time(symbol, skip_min, json_file_name):
         end_hour = last_trade_time['h']
         end_min = last_trade_time['m']+skip_min
 
-        if end_min > 60:
+        if end_min >= 60:
             end_hour += 1
             end_min -= 60
             if end_hour >= 24:
@@ -144,7 +144,7 @@ def check_duplicate_orders_time(symbol, skip_min, json_file_name):
         end_hour = last_trade_time['h']
         end_min = last_trade_time['m']+skip_min
 
-        if end_min > 60:
+        if end_min >= 60:
             end_hour += 1
             end_min -= 60
             if end_hour >= 24:
@@ -178,7 +178,7 @@ def check_duplicate_orders_time_json(symbol, skip_min, orders_json_main):
         end_hour = last_trade_time['h']
         end_min = last_trade_time['m']+skip_min
 
-        if end_min > 60:
+        if end_min >= 60:
             end_hour += 1
             end_min -= 60
             if end_hour >= 24:
@@ -213,7 +213,7 @@ def skip_trade_time(symbol, skip_min, json_file_name):
         end_hour = last_trade_time['h']
         end_min = last_trade_time['m']+skip_min
 
-        if end_min > 60:
+        if end_min >= 60:
             end_hour += 1
             end_min -= 60
             if end_hour >= 24:
