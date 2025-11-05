@@ -104,6 +104,7 @@ json_file_name = 'hammer_start'
 skip_min = 2
 tp_multi = 2
 spread_multi = 2
+RISK_PERCENT = 1
 
 ORDER_JSON = {}
 
@@ -160,7 +161,7 @@ while True:
 
             print(symbol, 'running_trade_status ->', running_trade_status)
 
-            lot = calculate_lot_size(symbol=symbol, sl_diff=hammer_tail_size, risk=1)
+            lot = calculate_lot_size(symbol=symbol, sl_diff=hammer_tail_size, risk=RISK_PERCENT)
             trade_order_price(symbol=symbol, tp_price=tp_price, sl_price=sl_price,
                               lot=lot, action=action)
 
