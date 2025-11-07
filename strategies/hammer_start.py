@@ -120,53 +120,56 @@ while True:
         if running_trade_status:
             continue
 
-        df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
-        df = detect_hammer_patterns(df)
+        try:
+            df = get_live_data(symbol=symbol, time_frame=time_frame, prev_n_candles=100)
+            df = detect_hammer_patterns(df)
 
-        action = None
-        spread = get_spread_in_price(symbol)
+            action = None
+            spread = get_spread_in_price(symbol)
 
-        if df['is_hammer'].iloc[-2]:
-            print(symbol, 'Hammer Found BUY')
-            hammer_tail_size = df['close'].iloc[-2] - df['low'].iloc[-2]
-            sl_price = df['low'].iloc[-2] - spread
-            tp_price = df['close'].iloc[-2] + hammer_tail_size * tp_multi
-            action = 'buy'
+            if df['is_hammer'].iloc[-2]:
+                print(symbol, 'Hammer Found BUY')
+                hammer_tail_size = df['close'].iloc[-2] - df['low'].iloc[-2]
+                sl_price = df['low'].iloc[-2] - spread
+                tp_price = df['close'].iloc[-2] + hammer_tail_size * tp_multi
+                action = 'buy'
 
-        elif df['is_inv_hammer'].iloc[-2]:
-            print(symbol, 'Inverse Hammer Found SELL')
-            hammer_tail_size = df['high'].iloc[-2] - df['close'].iloc[-2]
-            sl_price = df['high'].iloc[-2] + spread
-            tp_price = df['close'].iloc[-2] - hammer_tail_size * tp_multi
-            action = 'sell'
+            elif df['is_inv_hammer'].iloc[-2]:
+                print(symbol, 'Inverse Hammer Found SELL')
+                hammer_tail_size = df['high'].iloc[-2] - df['close'].iloc[-2]
+                sl_price = df['high'].iloc[-2] + spread
+                tp_price = df['close'].iloc[-2] - hammer_tail_size * tp_multi
+                action = 'sell'
 
-        if action:
-            print(ORDER_JSON)
-            ## Calculate the spread
-            if not hammer_tail_size > spread*spread_multi:
-                print(f'{symbol} SPREAD [{spread}] >> tail size [{hammer_tail_size}]')
+            if action:
+                print(ORDER_JSON)
+                ## Calculate the spread
+                if not hammer_tail_size > spread * spread_multi:
+                    print(f'{symbol} SPREAD [{spread}] >> tail size [{hammer_tail_size}]')
+                    ORDER_JSON = orders_json
+                    continue
+
+                boil_data = boil_bands_data(df)
+
+                if df['close'].iloc[-1] > boil_data['middle_band'] and action == 'buy':
+                    print(symbol, 'price is > middle_band')
+                    ORDER_JSON = orders_json
+                    continue
+                elif df['close'].iloc[-1] < boil_data['middle_band'] and action == 'sell':
+                    print(symbol, 'price is < middle_band')
+                    ORDER_JSON = orders_json
+                    continue
+
+                print(symbol, 'running_trade_status ->', running_trade_status)
+
+                lot = calculate_lot_size(symbol=symbol, sl_diff=hammer_tail_size, risk=RISK_PERCENT)
+                trade_order_price(symbol=symbol, tp_price=tp_price, sl_price=sl_price,
+                                  lot=lot, action=action)
+
                 ORDER_JSON = orders_json
-                continue
-
-            boil_data = boil_bands_data(df)
-
-            if df['close'].iloc[-1] > boil_data['middle_band'] and action == 'buy':
-                print(symbol, 'price is > middle_band')
-                ORDER_JSON = orders_json
-                continue
-            elif df['close'].iloc[-1] < boil_data['middle_band'] and action == 'sell':
-                print(symbol, 'price is < middle_band')
-                ORDER_JSON = orders_json
-                continue
-
-            print(symbol, 'running_trade_status ->', running_trade_status)
-
-            lot = calculate_lot_size(symbol=symbol, sl_diff=hammer_tail_size, risk=RISK_PERCENT)
-            trade_order_price(symbol=symbol, tp_price=tp_price, sl_price=sl_price,
-                              lot=lot, action=action)
-
-            ORDER_JSON = orders_json
-            print(ORDER_JSON)
+                print(ORDER_JSON)
+        except Exception as e:
+            print(str(e))
 
     time.sleep(sleep_time)
 
